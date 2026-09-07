@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { HashRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -52,7 +53,7 @@ const defaultFormState = {
   deliveryStatus: 'Pending'
 };
 
-export default function App() {
+function AppContent() {
   const [bills, setBills] = useState([]);
   const [formData, setFormData] = useState(defaultFormState);
   const [activeBillId, setActiveBillId] = useState(null);
@@ -61,6 +62,13 @@ export default function App() {
   const [isOnline, setIsOnline] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
+
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Current active view calculated from current route hash (e.g. 'billing', 'dashboard', 'reminders', 'followup', 'reports', 'customers', 'staff')
+  const currentPath = location.pathname.replace(/^\//, '');
+  const currentView = currentPath || 'billing';
 
   // Authentication State
   const [currentUser, setCurrentUser] = useState(() => {
@@ -118,9 +126,6 @@ export default function App() {
     });
     showNotification(`Staff profile for "${updatedStaff.name}" updated successfully.`, 'success');
   };
-
-  // View state: 'billing' | 'dashboard' | 'reminders'
-  const [currentView, setCurrentView] = useState('billing');
   
   // Search Panel Slide-out / Collapsible state
   const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
@@ -384,7 +389,7 @@ export default function App() {
       {/* Left Sidebar Navigation */}
       <Sidebar 
         currentView={currentView}
-        setCurrentView={setCurrentView}
+        setCurrentView={(view) => navigate(`/${view}`)}
         bills={bills}
         isDarkMode={isDarkMode}
         setIsDarkMode={setIsDarkMode}
@@ -406,103 +411,142 @@ export default function App() {
 
         {/* View Switch Router */}
         <div className="flex-1 flex flex-col justify-between">
-          {currentView === 'billing' && (
-            <main className="p-4.5 flex-1 grid grid-cols-1 xl:grid-cols-12 gap-4.5 items-start max-w-[1920px] mx-auto w-full transition-all duration-300">
-              {/* Left Column: Optical Form (Full 12 cols when search is closed, 7 cols when search is open) */}
-              <div className={`${isSearchPanelOpen ? 'xl:col-span-7' : 'xl:col-span-12'} w-full transition-all duration-300`}>
-                <CustomerPrescriptionForm 
-                  formData={formData}
-                  setFormData={setFormData}
-                  isEditing={isEditing}
-                  isDarkMode={isDarkMode}
-                  onToggleSearch={handleToggleSearch}
-                  isSearchPanelOpen={isSearchPanelOpen}
-                  userRole={currentUser?.role || 'admin'}
-                />
-              </div>
+          <Routes>
+            <Route path="/" element={<Navigate to="/billing" replace />} />
+            <Route 
+              path="/billing" 
+              element={
+                <main className="p-4.5 flex-1 grid grid-cols-1 xl:grid-cols-12 gap-4.5 items-start max-w-[1920px] mx-auto w-full transition-all duration-300">
+                  {/* Left Column: Optical Form (Full 12 cols when search is closed, 7 cols when search is open) */}
+                  <div className={`${isSearchPanelOpen ? 'xl:col-span-7' : 'xl:col-span-12'} w-full transition-all duration-300`}>
+                    <CustomerPrescriptionForm 
+                      formData={formData}
+                      setFormData={setFormData}
+                      isEditing={isEditing}
+                      isDarkMode={isDarkMode}
+                      onToggleSearch={handleToggleSearch}
+                      isSearchPanelOpen={isSearchPanelOpen}
+                      userRole={currentUser?.role || 'admin'}
+                    />
+                  </div>
 
-              {/* Right Column: Quick Search Grid (Slides in / Opens when isSearchPanelOpen is true) */}
-              {isSearchPanelOpen && (
-                <div id="search-panel-container" className="xl:col-span-5 w-full h-full transition-all duration-300">
-                  <QuickSearchGrid 
-                    bills={filteredBills}
-                    activeBillId={activeBillId}
-                    onSelectBill={handleSelectBillAndClose}
-                    searchQuery={searchQuery}
-                    setSearchQuery={setSearchQuery}
-                    onClosePanel={() => setIsSearchPanelOpen(false)}
+                  {/* Right Column: Quick Search Grid (Slides in / Opens when isSearchPanelOpen is true) */}
+                  {isSearchPanelOpen && (
+                    <div id="search-panel-container" className="xl:col-span-5 w-full h-full transition-all duration-300">
+                      <QuickSearchGrid 
+                        bills={filteredBills}
+                        activeBillId={activeBillId}
+                        onSelectBill={handleSelectBillAndClose}
+                        searchQuery={searchQuery}
+                        setSearchQuery={setSearchQuery}
+                        onClosePanel={() => setIsSearchPanelOpen(false)}
+                        isDarkMode={isDarkMode}
+                      />
+                    </div>
+                  )}
+                </main>
+              } 
+            />
+
+            <Route 
+              path="/dashboard" 
+              element={
+                <main className="flex-1 w-full">
+                  <DashboardPage 
+                    bills={bills}
+                    isDarkMode={isDarkMode}
+                    onNavigateToReminders={() => navigate('/reminders')}
+                    onNavigateToBilling={() => navigate('/billing')}
+                    onSelectBill={(b) => {
+                      handleSelectBill(b);
+                      navigate('/billing');
+                    }}
+                  />
+                </main>
+              } 
+            />
+
+            <Route 
+              path="/reminders" 
+              element={
+                <main className="flex-1 w-full">
+                  <RemindersPage 
+                    bills={bills}
+                    isDarkMode={isDarkMode}
+                    onToggleStatus={handleDeliveryToggleById}
+                    onSendSMS={handleSendSMS}
+                  />
+                </main>
+              } 
+            />
+
+            <Route 
+              path="/followup" 
+              element={
+                <main className="flex-1 w-full p-4.5 max-w-[1920px] mx-auto">
+                  <FollowUpPage 
+                    bills={bills}
                     isDarkMode={isDarkMode}
                   />
-                </div>
-              )}
-            </main>
-          )}
+                </main>
+              } 
+            />
 
-          {currentView === 'dashboard' && (
-            <main className="flex-1 w-full">
-              <DashboardPage 
-                bills={bills}
-                isDarkMode={isDarkMode}
-                onNavigateToReminders={() => setCurrentView('reminders')}
-                onNavigateToBilling={() => setCurrentView('billing')}
-                onSelectBill={(b) => {
-                  handleSelectBill(b);
-                  setCurrentView('billing');
-                }}
-              />
-            </main>
-          )}
+            {/* Admin Exclusive Views */}
+            <Route 
+              path="/reports" 
+              element={
+                currentUser.role === 'admin' ? (
+                  <main className="flex-1 w-full p-4.5 max-w-[1920px] mx-auto">
+                    <ReportsPage 
+                      bills={bills}
+                      isDarkMode={isDarkMode}
+                    />
+                  </main>
+                ) : (
+                  <Navigate to="/billing" replace />
+                )
+              } 
+            />
 
-          {currentView === 'reminders' && (
-            <main className="flex-1 w-full">
-              <RemindersPage 
-                bills={bills}
-                isDarkMode={isDarkMode}
-                onToggleStatus={handleDeliveryToggleById}
-                onSendSMS={handleSendSMS}
-              />
-            </main>
-          )}
+            <Route 
+              path="/customers" 
+              element={
+                currentUser.role === 'admin' ? (
+                  <main className="flex-1 w-full p-4.5 max-w-[1920px] mx-auto">
+                    <CustomerInfoPage 
+                      bills={bills}
+                      isDarkMode={isDarkMode}
+                    />
+                  </main>
+                ) : (
+                  <Navigate to="/billing" replace />
+                )
+              } 
+            />
 
-          {currentView === 'followup' && (
-            <main className="flex-1 w-full p-4.5 max-w-[1920px] mx-auto">
-              <FollowUpPage 
-                bills={bills}
-                isDarkMode={isDarkMode}
-              />
-            </main>
-          )}
+            <Route 
+              path="/staff" 
+              element={
+                currentUser.role === 'admin' ? (
+                  <main className="flex-1 w-full p-4.5 max-w-[1920px] mx-auto">
+                    <StaffSetupPage 
+                      registeredStaff={registeredStaff}
+                      onAddStaff={handleAddStaff}
+                      onDeleteStaff={handleDeleteStaff}
+                      onUpdateStaff={handleUpdateStaff}
+                      isDarkMode={isDarkMode}
+                    />
+                  </main>
+                ) : (
+                  <Navigate to="/billing" replace />
+                )
+              } 
+            />
 
-          {/* Admin Exclusive Views */}
-          {currentView === 'reports' && currentUser.role === 'admin' && (
-            <main className="flex-1 w-full p-4.5 max-w-[1920px] mx-auto">
-              <ReportsPage 
-                bills={bills}
-                isDarkMode={isDarkMode}
-              />
-            </main>
-          )}
-
-          {currentView === 'customers' && currentUser.role === 'admin' && (
-            <main className="flex-1 w-full p-4.5 max-w-[1920px] mx-auto">
-              <CustomerInfoPage 
-                bills={bills}
-                isDarkMode={isDarkMode}
-              />
-            </main>
-          )}
-
-          {currentView === 'staff' && currentUser.role === 'admin' && (
-            <main className="flex-1 w-full p-4.5 max-w-[1920px] mx-auto">
-              <StaffSetupPage 
-                registeredStaff={registeredStaff}
-                onAddStaff={handleAddStaff}
-                onDeleteStaff={handleDeleteStaff}
-                onUpdateStaff={handleUpdateStaff}
-                isDarkMode={isDarkMode}
-              />
-            </main>
-          )}
+            {/* Fallback route */}
+            <Route path="*" element={<Navigate to="/billing" replace />} />
+          </Routes>
 
           {/* Bottom Floating Action Dock (Only visible in Billing POS view) */}
           {currentView === 'billing' && (
@@ -540,6 +584,7 @@ export default function App() {
       {showItemSetupModal && (
         <ItemSetupModal 
           onClose={() => setShowItemSetupModal(false)}
+          userRole={currentUser?.role || 'admin'}
         />
       )}
 
@@ -557,3 +602,12 @@ export default function App() {
     </div>
   );
 }
+
+export default function App() {
+  return (
+    <HashRouter>
+      <AppContent />
+    </HashRouter>
+  );
+}
+

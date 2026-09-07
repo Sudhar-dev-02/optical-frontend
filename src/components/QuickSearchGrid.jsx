@@ -220,7 +220,7 @@ export default function QuickSearchGrid({
                     <td className="p-2 sm:p-2.5 border-r border-slate-400/20 font-sans font-bold">{b.customer?.name}</td>
                     <td className="p-2 sm:p-2.5 border-r border-slate-400/20 text-amber-500 font-semibold">{b.customer?.phone}</td>
                     <td className="p-2 sm:p-2.5 border-r border-slate-400/20">{renderPrescriptionBox(b.prescription)}</td>
-                    <td className="p-2 sm:p-2.5 text-right font-black text-emerald-500">₹ {b.totalAmount || b.netAmount || 0}</td>
+                    <td className="p-2 sm:p-2.5 text-right font-black text-emerald-500">₹ {b.netAmount !== undefined && b.netAmount !== null ? b.netAmount : (b.totalAmount || 0)}</td>
                   </tr>
                 );
               })

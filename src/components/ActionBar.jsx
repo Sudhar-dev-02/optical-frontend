@@ -66,12 +66,12 @@ export default function ActionBar({
         </button>
 
         {/* View / Print Button */}
-        <button
+        {/* <button
           onClick={onView}
           className="px-2.5 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-black transition-all shadow-md flex items-center justify-center gap-1 sm:gap-2 active:scale-95 cursor-pointer ring-1 sm:ring-2 ring-white/30"
         >
           <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> <span>View</span>
-        </button>
+        </button> */}
 
         {/* Delivery Status Button */}
         <button
@@ -82,12 +82,12 @@ export default function ActionBar({
         </button>
 
         {/* Duplicate Bill Button */}
-        <button
+        {/* <button
           onClick={onDuplicateBill}
           className="px-2.5 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-full bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white font-black transition-all shadow-md flex items-center justify-center gap-1 sm:gap-2 active:scale-95 cursor-pointer ring-1 sm:ring-2 ring-white/30"
         >
           <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Dup_Bill</span><span className="sm:hidden">Dup</span>
-        </button>
+        </button> */}
 
         {/* Item Setup Button */}
         <button

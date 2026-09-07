@@ -3,7 +3,8 @@ import { PackagePlus, X, Plus, Check, Save, UserCheck, Stethoscope } from 'lucid
 import axios from 'axios';
 import { CATALOG_API } from '../config/api';
 
-export default function ItemSetupModal({ onClose }) {
+export default function ItemSetupModal({ onClose, userRole = 'admin' }) {
+  const isAdmin = userRole === 'admin';
   const [orderTakenOptions, setOrderTakenOptions] = useState(['Babu', 'Abrar', 'Janani', 'Arafath']);
   const [prescribedByOptions, setPrescribedByOptions] = useState(['Bushra', 'Janani', 'Aravint Hsptl', 'Vivekanandha', 'Agarwal']);
   const [lensTypes, setLensTypes] = useState(['SV', 'Bifocal', 'Progressive']);
@@ -48,15 +49,16 @@ export default function ItemSetupModal({ onClose }) {
         if (res.data.frameWarranties) setFrameWarranties(res.data.frameWarranties);
       }
     } catch (err) {
-      console.warn('Using local state catalog values.');
+      console.error('Failed to load catalog:', err);
     }
   };
 
-  const saveCatalogToDatabase = async (updatedCatalog) => {
+  const saveCatalogToDatabase = async (payload) => {
     setIsSaving(true);
+    setSaveStatus('Saving...');
     try {
-      await axios.post(CATALOG_API, updatedCatalog);
-      setSaveStatus('Saved to Database!');
+      await axios.post(CATALOG_API, payload);
+      setSaveStatus('Saved to DB!');
       setTimeout(() => setSaveStatus(''), 2500);
     } catch (err) {
       setSaveStatus('Saved Locally');
@@ -164,9 +166,13 @@ export default function ItemSetupModal({ onClose }) {
       <div className="bg-white border border-slate-300 rounded-2xl max-w-4xl w-full text-slate-900 shadow-2xl overflow-hidden my-6">
         <div className="bg-slate-100 px-5 py-3.5 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <PackagePlus className="w-5 h-5 text-blue-600" />
-            <h2 className="font-extrabold text-sm uppercase tracking-wider text-slate-900">
-              Admin Master Setup & Catalog Manager (Database Persistent)
+            <div className="p-2 rounded-xl bg-purple-100 text-purple-600">
+              <PackagePlus className="w-6 h-6" />
+            </div>
+            <h2 className="text-base font-black text-slate-900">
+              {isAdmin 
+                ? 'ADMIN MASTER SETUP & CATALOG MANAGER (DATABASE PERSISTENT)' 
+                : 'ITEM SETUP & CATALOG MANAGER'}
             </h2>
           </div>
 
@@ -184,71 +190,75 @@ export default function ItemSetupModal({ onClose }) {
 
         <div className="p-5 space-y-4 text-xs font-medium max-h-[80vh] overflow-y-auto">
           <p className="text-slate-600">
-            Admins can manage staff list, doctors, lens types, coatings, brands, and warranties. Details added here will automatically populate in all Sales Person dropdowns across the system.
+            {isAdmin 
+              ? 'Admins can manage staff list, doctors, lens types, coatings, brands, and warranties. Details added here will automatically populate in all Sales Person dropdowns across the system.'
+              : 'Manage lens types, coatings, brands, and warranties. Details added here will automatically populate in dropdowns across the system.'}
           </p>
 
-          {/* Section 1: Staff & Doctor Setup */}
-          <div className="border border-purple-200 bg-purple-50/40 p-3 rounded-2xl space-y-3">
-            <h3 className="font-black text-purple-900 text-xs uppercase tracking-wider flex items-center gap-1.5 border-b border-purple-200 pb-1">
-              <UserCheck className="w-4 h-4 text-purple-600" /> Order Taken Staff & Prescribed By Doctors (Admin Setup)
-            </h3>
+          {/* Section 1: Staff & Doctor Setup (Admin Only) */}
+          {isAdmin && (
+            <div className="border border-purple-200 bg-purple-50/40 p-3 rounded-2xl space-y-3">
+              <h3 className="font-black text-purple-900 text-xs uppercase tracking-wider flex items-center gap-1.5 border-b border-purple-200 pb-1">
+                <UserCheck className="w-4 h-4 text-purple-600" /> Order Taken Staff & Prescribed By Doctors (Admin Setup)
+              </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Order Taken Staff */}
-              <div className="bg-white p-3 rounded-xl border border-purple-200 shadow-xs">
-                <h4 className="font-bold text-purple-800 mb-2 flex items-center justify-between">
-                  <span>Order Taken Staff List</span>
-                  <span className="text-[10px] bg-purple-100 text-purple-900 px-1.5 py-0.5 rounded font-mono">{orderTakenOptions.length} staff</span>
-                </h4>
-                <div className="flex gap-1.5 mb-2">
-                  <input 
-                    type="text" 
-                    placeholder="New Staff Name"
-                    value={newOrderTaken}
-                    onChange={(e) => setNewOrderTaken(e.target.value)}
-                    className="flex-1 bg-white border border-slate-300 rounded-md px-2 py-1 text-slate-800"
-                  />
-                  <button onClick={addOrderTaken} className="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 rounded-md text-white font-bold">
-                    <Plus className="w-4 h-4" />
-                  </button>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Order Taken Staff */}
+                <div className="bg-white p-3 rounded-xl border border-purple-200 shadow-xs">
+                  <h4 className="font-bold text-purple-800 mb-2 flex items-center justify-between">
+                    <span>Order Taken Staff List</span>
+                    <span className="text-[10px] bg-purple-100 text-purple-900 px-1.5 py-0.5 rounded font-mono">{orderTakenOptions.length} staff</span>
+                  </h4>
+                  <div className="flex gap-1.5 mb-2">
+                    <input 
+                      type="text" 
+                      placeholder="New Staff Name"
+                      value={newOrderTaken}
+                      onChange={(e) => setNewOrderTaken(e.target.value)}
+                      className="flex-1 bg-white border border-slate-300 rounded-md px-2 py-1 text-slate-800"
+                    />
+                    <button onClick={addOrderTaken} className="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 rounded-md text-white font-bold">
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
+                    {orderTakenOptions.map((item, idx) => (
+                      <span key={idx} className="px-2 py-0.5 rounded bg-purple-50 border border-purple-200 text-purple-900 font-mono text-[11px] font-semibold">
+                        {item}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
-                  {orderTakenOptions.map((item, idx) => (
-                    <span key={idx} className="px-2 py-0.5 rounded bg-purple-50 border border-purple-200 text-purple-900 font-mono text-[11px] font-semibold">
-                      {item}
-                    </span>
-                  ))}
-                </div>
-              </div>
 
-              {/* Prescribed By Doctors */}
-              <div className="bg-white p-3 rounded-xl border border-purple-200 shadow-xs">
-                <h4 className="font-bold text-purple-800 mb-2 flex items-center justify-between flex items-center gap-1">
-                  <span className="flex items-center gap-1"><Stethoscope className="w-3.5 h-3.5 text-purple-600" /> Prescribed By (Doctors / Hospitals)</span>
-                  <span className="text-[10px] bg-purple-100 text-purple-900 px-1.5 py-0.5 rounded font-mono">{prescribedByOptions.length} items</span>
-                </h4>
-                <div className="flex gap-1.5 mb-2">
-                  <input 
-                    type="text" 
-                    placeholder="New Doctor / Hospital Name"
-                    value={newPrescribedBy}
-                    onChange={(e) => setNewPrescribedBy(e.target.value)}
-                    className="flex-1 bg-white border border-slate-300 rounded-md px-2 py-1 text-slate-800"
-                  />
-                  <button onClick={addPrescribedBy} className="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 rounded-md text-white font-bold">
-                    <Plus className="w-4 h-4" />
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
-                  {prescribedByOptions.map((item, idx) => (
-                    <span key={idx} className="px-2 py-0.5 rounded bg-purple-50 border border-purple-200 text-purple-900 font-mono text-[11px] font-semibold">
-                      {item}
-                    </span>
-                  ))}
+                {/* Prescribed By Doctors */}
+                <div className="bg-white p-3 rounded-xl border border-purple-200 shadow-xs">
+                  <h4 className="font-bold text-purple-800 mb-2 flex items-center justify-between flex items-center gap-1">
+                    <span className="flex items-center gap-1"><Stethoscope className="w-3.5 h-3.5 text-purple-600" /> Prescribed By (Doctors / Hospitals)</span>
+                    <span className="text-[10px] bg-purple-100 text-purple-900 px-1.5 py-0.5 rounded font-mono">{prescribedByOptions.length} items</span>
+                  </h4>
+                  <div className="flex gap-1.5 mb-2">
+                    <input 
+                      type="text" 
+                      placeholder="New Doctor / Hospital Name"
+                      value={newPrescribedBy}
+                      onChange={(e) => setNewPrescribedBy(e.target.value)}
+                      className="flex-1 bg-white border border-slate-300 rounded-md px-2 py-1 text-slate-800"
+                    />
+                    <button onClick={addPrescribedBy} className="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 rounded-md text-white font-bold">
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
+                    {prescribedByOptions.map((item, idx) => (
+                      <span key={idx} className="px-2 py-0.5 rounded bg-purple-50 border border-purple-200 text-purple-900 font-mono text-[11px] font-semibold">
+                        {item}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Section 2: Products & Inventory Setup */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

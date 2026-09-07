@@ -33,8 +33,15 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
     }
   };
 
+  const hasDateSelected = Boolean(startDate || endDate);
+
   // Filter bills by Start Date, End Date, and optional Search
+  // If no date is selected, keep entries empty
   const filteredBills = useMemo(() => {
+    if (!startDate && !endDate) {
+      return [];
+    }
+
     return bills.filter(bill => {
       const bDate = getBillDateStr(bill);
       if (startDate && bDate && bDate < startDate) return false;
@@ -279,8 +286,12 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
 
   // Export filtered bills directly to Excel (.xlsx) including full Prescription Details
   const handleExportExcel = () => {
+    if (!hasDateSelected) {
+      alert('Please select a date or date range first to export reports.');
+      return;
+    }
     if (filteredBills.length === 0) {
-      alert('No entries available to export for the selected filter.');
+      alert('No entries available to export for the selected date range.');
       return;
     }
 
@@ -448,8 +459,13 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
           {/* Download Excel Button */}
           <button
             onClick={handleExportExcel}
-            className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold shadow-md shadow-emerald-600/30 transition-all cursor-pointer shrink-0"
-            title="Export filtered records including Prescription to Microsoft Excel (.xlsx)"
+            disabled={!hasDateSelected || filteredBills.length === 0}
+            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
+              hasDateSelected && filteredBills.length > 0
+                ? 'bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white shadow-md shadow-emerald-600/30 cursor-pointer'
+                : 'bg-slate-400/20 text-slate-400 cursor-not-allowed border border-slate-400/20 opacity-60'
+            }`}
+            title={hasDateSelected && filteredBills.length > 0 ? "Export filtered records including Prescription to Microsoft Excel (.xlsx)" : "Select a date to view and export records"}
           >
             <FileSpreadsheet className="w-4 h-4" />
             <span>Download Excel</span>
@@ -537,9 +553,15 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
 
           <div className="mt-2 text-[11px] opacity-70 font-semibold flex items-center justify-between">
             <span>
-              Showing <strong>{filteredBills.length}</strong> of <strong>{bills.length}</strong> total billing entries
+              {hasDateSelected ? (
+                <>Showing <strong>{filteredBills.length}</strong> matching billing entries</>
+              ) : (
+                <span className="text-amber-500 font-bold flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5" /> Please select a date or date range to display entries
+                </span>
+              )}
             </span>
-            {(startDate || endDate) && (
+            {hasDateSelected && (
               <span className="font-mono text-sky-500 font-bold">
                 Filtered: {startDate || 'Beginning'} → {endDate || 'Today'}
               </span>
@@ -572,7 +594,19 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-400/20 font-mono">
-              {filteredBills.length === 0 ? (
+              {!hasDateSelected ? (
+                <tr>
+                  <td colSpan="13" className="p-12 text-center font-sans">
+                    <div className="flex flex-col items-center justify-center gap-2 opacity-75">
+                      <Calendar className="w-8 h-8 text-sky-500 animate-pulse" />
+                      <p className="text-sm font-bold">No Date Selected</p>
+                      <p className="text-xs opacity-80">
+                        Date select panna mattumey entries show aagum. Please pick a <strong>Start Date</strong> / <strong>End Date</strong> or click <strong>Today</strong> / <strong>This Month</strong> above.
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredBills.length === 0 ? (
                 <tr>
                   <td colSpan="13" className="p-8 text-center opacity-60 font-sans">
                     No billing entries found for the selected date range or search query.
@@ -691,24 +725,36 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
             <div>
               <h3 className="font-bold opacity-80 mb-2 text-sky-400">Popular Lens Designs:</h3>
               <div className="space-y-1 font-mono">
-                {Object.entries(summaryMetrics.lensTypeCounts).map(([type, count]) => (
-                  <div key={type} className="flex justify-between p-1.5 rounded-lg bg-slate-500/10">
-                    <span className="truncate pr-1">{type || 'SV'}</span>
-                    <strong className="text-sky-400">{count} sold</strong>
+                {Object.entries(summaryMetrics.lensTypeCounts).length === 0 ? (
+                  <div className="p-3 text-center text-[11px] opacity-40 font-sans italic">
+                    No lens sales in selected period
                   </div>
-                ))}
+                ) : (
+                  Object.entries(summaryMetrics.lensTypeCounts).map(([type, count]) => (
+                    <div key={type} className="flex justify-between p-1.5 rounded-lg bg-slate-500/10">
+                      <span className="truncate pr-1">{type || 'SV'}</span>
+                      <strong className="text-sky-400">{count} sold</strong>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
             <div>
               <h3 className="font-bold opacity-80 mb-2 text-amber-400">Top Frame Brands:</h3>
               <div className="space-y-1 font-mono">
-                {Object.entries(summaryMetrics.frameBrandCounts).map(([brand, count]) => (
-                  <div key={brand} className="flex justify-between p-1.5 rounded-lg bg-slate-500/10">
-                    <span className="truncate pr-1">{brand || 'Regular'}</span>
-                    <strong className="text-amber-400">{count} sold</strong>
+                {Object.entries(summaryMetrics.frameBrandCounts).length === 0 ? (
+                  <div className="p-3 text-center text-[11px] opacity-40 font-sans italic">
+                    No frame sales in selected period
                   </div>
-                ))}
+                ) : (
+                  Object.entries(summaryMetrics.frameBrandCounts).map(([brand, count]) => (
+                    <div key={brand} className="flex justify-between p-1.5 rounded-lg bg-slate-500/10">
+                      <span className="truncate pr-1">{brand || 'Regular'}</span>
+                      <strong className="text-amber-400">{count} sold</strong>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
