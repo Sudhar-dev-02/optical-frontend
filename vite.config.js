@@ -8,5 +8,18 @@ export default defineConfig({
     react(),
     tailwindcss()
   ],
-  base: "/optical-frontend/"
+  base: "/optical-frontend/",
+  build: {
+    chunkSizeWarningLimit: 1600,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('xlsx')) return 'xlsx';
+            if (id.includes('lucide-react')) return 'icons';
+          }
+        }
+      }
+    }
+  }
 })
