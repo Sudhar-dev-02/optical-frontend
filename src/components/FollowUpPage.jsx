@@ -144,8 +144,8 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
       <div className={`${panelClass} p-4 sm:p-5 rounded-2xl sm:rounded-3xl`}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-400/20 pb-3 mb-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-black bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-600 bg-clip-text text-transparent flex items-center gap-2">
-              <Phone className="w-6 h-6 text-sky-500" /> Customer Follow-Up Manager
+            <h1 className="text-xl sm:text-2xl font-black bg-gradient-to-r from-blue-800 via-blue-600 to-indigo-700 dark:from-sky-400 dark:via-blue-500 dark:to-indigo-400 bg-clip-text text-transparent flex items-center gap-2">
+              <Phone className="w-6 h-6 text-blue-700 dark:text-sky-400" /> Customer Follow-Up Manager
             </h1>
             <p className={`text-xs font-semibold mt-0.5 ${labelClass}`}>
               Automated 3-Month Free Service, Product Feedback, and 8-Month Vision Checkup Workflows
@@ -154,9 +154,9 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
 
           <div className="flex items-center gap-2 self-start sm:self-auto">
             <div className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 ${
-              isDarkMode ? 'bg-sky-950/60 border-sky-800 text-sky-300' : 'bg-sky-50 border-sky-200 text-sky-800'
+              isDarkMode ? 'bg-sky-950/60 border-sky-800 text-sky-300' : 'bg-blue-50 border-blue-200 text-blue-900'
             }`}>
-              <PhoneCall className="w-3.5 h-3.5 text-emerald-500" />
+              <PhoneCall className="w-3.5 h-3.5 text-blue-700 dark:text-sky-400" />
               <span>Official WhatsApp / Store Contact: <strong>{STORE_PHONE}</strong></span>
             </div>
           </div>
@@ -168,48 +168,48 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
           <div className={`p-3.5 rounded-2xl border transition-all ${
             isDarkMode ? 'bg-slate-900/60 border-slate-800' : 'bg-white/80 border-slate-200'
           }`}>
-            <div className="flex items-center justify-between text-slate-400 font-bold mb-1">
+            <div className={`flex items-center justify-between font-bold mb-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
               <span>Total Customers</span>
-              <User className="w-4 h-4 text-sky-500" />
+              <User className="w-4 h-4 text-blue-700 dark:text-sky-400" />
             </div>
-            <div className="text-xl sm:text-2xl font-black font-mono">{totalCount}</div>
+            <div className="text-xl sm:text-2xl font-black font-mono text-slate-900 dark:text-slate-100">{totalCount}</div>
             <div className="text-[10px] opacity-70 font-semibold mt-0.5">Active follow-up queue</div>
           </div>
 
           {/* Card 2: 3-Month Free Service Due */}
           <div className={`p-3.5 rounded-2xl border transition-all ${
-            isDarkMode ? 'bg-blue-950/40 border-blue-800/40' : 'bg-blue-50/80 border-blue-200'
+            isDarkMode ? 'bg-sky-950/40 border-sky-800/40' : 'bg-blue-50/80 border-blue-200'
           }`}>
-            <div className="flex items-center justify-between text-blue-500 font-bold mb-1">
+            <div className="flex items-center justify-between text-blue-800 dark:text-sky-400 font-bold mb-1">
               <span>🛠️ 3M Free Service</span>
-              <Wrench className="w-4 h-4 text-blue-500" />
+              <Wrench className="w-4 h-4 text-blue-700 dark:text-sky-400" />
             </div>
-            <div className="text-xl sm:text-2xl font-black font-mono text-blue-500">{followUpItems.length}</div>
-            <div className="text-[10px] opacity-70 font-semibold mt-0.5">90 days post-purchase</div>
+            <div className="text-xl sm:text-2xl font-black font-mono text-blue-900 dark:text-sky-400">{followUpItems.length}</div>
+            <div className="text-[10px] opacity-70 font-semibold mt-0.5 text-blue-800 dark:text-sky-400/80">90 days post-purchase</div>
           </div>
 
           {/* Card 3: Feedback Pending */}
           <div className={`p-3.5 rounded-2xl border transition-all ${
-            isDarkMode ? 'bg-amber-950/40 border-amber-800/40' : 'bg-amber-50/80 border-amber-200'
+            isDarkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-slate-50 border-slate-200'
           }`}>
-            <div className="flex items-center justify-between text-amber-500 font-bold mb-1">
+            <div className="flex items-center justify-between text-blue-800 dark:text-sky-300 font-bold mb-1">
               <span>💬 Product Feedback</span>
-              <MessageSquare className="w-4 h-4 text-amber-500" />
+              <MessageSquare className="w-4 h-4 text-blue-700 dark:text-sky-400" />
             </div>
-            <div className="text-xl sm:text-2xl font-black font-mono text-amber-500">{pendingCount}</div>
+            <div className="text-xl sm:text-2xl font-black font-mono text-blue-900 dark:text-sky-300">{pendingCount}</div>
             <div className="text-[10px] opacity-70 font-semibold mt-0.5">Post-delivery checkup</div>
           </div>
 
           {/* Card 4: 8-Month Next Eye Check */}
           <div className={`p-3.5 rounded-2xl border transition-all ${
-            isDarkMode ? 'bg-emerald-950/40 border-emerald-800/40' : 'bg-emerald-50/80 border-emerald-200'
+            isDarkMode ? 'bg-sky-950/40 border-sky-800/40' : 'bg-blue-50/80 border-blue-200'
           }`}>
-            <div className="flex items-center justify-between text-emerald-500 font-bold mb-1">
+            <div className="flex items-center justify-between text-blue-800 dark:text-sky-400 font-bold mb-1">
               <span>👁️ 8M Eye Checkup</span>
-              <Stethoscope className="w-4 h-4 text-emerald-500" />
+              <Stethoscope className="w-4 h-4 text-blue-700 dark:text-sky-400" />
             </div>
-            <div className="text-xl sm:text-2xl font-black font-mono text-emerald-500">{followUpItems.length}</div>
-            <div className="text-[10px] opacity-70 font-semibold mt-0.5">240 days vision check</div>
+            <div className="text-xl sm:text-2xl font-black font-mono text-blue-900 dark:text-sky-400">{followUpItems.length}</div>
+            <div className="text-[10px] opacity-70 font-semibold mt-0.5 text-blue-800 dark:text-sky-400/80">240 days vision check</div>
           </div>
         </div>
       </div>
@@ -223,8 +223,8 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
               onClick={() => setActiveTab('all')}
               className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
                 activeTab === 'all'
-                  ? 'bg-sky-500 text-white shadow-md'
-                  : 'text-slate-400 hover:text-slate-100 hover:bg-slate-500/20'
+                  ? 'bg-blue-700 dark:bg-sky-500 text-white shadow-md'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-500/20'
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
@@ -235,11 +235,11 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
               onClick={() => setActiveTab('service')}
               className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
                 activeTab === 'service'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-slate-100 hover:bg-slate-500/20'
+                  ? 'bg-blue-800 dark:bg-sky-600 text-white shadow-md'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-500/20'
               }`}
             >
-              <Wrench className="w-3.5 h-3.5 text-blue-300" />
+              <Wrench className="w-3.5 h-3.5 text-blue-200 dark:text-sky-300" />
               <span>🛠️ Free Service (3 Months)</span>
             </button>
 
@@ -247,11 +247,11 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
               onClick={() => setActiveTab('feedback')}
               className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
                 activeTab === 'feedback'
-                  ? 'bg-amber-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-slate-100 hover:bg-slate-500/20'
+                  ? 'bg-indigo-700 dark:bg-blue-600 text-white shadow-md'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-500/20'
               }`}
             >
-              <MessageSquare className="w-3.5 h-3.5 text-amber-300" />
+              <MessageSquare className="w-3.5 h-3.5 text-blue-200 dark:text-sky-300" />
               <span>💬 Product Feedback</span>
             </button>
 
@@ -259,11 +259,11 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
               onClick={() => setActiveTab('eyecheck')}
               className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
                 activeTab === 'eyecheck'
-                  ? 'bg-emerald-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-slate-100 hover:bg-slate-500/20'
+                  ? 'bg-blue-800 dark:bg-sky-600 text-white shadow-md'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-500/20'
               }`}
             >
-              <Stethoscope className="w-3.5 h-3.5 text-emerald-300" />
+              <Stethoscope className="w-3.5 h-3.5 text-blue-200 dark:text-sky-300" />
               <span>👁️ Next Eye Check (8 Months)</span>
             </button>
           </div>
@@ -284,7 +284,7 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
 
             {/* Status Dropdown Filter */}
             <div className="flex items-center gap-1.5 shrink-0">
-              <Filter className="w-3.5 h-3.5 text-sky-500" />
+              <Filter className="w-3.5 h-3.5 text-blue-700 dark:text-sky-400" />
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -318,17 +318,17 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
             return (
               <div
                 key={item._id || item.billNo}
-                className={`${panelClass} p-4 sm:p-5 rounded-2xl sm:rounded-3xl transition-all hover:border-sky-500/50 shadow-md`}
+                className={`${panelClass} p-4 sm:p-5 rounded-2xl sm:rounded-3xl transition-all hover:border-blue-500/50 shadow-md`}
               >
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   {/* Customer Information Block */}
                   <div className="space-y-1.5 flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-black text-sm sm:text-base text-sky-500">
+                      <span className="font-black text-sm sm:text-base text-blue-900 dark:text-sky-400">
                         {item.customer?.name || 'Unnamed Customer'}
                       </span>
 
-                      <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-sky-500/15 border border-sky-500/30 text-sky-400">
+                      <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-sky-500/15 border border-blue-200 dark:border-sky-500/30 text-blue-800 dark:text-sky-400">
                         Bill #{item.billNo}
                       </span>
 
@@ -338,10 +338,10 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
                         onClick={() => handleToggleStatus(item._id || item.billNo, status)}
                         className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border transition-all cursor-pointer flex items-center gap-1 ${
                           status === 'Completed'
-                            ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30'
+                            ? 'bg-blue-100 dark:bg-sky-500/20 border-blue-300 dark:border-sky-500/40 text-blue-900 dark:text-sky-300 hover:bg-blue-200 dark:hover:bg-sky-500/30'
                             : status === 'Contacted'
-                            ? 'bg-blue-500/20 border-blue-500/40 text-blue-400 hover:bg-blue-500/30'
-                            : 'bg-amber-500/20 border-amber-500/40 text-amber-400 hover:bg-amber-500/30'
+                            ? 'bg-indigo-100 dark:bg-blue-500/20 border-indigo-300 dark:border-blue-500/40 text-indigo-900 dark:text-blue-300 hover:bg-indigo-200 dark:hover:bg-blue-500/30'
+                            : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                         }`}
                         title="Click to toggle status (Pending -> Contacted -> Completed)"
                       >
@@ -352,17 +352,17 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs opacity-90 pt-1">
                       <div className="flex items-center gap-1.5 font-mono">
-                        <Phone className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                        <span className="font-bold">{rawPhone || 'N/A'}</span>
+                        <Phone className="w-3.5 h-3.5 text-blue-700 dark:text-sky-400 shrink-0" />
+                        <span className="font-bold text-slate-800 dark:text-slate-200">{rawPhone || 'N/A'}</span>
                       </div>
 
                       <div className="flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                        <Calendar className="w-3.5 h-3.5 text-blue-700 dark:text-sky-400 shrink-0" />
                         <span>Purchase: <strong>{formatDate(item.deliveryDate || item.date)}</strong></span>
                       </div>
 
                       <div className="flex items-center gap-1.5">
-                        <User className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                        <User className="w-3.5 h-3.5 text-blue-700 dark:text-sky-300 shrink-0" />
                         <span>Staff: <strong>{item.customer?.orderTakenBy || 'Store Staff'}</strong></span>
                       </div>
                     </div>
@@ -370,10 +370,10 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
                     {/* Prescription & Order Summary */}
                     <div className="flex flex-wrap items-center gap-3 text-[11px] opacity-75 font-mono pt-1">
                       {item.lens?.type && (
-                        <span>Lens: <strong className="text-sky-400">{item.lens.type} ({item.lens.brand || 'Regular'})</strong></span>
+                        <span>Lens: <strong className="text-blue-800 dark:text-sky-400">{item.lens.type} ({item.lens.brand || 'Regular'})</strong></span>
                       )}
                       {item.frame?.brand && (
-                        <span>Frame: <strong className="text-amber-400">{item.frame.brand}</strong></span>
+                        <span>Frame: <strong className="text-blue-800 dark:text-sky-400">{item.frame.brand}</strong></span>
                       )}
                       {item.prescription?.rightEye?.sph && (
                         <span>RE SPH: <strong>{item.prescription.rightEye.sph}</strong></span>
@@ -387,17 +387,17 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
                   {/* Target Follow-Up Dates Grid */}
                   <div className="grid grid-cols-3 gap-2 text-center p-2 rounded-xl bg-slate-500/10 border border-slate-400/20 text-[11px] shrink-0">
                     <div className="p-1">
-                      <div className="text-[10px] font-bold text-blue-400 uppercase">🛠️ 3M Free Service</div>
+                      <div className="text-[10px] font-bold text-blue-800 dark:text-sky-400 uppercase">🛠️ 3M Free Service</div>
                       <div className="font-mono font-bold mt-0.5">{formatDate(item.serviceDate)}</div>
                     </div>
 
                     <div className="p-1 border-x border-slate-400/20">
-                      <div className="text-[10px] font-bold text-amber-400 uppercase">💬 Feedback</div>
+                      <div className="text-[10px] font-bold text-blue-800 dark:text-sky-300 uppercase">💬 Feedback</div>
                       <div className="font-mono font-bold mt-0.5">{formatDate(item.feedbackDate)}</div>
                     </div>
 
                     <div className="p-1">
-                      <div className="text-[10px] font-bold text-emerald-400 uppercase">👁️ 8M Eye Check</div>
+                      <div className="text-[10px] font-bold text-blue-800 dark:text-sky-400 uppercase">👁️ 8M Eye Check</div>
                       <div className="font-mono font-bold mt-0.5">{formatDate(item.eyeCheckDate)}</div>
                     </div>
                   </div>
@@ -410,7 +410,7 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
                         href={getWhatsAppLink(item, 'service')}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-bold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all"
+                        className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-600 hover:to-indigo-600 dark:from-sky-600 dark:to-blue-600 text-white font-bold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all"
                         title="Send 3-Month Free Service WhatsApp Message"
                       >
                         <MessageSquare className="w-3.5 h-3.5 fill-current" />
@@ -424,7 +424,7 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
                         href={getWhatsAppLink(item, 'feedback')}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-bold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all"
+                        className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-800 to-indigo-800 hover:from-blue-700 hover:to-indigo-700 dark:from-blue-600 dark:to-indigo-600 text-white font-bold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all"
                         title="Send Product Feedback WhatsApp Message"
                       >
                         <MessageSquare className="w-3.5 h-3.5 fill-current" />
@@ -438,7 +438,7 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
                         href={getWhatsAppLink(item, 'eyecheck')}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-bold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all"
+                        className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-600 hover:to-indigo-600 dark:from-sky-600 dark:to-blue-600 text-white font-bold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all"
                         title="Send 8-Month Eye Checkup WhatsApp Message"
                       >
                         <MessageSquare className="w-3.5 h-3.5 fill-current" />
@@ -450,9 +450,9 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
                     {rawPhone && (
                       <a
                         href={`tel:${rawPhone}`}
-                        className="px-3 py-1 rounded-xl bg-slate-500/15 border border-slate-400/30 hover:bg-slate-500/25 text-slate-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
+                        className="px-3 py-1 rounded-xl bg-blue-50 dark:bg-slate-800 border border-blue-200 dark:border-slate-700 hover:bg-blue-100 dark:hover:bg-slate-700 text-blue-800 dark:text-sky-400 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
                       >
-                        <PhoneCall className="w-3 h-3 text-amber-500" />
+                        <PhoneCall className="w-3 h-3 text-blue-700 dark:text-sky-400" />
                         <span>Call Customer</span>
                       </a>
                     )}

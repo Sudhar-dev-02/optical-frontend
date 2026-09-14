@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Users, Search, Phone, MapPin, Stethoscope, Calendar, DollarSign, MessageSquare, PhoneCall, ExternalLink, User } from 'lucide-react';
+import { Users, Search, Phone, MapPin, Stethoscope, Calendar, DollarSign, MessageSquare, PhoneCall, ExternalLink, User, Wallet } from 'lucide-react';
 
 const STORE_PHONE = '+91 90432 29107 / +91 99524 17748';
 
@@ -25,6 +25,7 @@ export default function CustomerInfoPage({ bills = [], isDarkMode }) {
           bills: [],
           totalSpend: 0,
           totalBalance: 0,
+          walletBalance: 0,
           latestDate: bill.date || bill.createdAt
         };
       }
@@ -32,6 +33,7 @@ export default function CustomerInfoPage({ bills = [], isDarkMode }) {
       map[phoneKey].bills.push(bill);
       map[phoneKey].totalSpend += (Number(bill.netAmount) || 0);
       map[phoneKey].totalBalance += (Number(bill.balanceAmount) || 0);
+      map[phoneKey].walletBalance += (Number(bill.cashbackEarned) || 0) - (Number(bill.walletRedeemed) || 0);
     });
 
     return Object.values(map);
@@ -54,7 +56,7 @@ export default function CustomerInfoPage({ bills = [], isDarkMode }) {
   const getWhatsAppLink = (cust) => {
     const rawPhone = cust.phone.replace(/\D/g, '');
     const phoneWithCountry = rawPhone.length === 10 ? `91${rawPhone}` : rawPhone;
-    const msg = `Hello ${cust.name}, greetings from Optics India (${STORE_PHONE})! We are reaching out regarding your optical records. Please feel free to contact us at ${STORE_PHONE} anytime!`;
+    const msg = `Hello ${cust.name}, greetings from Optics India (${STORE_PHONE})! Your current Optics India Wallet Balance is ₹${Math.max(0, cust.walletBalance).toLocaleString('en-IN')} Rupees. Feel free to redeem it on your next visit!`;
     return `https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(msg)}`;
   };
 
@@ -68,8 +70,8 @@ export default function CustomerInfoPage({ bills = [], isDarkMode }) {
       <div className={`${panelClass} p-4 sm:p-5 rounded-2xl sm:rounded-3xl`}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-400/20 pb-3 mb-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-black bg-gradient-to-r from-blue-400 via-sky-500 to-indigo-600 bg-clip-text text-transparent flex items-center gap-2">
-              <Users className="w-6 h-6 text-sky-500" /> Master Customer Directory & Info
+            <h1 className="text-xl sm:text-2xl font-black bg-gradient-to-r from-blue-800 via-blue-600 to-indigo-700 dark:from-sky-400 dark:via-blue-500 dark:to-indigo-400 bg-clip-text text-transparent flex items-center gap-2">
+              <Users className="w-6 h-6 text-blue-700 dark:text-sky-500" /> Master Customer Directory & Info
             </h1>
             <p className={`text-xs font-semibold mt-0.5 ${labelClass}`}>
               Comprehensive Customer Purchase History, Lifetime Value, and Prescription Tracking
@@ -77,7 +79,7 @@ export default function CustomerInfoPage({ bills = [], isDarkMode }) {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono font-bold px-3 py-1 rounded-xl bg-sky-500/15 border border-sky-500/30 text-sky-400">
+            <span className="text-xs font-mono font-bold px-3 py-1 rounded-xl bg-blue-50 dark:bg-sky-500/15 border border-blue-200 dark:border-sky-500/30 text-blue-800 dark:text-sky-400">
               Admin Exclusive ({customerProfiles.length} Customers)
             </span>
           </div>
@@ -108,37 +110,40 @@ export default function CustomerInfoPage({ bills = [], isDarkMode }) {
           filteredCustomers.map((cust) => (
             <div
               key={cust.phoneKey}
-              className={`${panelClass} p-4 sm:p-5 rounded-2xl sm:rounded-3xl transition-all hover:border-sky-500/50 shadow-md`}
+              className={`${panelClass} p-4 sm:p-5 rounded-2xl sm:rounded-3xl transition-all hover:border-blue-500/50 shadow-md`}
             >
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 {/* Left Info Block */}
                 <div className="space-y-1.5 flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-black text-base text-sky-500">{cust.name}</span>
+                    <span className="font-black text-base text-blue-900 dark:text-sky-400">{cust.name}</span>
                     {cust.mrdNo && (
-                      <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-slate-500/15 border border-slate-400/30 text-slate-400">
+                      <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-slate-500/15 border border-slate-400/30 text-slate-500 dark:text-slate-400">
                         MRD #{cust.mrdNo}
                       </span>
                     )}
-                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400">
+                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/20 border border-blue-200 dark:border-blue-500/40 text-blue-800 dark:text-blue-300">
                       {cust.bills.length} Orders
+                    </span>
+                    <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/20 border border-emerald-300 dark:border-emerald-500/40 text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
+                      <Wallet className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> ₹{Math.max(0, cust.walletBalance).toLocaleString('en-IN')} Wallet Rupees
                     </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs opacity-90 font-mono">
                     <div className="flex items-center gap-1.5">
-                      <Phone className="w-3.5 h-3.5 text-amber-500" />
-                      <span className="font-bold text-amber-500">{cust.phone || 'No Phone'}</span>
+                      <Phone className="w-3.5 h-3.5 text-blue-700 dark:text-sky-400" />
+                      <span className="font-bold text-blue-800 dark:text-sky-400">{cust.phone || 'No Phone'}</span>
                     </div>
 
                     <div className="flex items-center gap-1.5">
                       <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                      <span>{cust.address || 'No Address'}</span>
+                      <span className="text-slate-700 dark:text-slate-300">{cust.address || 'No Address'}</span>
                     </div>
 
                     <div className="flex items-center gap-1.5">
-                      <User className="w-3.5 h-3.5 text-purple-400" />
-                      <span>{cust.gender} ({cust.age ? `${cust.age} yrs` : 'N/A'})</span>
+                      <User className="w-3.5 h-3.5 text-blue-700 dark:text-sky-300" />
+                      <span className="text-slate-700 dark:text-slate-300">{cust.gender} ({cust.age ? `${cust.age} yrs` : 'N/A'})</span>
                     </div>
                   </div>
                 </div>
@@ -146,10 +151,10 @@ export default function CustomerInfoPage({ bills = [], isDarkMode }) {
                 {/* Right Financial & Action Block */}
                 <div className="flex flex-wrap items-center gap-4 shrink-0">
                   <div className="text-right font-mono text-xs">
-                    <div className="opacity-70 text-[10px]">Lifetime Spend</div>
-                    <div className="font-black text-sm text-emerald-500">₹ {cust.totalSpend.toFixed(2)}</div>
+                    <div className="opacity-70 text-[10px] text-slate-600 dark:text-slate-400">Lifetime Spend</div>
+                    <div className="font-black text-sm text-blue-900 dark:text-sky-400">₹ {cust.totalSpend.toFixed(2)}</div>
                     {cust.totalBalance > 0 && (
-                      <div className="text-[10px] text-rose-500 font-bold">Bal: ₹ {cust.totalBalance.toFixed(2)}</div>
+                      <div className="text-[10px] text-blue-800 dark:text-sky-400 font-bold">Bal: ₹ {cust.totalBalance.toFixed(2)}</div>
                     )}
                   </div>
 
@@ -160,7 +165,7 @@ export default function CustomerInfoPage({ bills = [], isDarkMode }) {
                           href={getWhatsAppLink(cust)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md transition-all"
+                          className="px-3 py-1.5 rounded-xl bg-blue-700 hover:bg-blue-800 dark:bg-sky-600 dark:hover:bg-sky-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md transition-all"
                         >
                           <MessageSquare className="w-3.5 h-3.5" />
                           <span>WhatsApp</span>
@@ -168,9 +173,9 @@ export default function CustomerInfoPage({ bills = [], isDarkMode }) {
 
                         <a
                           href={`tel:${cust.phone}`}
-                          className="px-3 py-1.5 rounded-xl bg-slate-500/15 border border-slate-400/30 hover:bg-slate-500/25 text-slate-300 font-bold text-xs flex items-center gap-1.5 transition-all"
+                          className="px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-slate-800 border border-blue-200 dark:border-slate-700 hover:bg-blue-100 dark:hover:bg-slate-700 text-blue-800 dark:text-sky-400 font-bold text-xs flex items-center gap-1.5 transition-all"
                         >
-                          <PhoneCall className="w-3.5 h-3.5 text-amber-500" />
+                          <PhoneCall className="w-3.5 h-3.5 text-blue-700 dark:text-sky-400" />
                           <span>Call</span>
                         </a>
                       </>

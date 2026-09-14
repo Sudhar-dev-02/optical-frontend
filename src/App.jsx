@@ -43,6 +43,10 @@ const defaultFormState = {
   frame: { type: '', brand: '', warranty: '', qty: '', price: '' },
   totalAmount: 0,
   discountAmount: '',
+  referralDiscount: 0,
+  referrerMrd: '',
+  walletRedeemed: 0,
+  cashbackEarned: 0,
   netAmount: 0,
   payMode: 'CASH',
   onlinePayAmount: '',
@@ -68,7 +72,7 @@ function AppContent() {
 
   // Current active view calculated from current route hash (e.g. 'billing', 'dashboard', 'reminders', 'followup', 'reports', 'customers', 'staff')
   const currentPath = location.pathname.replace(/^\//, '');
-  const currentView = currentPath || 'billing';
+  const currentView = currentPath || 'dashboard';
 
   // Authentication State
   const [currentUser, setCurrentUser] = useState(() => {
@@ -93,12 +97,14 @@ function AppContent() {
     setCurrentUser(user);
     localStorage.setItem('optics_current_user', JSON.stringify(user));
     showNotification(`Welcome, ${user.name || user.role}! Logged in successfully.`, 'success');
+    navigate('/dashboard');
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
     localStorage.removeItem('optics_current_user');
     showNotification('Logged out successfully.', 'info');
+    navigate('/login');
   };
 
   const handleAddStaff = (newStaff) => {
@@ -187,7 +193,7 @@ function AppContent() {
     fetchBills();
   }, []);
 
-  const handleNew = () => {
+  const resetFormFields = () => {
     setActiveBillId(null);
     setIsEditing(false);
     setFormData({
@@ -198,6 +204,10 @@ function AppContent() {
         gender: ''
       }
     });
+  };
+
+  const handleNew = () => {
+    resetFormFields();
     showNotification('Form reset. Ready for new customer entry.', 'info');
   };
 
@@ -207,16 +217,21 @@ function AppContent() {
       return;
     }
 
+    let savedBillNo = formData.billNo || 'New';
+    const customerName = formData.customer.name;
+
     try {
       if (isEditing && activeBillId) {
         await axios.put(`${API_BASE}/${activeBillId}`, formData);
-        showNotification(`Bill #${formData.billNo} updated successfully!`, 'success');
       } else {
         const res = await axios.post(API_BASE, formData);
-        showNotification(`Bill #${res.data.billNo || formData.billNo} created successfully!`, 'success');
+        if (res.data?.billNo) {
+          savedBillNo = res.data.billNo;
+        }
       }
       fetchBills();
-      handleNew();
+      resetFormFields();
+      showNotification(`Customer "${customerName}" info & Bill #${savedBillNo} saved successfully!`, 'success');
     } catch (err) {
       const existingIdx = bills.findIndex(b => b.billNo === formData.billNo);
       if (existingIdx >= 0) {
@@ -227,8 +242,8 @@ function AppContent() {
         const newRecord = { ...formData, _id: 'bill_' + Date.now() };
         setBills([newRecord, ...bills]);
       }
-      showNotification(`Bill #${formData.billNo} saved locally!`, 'success');
-      handleNew();
+      resetFormFields();
+      showNotification(`Customer "${customerName}" info & Bill #${savedBillNo} saved successfully!`, 'success');
     }
   };
 
@@ -360,7 +375,16 @@ function AppContent() {
     );
   });
 
-  if (!currentUser) {
+  // Dedicated /login Route & Authentication Guard
+  if (currentView === 'login' || !currentUser) {
+    if (!currentUser && currentView !== 'login') {
+      return <Navigate to="/login" replace />;
+    }
+
+    if (currentUser && currentView === 'login') {
+      return <Navigate to="/dashboard" replace />;
+    }
+
     return (
       <LoginPage 
         onLoginSuccess={handleLoginSuccess}
@@ -377,10 +401,10 @@ function AppContent() {
       {/* Toast Alert Banner */}
       {toastMessage && (
         <div className={`fixed top-16 right-6 z-50 px-4 py-3 rounded-2xl shadow-2xl border text-xs font-bold flex items-center gap-2 animate-bounce backdrop-blur-md ${
-          toastMessage.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' :
-          toastMessage.type === 'error' ? 'bg-rose-500/20 border-rose-500/50 text-rose-400' :
-          toastMessage.type === 'warning' ? 'bg-amber-500/20 border-amber-500/50 text-amber-400' :
-          'bg-sky-500/20 border-sky-500/50 text-sky-400'
+          toastMessage.type === 'success' ? 'bg-blue-50 border-blue-300 text-blue-900 dark:bg-sky-500/20 dark:border-sky-500/50 dark:text-sky-400' :
+          toastMessage.type === 'error' ? 'bg-rose-50 border-rose-200 text-rose-900 dark:bg-sky-950/80 dark:border-sky-800 dark:text-sky-300' :
+          toastMessage.type === 'warning' ? 'bg-amber-50 border-amber-200 text-amber-900 dark:bg-sky-900/60 dark:border-sky-700 dark:text-sky-300' :
+          'bg-blue-50 border-blue-300 text-blue-900 dark:bg-sky-500/20 dark:border-sky-500/50 dark:text-sky-400'
         }`}>
           <span>{toastMessage.text}</span>
         </div>
@@ -412,7 +436,7 @@ function AppContent() {
         {/* View Switch Router */}
         <div className="flex-1 flex flex-col justify-between">
           <Routes>
-            <Route path="/" element={<Navigate to="/billing" replace />} />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route 
               path="/billing" 
               element={
@@ -427,6 +451,7 @@ function AppContent() {
                       onToggleSearch={handleToggleSearch}
                       isSearchPanelOpen={isSearchPanelOpen}
                       userRole={currentUser?.role || 'admin'}
+                      bills={bills}
                     />
                   </div>
 
@@ -455,6 +480,7 @@ function AppContent() {
                   <DashboardPage 
                     bills={bills}
                     isDarkMode={isDarkMode}
+                    userRole={currentUser?.role}
                     onNavigateToReminders={() => navigate('/reminders')}
                     onNavigateToBilling={() => navigate('/billing')}
                     onSelectBill={(b) => {

@@ -11,6 +11,7 @@ import {
   AlertTriangle,
   RotateCcw,
   Check,
+  Truck,
   LayoutGrid,
   Table as TableIcon,
   MessageSquare
@@ -74,8 +75,8 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
           <h1 className={`text-2xl sm:text-3xl font-black tracking-tight flex items-center gap-3 ${
             isDarkMode ? 'text-white' : 'text-slate-900'
           }`}>
-            <span className="p-2 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-600 text-white shadow-lg shadow-amber-500/30">
-              🔔
+            <span className="p-2.5 rounded-2xl bg-gradient-to-tr from-blue-700 to-indigo-800 text-white shadow-lg shadow-blue-500/20 flex items-center justify-center">
+              <Bell className="w-6 h-6 text-white" />
             </span>
             Delivery & Customer Reminders
           </h1>
@@ -94,7 +95,7 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
               onClick={() => setViewMode('table')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                 viewMode === 'table'
-                  ? 'bg-amber-500 text-white shadow-md'
+                  ? 'bg-sky-500 text-white shadow-md'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
               title="Table View (Desktop & Tablet)"
@@ -107,7 +108,7 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
               onClick={() => setViewMode('cards')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                 viewMode === 'cards'
-                  ? 'bg-amber-500 text-white shadow-md'
+                  ? 'bg-sky-500 text-white shadow-md'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
               title="Card Grid View"
@@ -125,31 +126,31 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
               placeholder="Search by customer, phone, doctor, bill #..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className={`w-full pl-9 pr-3 py-2 text-xs font-semibold rounded-xl border focus:outline-none focus:ring-2 focus:ring-amber-500 ${inputClass}`}
+              className={`w-full pl-9 pr-3 py-2 text-xs font-semibold rounded-xl border focus:outline-none focus:ring-2 focus:ring-sky-500 ${inputClass}`}
             />
           </div>
         </div>
       </div>
 
-      {/* Status Tabs */}
-      <div className="flex items-center gap-3 overflow-x-auto pb-1">
+      {/* Status Tabs (2-Column Grid on Mobile) */}
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-3">
         {/* Pending Tab */}
         <button
           onClick={() => setActiveTab('pending')}
-          className={`flex items-center gap-2.5 px-6 py-3 rounded-2xl font-bold text-sm transition-all cursor-pointer shadow-lg active:scale-95 ${
+          className={`flex items-center justify-center gap-1.5 sm:gap-2.5 px-3 sm:px-6 py-2.5 sm:py-3 rounded-2xl font-bold text-xs sm:text-sm transition-all cursor-pointer shadow-lg active:scale-95 ${
             activeTab === 'pending'
-              ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-amber-500/25 ring-2 ring-amber-400/50'
+              ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-sky-500/25 ring-2 ring-sky-400/50'
               : isDarkMode 
                 ? 'bg-slate-900/80 border border-slate-800 text-slate-400 hover:text-slate-200' 
                 : 'bg-white border border-slate-200 text-slate-600 hover:text-slate-900'
           }`}
         >
-          <Clock className="w-4 h-4" />
-          <span>Pending Deliveries</span>
-          <span className={`ml-1 px-2.5 py-0.5 rounded-full text-xs font-black ${
+          <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+          <span className="truncate">Pending Deliveries</span>
+          <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-black shrink-0 ${
             activeTab === 'pending'
               ? 'bg-white/20 text-white'
-              : isDarkMode ? 'bg-slate-800 text-amber-400' : 'bg-amber-100 text-amber-800'
+              : isDarkMode ? 'bg-slate-800 text-sky-400' : 'bg-sky-100 text-sky-800'
           }`}>
             {pendingBills.length}
           </span>
@@ -158,20 +159,20 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
         {/* Delivered Tab */}
         <button
           onClick={() => setActiveTab('delivered')}
-          className={`flex items-center gap-2.5 px-6 py-3 rounded-2xl font-bold text-sm transition-all cursor-pointer shadow-lg active:scale-95 ${
+          className={`flex items-center justify-center gap-1.5 sm:gap-2.5 px-3 sm:px-6 py-2.5 sm:py-3 rounded-2xl font-bold text-xs sm:text-sm transition-all cursor-pointer shadow-lg active:scale-95 ${
             activeTab === 'delivered'
-              ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-emerald-500/25 ring-2 ring-emerald-400/50'
+              ? 'bg-gradient-to-r from-sky-600 to-blue-700 text-white shadow-sky-500/25 ring-2 ring-sky-400/50'
               : isDarkMode 
                 ? 'bg-slate-900/80 border border-slate-800 text-slate-400 hover:text-slate-200' 
                 : 'bg-white border border-slate-200 text-slate-600 hover:text-slate-900'
           }`}
         >
-          <CheckCircle2 className="w-4 h-4" />
-          <span>Delivered Orders</span>
-          <span className={`ml-1 px-2.5 py-0.5 rounded-full text-xs font-black ${
+          <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+          <span className="truncate">Delivered Orders</span>
+          <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-black shrink-0 ${
             activeTab === 'delivered'
               ? 'bg-white/20 text-white'
-              : isDarkMode ? 'bg-slate-800 text-emerald-400' : 'bg-emerald-100 text-emerald-800'
+              : isDarkMode ? 'bg-slate-800 text-sky-400' : 'bg-sky-100 text-sky-800'
           }`}>
             {deliveredBills.length}
           </span>
@@ -193,13 +194,13 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
         </div>
       ) : (
         <>
-          {/* 1. TABLE VIEW (Default for Desktop & Tablet) */}
+          {/* 1. TABLE VIEW (For Desktop & Tablet >= md when Table View selected) */}
           {(viewMode === 'table') && (
-            <div className={`rounded-2xl border shadow-xl overflow-hidden ${
+            <div className={`hidden md:block rounded-2xl border shadow-xl overflow-hidden ${
               isDarkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'
             }`}>
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
+                <table className="w-full min-w-[900px] text-left text-xs border-collapse">
                   <thead>
                     <tr className={`border-b font-extrabold uppercase tracking-wider text-[11px] ${
                       isDarkMode ? 'bg-slate-950/90 text-slate-300 border-slate-800' : 'bg-slate-100 text-slate-700 border-slate-200'
@@ -210,8 +211,8 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
                       <th className="p-3 border-r border-slate-400/20">Lens Specification</th>
                       <th className="p-3 border-r border-slate-400/20">Frame Specification</th>
                       <th className="p-3 border-r border-slate-400/20">Doctor / Prescriber</th>
+                      <th className="p-3 border-r border-slate-400/20 text-right">Advance Amount</th>
                       <th className="p-3 border-r border-slate-400/20 text-right">Net Bill / Balance</th>
-                      <th className="p-3 border-r border-slate-400/20 text-center">Status</th>
                       <th className="p-3 text-center">Actions</th>
                     </tr>
                   </thead>
@@ -243,12 +244,12 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
 
                           {/* Customer Name, Phone, Age/Gender */}
                           <td className="p-3 border-r border-slate-400/20 font-sans">
-                            <div className="font-black text-sm text-sky-500">{bill.customer?.name || 'Unnamed'}</div>
-                            <div className="flex items-center gap-1.5 text-xs text-amber-500 font-mono font-bold mt-0.5">
-                              <Phone className="w-3 h-3" />
+                            <div className="font-black text-sm text-blue-900 dark:text-sky-400">{bill.customer?.name || 'Unnamed'}</div>
+                            <div className="flex items-center gap-1.5 text-xs text-blue-800 dark:text-sky-400 font-mono font-bold mt-0.5">
+                              <Phone className="w-3 h-3 text-blue-800 dark:text-sky-400" />
                               <span>{bill.customer?.phone || 'No Phone'}</span>
                             </div>
-                            <div className="text-[11px] text-slate-400 mt-0.5">
+                            <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-semibold">
                               {bill.customer?.age ? `${bill.customer.age} yrs` : ''} ({bill.customer?.gender || 'N/A'})
                             </div>
                           </td>
@@ -257,64 +258,59 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
                           <td className="p-3 border-r border-slate-400/20 whitespace-nowrap">
                             <div className="font-bold font-mono">{formattedDelivDate}</div>
                             {isOverdue && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rose-500/20 border border-rose-500/40 text-rose-400 text-[10px] font-bold mt-1">
-                                <AlertTriangle className="w-3 h-3" /> OVERDUE
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-100 border border-blue-300 text-blue-900 dark:bg-sky-950/50 dark:border-sky-800/60 dark:text-sky-300 text-[10px] font-bold mt-1">
+                                <AlertTriangle className="w-3 h-3 text-blue-800 dark:text-sky-300" /> OVERDUE
                               </span>
                             )}
                           </td>
 
                           {/* Lens Specs */}
                           <td className="p-3 border-r border-slate-400/20 font-sans">
-                            <div className="font-bold text-sky-400">{bill.lens?.type || 'Single Vision'}</div>
-                            <div className="text-[11px] text-slate-400">
+                            <div className="font-bold text-blue-800 dark:text-sky-400">{bill.lens?.type || 'Single Vision'}</div>
+                            <div className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">
                               {bill.lens?.brand || 'Essilor'} ({bill.lens?.coating || 'HMC'})
                             </div>
                             {bill.lens?.warranty && (
-                              <div className="text-[10px] text-slate-400">W: {bill.lens.warranty}</div>
+                              <div className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">W: {bill.lens.warranty}</div>
                             )}
                           </td>
 
                           {/* Frame Specs */}
                           <td className="p-3 border-r border-slate-400/20 font-sans">
-                            <div className="font-bold text-amber-400">{bill.frame?.brand || 'Titan'}</div>
-                            <div className="text-[11px] text-slate-400">
+                            <div className="font-bold text-blue-800 dark:text-sky-400">{bill.frame?.brand || 'Titan'}</div>
+                            <div className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">
                               {bill.frame?.type || 'Full frame'}
                             </div>
                             {bill.frame?.warranty && (
-                              <div className="text-[10px] text-slate-400">W: {bill.frame.warranty}</div>
+                              <div className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">W: {bill.frame.warranty}</div>
                             )}
                           </td>
 
                           {/* Prescribed By / Doctor */}
                           <td className="p-3 border-r border-slate-400/20 font-sans">
-                            <div className="font-semibold text-slate-300">
+                            <div className="font-semibold text-slate-700 dark:text-slate-300">
                               {bill.customer?.drName ? `Dr. ${bill.customer.drName}` : '-'}
                             </div>
                             {bill.customer?.orderTakenBy && (
-                              <div className="text-[10px] text-slate-400">Taken by: {bill.customer.orderTakenBy}</div>
+                              <div className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">Taken by: {bill.customer.orderTakenBy}</div>
                             )}
+                          </td>
+
+                          {/* Advance Amount */}
+                          <td className="p-3 border-r border-slate-400/20 text-right whitespace-nowrap font-sans">
+                            <div className="font-bold text-sm text-emerald-700 dark:text-emerald-400">
+                              ₹ {Number(bill.advanceAmount || 0).toLocaleString('en-IN')}
+                            </div>
                           </td>
 
                           {/* Net Bill & Balance */}
                           <td className="p-3 border-r border-slate-400/20 text-right whitespace-nowrap">
                             <div className="text-xs font-semibold opacity-70">₹ {Number(bill.netAmount || 0).toFixed(2)}</div>
                             <div className={`font-black text-sm mt-0.5 ${
-                              Number(bill.balanceAmount || 0) > 0 ? 'text-rose-400' : 'text-emerald-400'
+                              Number(bill.balanceAmount || 0) > 0 ? 'text-blue-800 dark:text-sky-400' : 'text-slate-600 dark:text-slate-300'
                             }`}>
                               Bal: ₹ {Number(bill.balanceAmount || 0).toFixed(2)}
                             </div>
-                          </td>
-
-                          {/* Status Pill */}
-                          <td className="p-3 border-r border-slate-400/20 text-center whitespace-nowrap">
-                            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold border ${
-                              isDelivered 
-                                ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400' 
-                                : 'bg-amber-500/15 border-amber-500/30 text-amber-400'
-                            }`}>
-                              {isDelivered ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
-                              {bill.deliveryStatus || 'Pending'}
-                            </span>
                           </td>
 
                           {/* Action Buttons */}
@@ -323,20 +319,20 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
                               {activeTab === 'pending' ? (
                                 <button
                                   onClick={() => handleOpenDeliveryModal(bill)}
-                                  className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-sm flex items-center gap-1 cursor-pointer transition-all active:scale-95"
-                                  title="Mark order as Delivered"
+                                  className="px-3 py-1.5 rounded-xl bg-blue-700 hover:bg-blue-600 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+                                  title="Open Delivery Settlement"
                                 >
-                                  <Check className="w-3.5 h-3.5" />
-                                  <span>Delivered</span>
+                                  <Truck className="w-3.5 h-3.5" />
+                                  <span>Need to Delivery</span>
                                 </button>
                               ) : (
                                 <button
                                   onClick={() => onToggleStatus && onToggleStatus(billId, 'Pending')}
-                                  className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-sm flex items-center gap-1 cursor-pointer transition-all active:scale-95"
-                                  title="Mark order as Pending"
+                                  className="px-3 py-1.5 rounded-xl bg-emerald-700/20 border border-emerald-500/30 text-emerald-800 dark:text-emerald-400 hover:bg-emerald-700 hover:text-white font-bold text-xs shadow-sm flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+                                  title="Delivered (Click to revert to Pending)"
                                 >
-                                  <RotateCcw className="w-3.5 h-3.5" />
-                                  <span>Pending</span>
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                                  <span>Delivered</span>
                                 </button>
                               )}
 
@@ -346,7 +342,7 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
                                     href={getWhatsAppLink(bill)}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="p-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500 text-emerald-400 hover:text-white border border-emerald-500/40 transition-all cursor-pointer"
+                                    className="p-1.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 hover:bg-blue-700 hover:text-white dark:bg-sky-500/20 dark:border-sky-500/40 dark:text-sky-400 dark:hover:bg-sky-500 transition-all cursor-pointer"
                                     title="Send WhatsApp Reminder"
                                   >
                                     <MessageSquare className="w-4 h-4" />
@@ -354,7 +350,7 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
 
                                   <button
                                     onClick={() => onSendSMS && onSendSMS(bill)}
-                                    className="p-1.5 rounded-xl bg-sky-500/20 hover:bg-sky-500 text-sky-400 hover:text-white border border-sky-500/40 transition-all cursor-pointer"
+                                    className="p-1.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 hover:bg-blue-700 hover:text-white dark:bg-sky-500/20 dark:border-sky-500/40 dark:text-sky-400 dark:hover:bg-sky-500 transition-all cursor-pointer"
                                     title="Send SMS Reminder"
                                   >
                                     <Send className="w-4 h-4" />
@@ -372,92 +368,113 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
             </div>
           )}
 
-          {/* 2. CARD VIEW (Option for mobile or card layout) */}
-          {(viewMode === 'cards') && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4.5">
+          {/* 2. MOBILE CARD VIEW (Auto-active on Mobile screens < md, or when Card view selected on Desktop) */}
+          {(viewMode === 'cards' || viewMode === 'table') && (
+            <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 ${
+              viewMode === 'table' ? 'block md:hidden' : 'block'
+            }`}>
               {filteredBills.map((bill) => {
                 const billId = bill._id || bill.billNo;
                 const isDelivered = bill.deliveryStatus === 'Delivered';
+                const formattedDelivDate = bill.deliveryDate 
+                  ? new Date(bill.deliveryDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-')
+                  : (bill.date ? new Date(bill.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-') : 'N/A');
+
                 const isOverdue = !isDelivered && bill.deliveryDate && bill.deliveryDate.substring(0, 10) < todayStr;
 
                 return (
                   <div
                     key={billId}
-                    className={`p-5 rounded-2xl border transition-all duration-200 shadow-xl flex flex-col justify-between relative overflow-hidden group ${
+                    className={`p-4 sm:p-5 rounded-2xl border transition-all duration-200 shadow-xl flex flex-col justify-between relative overflow-hidden group ${
                       isDarkMode 
-                        ? 'bg-slate-900/80 border-slate-800 text-slate-100 hover:border-slate-700' 
-                        : 'bg-white border-slate-200 text-slate-900 hover:border-slate-300'
+                        ? 'bg-slate-900/90 border-slate-800 text-slate-100' 
+                        : 'bg-white border-slate-200 text-slate-900'
                     }`}
                   >
-                    {/* Status Indicator Bar top accent */}
+                    {/* Top Accent Bar */}
                     <div className={`absolute top-0 left-0 right-0 h-1.5 ${
-                      isDelivered ? 'bg-emerald-500' : isOverdue ? 'bg-rose-500' : 'bg-amber-500'
+                      isDelivered ? 'bg-emerald-500' : isOverdue ? 'bg-rose-500' : 'bg-blue-600'
                     }`} />
 
                     <div>
-                      {/* Top Card Row: Bill No & Status Badge */}
-                      <div className="flex items-center justify-between gap-2 mb-3">
-                        <div className="flex items-center gap-2">
-                          <span className="px-2.5 py-1 rounded-xl bg-sky-500/15 border border-sky-500/30 text-sky-400 font-mono font-black text-xs">
-                            #{bill.billNo}
-                          </span>
+                      {/* Top Row: Bill # & Status Pills */}
+                      <div className="flex items-center justify-between gap-2 mb-3 pt-1">
+                        <span className="px-3 py-1 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-700 dark:text-sky-400 font-mono font-black text-xs">
+                          #{bill.billNo}
+                        </span>
+
+                        <div className="flex items-center gap-1.5">
                           {isOverdue && (
-                            <span className="px-2 py-0.5 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-400 font-bold text-[10px] flex items-center gap-1">
-                              <AlertTriangle className="w-3 h-3" /> Overdue
+                            <span className="px-2.5 py-0.5 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-800 dark:text-rose-400 font-extrabold text-[10px] flex items-center gap-1">
+                              <AlertTriangle className="w-3 h-3 text-rose-700 dark:text-rose-400" /> OVERDUE
+                            </span>
+                          )}
+                          {isDelivered ? (
+                            <span className="px-2.5 py-0.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-400 font-extrabold text-[10px] flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-700 dark:text-emerald-400" /> DELIVERED
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-0.5 rounded-lg bg-blue-500/15 border border-blue-500/30 text-blue-800 dark:text-sky-400 font-extrabold text-[10px] flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-blue-700 dark:text-sky-400" /> PENDING
                             </span>
                           )}
                         </div>
-
-                        <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border flex items-center gap-1 ${
-                          isDelivered 
-                            ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400' 
-                            : 'bg-amber-500/15 border-amber-500/30 text-amber-400'
-                        }`}>
-                          {isDelivered ? <CheckCircle2 className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                          {bill.deliveryStatus || 'Pending'}
-                        </span>
                       </div>
 
                       {/* Customer Info Box */}
-                      <div className="space-y-2 mb-4">
-                        <h3 className="text-base font-black tracking-tight flex items-center justify-between">
-                          <span>{bill.customer?.name || 'Unnamed Customer'}</span>
-                          <span className="text-xs font-medium text-slate-400">
-                            {bill.customer?.age ? `${bill.customer.age} yrs` : ''} ({bill.customer?.gender || 'N/A'})
-                          </span>
-                        </h3>
+                      <div className="space-y-2 mb-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <h3 className="text-base font-black tracking-tight text-slate-900 dark:text-slate-100">
+                              {bill.customer?.name || 'Unnamed Customer'}
+                            </h3>
+                            <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
+                              {bill.customer?.age ? `${bill.customer.age} yrs` : ''} ({bill.customer?.gender || 'N/A'})
+                            </div>
+                          </div>
 
-                        <div className="flex items-center gap-2 text-xs font-semibold text-sky-400">
-                          <Phone className="w-3.5 h-3.5" />
-                          <span>{bill.customer?.phone || 'No Phone Number'}</span>
+                          {bill.customer?.phone && (
+                            <a 
+                              href={`tel:${bill.customer.phone}`}
+                              className="px-2.5 py-1 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 dark:bg-sky-500/15 dark:border-sky-500/30 dark:text-sky-400 text-xs font-mono font-bold flex items-center gap-1 shrink-0 hover:bg-blue-100"
+                            >
+                              <Phone className="w-3 h-3 text-blue-700 dark:text-sky-400" />
+                              <span>{bill.customer.phone}</span>
+                            </a>
+                          )}
                         </div>
 
-                        {/* Prescription & Order Details */}
-                        <div className={`p-3 rounded-xl border text-xs space-y-1.5 ${
+                        {/* Order & Prescription Specs Box */}
+                        <div className={`p-3 rounded-xl border text-xs space-y-2 ${
                           isDarkMode ? 'bg-slate-950/60 border-slate-800/80' : 'bg-slate-50 border-slate-200'
                         }`}>
-                          <div className="flex justify-between items-center text-slate-400 font-medium">
-                            <span>Delivery Date:</span>
-                            <span className="font-bold text-slate-200 font-mono">
-                              {bill.deliveryDate || bill.date || 'N/A'}
+                          <div className="flex justify-between items-center text-slate-500 dark:text-slate-400 font-medium">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3.5 h-3.5 text-blue-700 dark:text-sky-400" /> Delivery Date:
+                            </span>
+                            <span className="font-bold text-slate-900 dark:text-slate-100 font-mono">
+                              {formattedDelivDate}
                             </span>
                           </div>
-                          <div className="flex justify-between items-center text-slate-400 font-medium">
+
+                          <div className="flex justify-between items-center text-slate-500 dark:text-slate-400 font-medium">
                             <span>Lens Specs:</span>
-                            <span className="font-semibold text-slate-300">
-                              {bill.lens?.type} ({bill.lens?.coating || 'HMC'})
+                            <span className="font-bold text-blue-900 dark:text-sky-400">
+                              {bill.lens?.type || 'Single Vision'} ({bill.lens?.brand || 'Essilor'} {bill.lens?.coating || 'HMC'})
                             </span>
                           </div>
-                          <div className="flex justify-between items-center text-slate-400 font-medium">
+
+                          <div className="flex justify-between items-center text-slate-500 dark:text-slate-400 font-medium">
                             <span>Frame Specs:</span>
-                            <span className="font-semibold text-slate-300">
-                              {bill.frame?.brand} ({bill.frame?.type})
+                            <span className="font-bold text-blue-900 dark:text-sky-400">
+                              {bill.frame?.brand || 'Titan'} ({bill.frame?.type || 'Full frame'})
                             </span>
                           </div>
+
                           {bill.customer?.drName && (
-                            <div className="flex justify-between items-center text-slate-400 font-medium">
+                            <div className="flex justify-between items-center text-slate-500 dark:text-slate-400 font-medium">
                               <span>Doctor:</span>
-                              <span className="font-medium text-slate-300">
+                              <span className="font-semibold text-slate-800 dark:text-slate-200">
                                 Dr. {bill.customer.drName}
                               </span>
                             </div>
@@ -465,42 +482,49 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
                         </div>
                       </div>
 
-                      {/* Financial Summary */}
-                      <div className="flex items-center justify-between pt-2 border-t border-slate-700/20 text-xs mb-4">
+                      {/* Financial Summary Grid */}
+                      <div className="grid grid-cols-3 gap-2 p-2.5 rounded-xl bg-slate-500/10 border border-slate-400/20 text-xs mb-3 text-center">
                         <div>
-                          <span className="text-slate-400 font-medium">Net Bill:</span>
-                          <span className="font-bold ml-1 text-slate-200">
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase">Net Bill</div>
+                          <div className="font-extrabold text-slate-900 dark:text-slate-100">
                             ₹{Number(bill.netAmount || 0).toLocaleString('en-IN')}
-                          </span>
+                          </div>
                         </div>
                         <div>
-                          <span className="text-slate-400 font-medium">Balance Due:</span>
-                          <span className={`font-black ml-1 ${
-                            Number(bill.balanceAmount || 0) > 0 ? 'text-rose-400' : 'text-emerald-400'
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase">Advance</div>
+                          <div className="font-extrabold text-emerald-700 dark:text-emerald-400">
+                            ₹{Number(bill.advanceAmount || 0).toLocaleString('en-IN')}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase">Balance</div>
+                          <div className={`font-black ${
+                            Number(bill.balanceAmount || 0) > 0 ? 'text-blue-800 dark:text-sky-400' : 'text-slate-700 dark:text-slate-300'
                           }`}>
                             ₹{Number(bill.balanceAmount || 0).toLocaleString('en-IN')}
-                          </span>
+                          </div>
                         </div>
                       </div>
                     </div>
 
-                    {/* Bottom Action Controls */}
+                    {/* Action Controls */}
                     <div className="flex items-center gap-2 pt-2 border-t border-slate-700/20">
                       {activeTab === 'pending' ? (
                         <button
                           onClick={() => handleOpenDeliveryModal(bill)}
-                          className="flex-1 py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-xs shadow-md flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
+                          className="flex-1 py-2.5 px-3 rounded-xl bg-blue-700 hover:bg-blue-600 text-white font-bold text-xs shadow-md flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
                         >
-                          <Check className="w-4 h-4" />
-                          <span>Mark Delivered</span>
+                          <Truck className="w-4 h-4" />
+                          <span>Need to Delivery</span>
                         </button>
                       ) : (
                         <button
                           onClick={() => onToggleStatus && onToggleStatus(billId, 'Pending')}
-                          className="flex-1 py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold text-xs shadow-md flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
+                          className="flex-1 py-2.5 px-3 rounded-xl bg-emerald-700/20 border border-emerald-500/30 text-emerald-800 dark:text-emerald-400 hover:bg-emerald-700 hover:text-white font-bold text-xs shadow-md flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
+                          title="Delivered (Click to revert to Pending)"
                         >
-                          <RotateCcw className="w-4 h-4" />
-                          <span>Mark Pending</span>
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                          <span>Delivered</span>
                         </button>
                       )}
 
@@ -510,7 +534,7 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
                             href={getWhatsAppLink(bill)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-2.5 rounded-xl border font-bold text-xs transition-all cursor-pointer flex items-center justify-center bg-emerald-500/20 border-emerald-500/40 text-emerald-400 hover:bg-emerald-500 hover:text-white"
+                            className="p-2.5 rounded-xl border font-bold text-xs transition-all cursor-pointer flex items-center justify-center bg-blue-50 border-blue-200 text-blue-800 hover:bg-blue-700 hover:text-white dark:bg-sky-500/20 dark:border-sky-500/40 dark:text-sky-400 dark:hover:bg-sky-500"
                             title="Send WhatsApp Reminder"
                           >
                             <MessageSquare className="w-4 h-4" />
@@ -518,12 +542,8 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
 
                           <button
                             onClick={() => onSendSMS && onSendSMS(bill)}
-                            className={`p-2.5 rounded-xl border font-bold text-xs transition-all cursor-pointer flex items-center justify-center ${
-                              isDarkMode 
-                                ? 'bg-slate-800 border-slate-700 text-sky-400 hover:bg-sky-500 hover:text-white' 
-                                : 'bg-slate-100 border-slate-300 text-sky-600 hover:bg-sky-500 hover:text-white'
-                            }`}
-                            title="Send Customer SMS Reminder"
+                            className="p-2.5 rounded-xl border font-bold text-xs transition-all cursor-pointer flex items-center justify-center bg-blue-50 border-blue-200 text-blue-800 hover:bg-blue-700 hover:text-white dark:bg-sky-500/20 dark:border-sky-500/40 dark:text-sky-400 dark:hover:bg-sky-500"
+                            title="Send SMS Reminder"
                           >
                             <Send className="w-4 h-4" />
                           </button>

@@ -45,24 +45,24 @@ select option {
   text-overflow: ellipsis;
 }
 
-/* Ambient Aurora Mesh Background */
+/* Ambient Optics India Mesh Background */
 .aurora-bg-light {
   background-color: #f1f5f9;
   background-image: 
-    radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.18) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(129, 140, 248, 0.18) 0px, transparent 50%),
-    radial-gradient(at 50% 100%, rgba(52, 211, 153, 0.15) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(244, 114, 182, 0.12) 0px, transparent 50%);
+    radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.22) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(14, 165, 233, 0.18) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(2, 132, 199, 0.15) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(15, 23, 42, 0.08) 0px, transparent 50%);
   background-attachment: fixed;
 }
 
 .aurora-bg-dark {
-  background-color: #090d16;
+  background-color: #020617;
   background-image: 
-    radial-gradient(at 0% 0%, rgba(14, 165, 233, 0.18) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.18) 0px, transparent 50%),
-    radial-gradient(at 50% 100%, rgba(16, 185, 129, 0.15) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(217, 70, 239, 0.12) 0px, transparent 50%);
+    radial-gradient(at 0% 0%, rgba(14, 165, 233, 0.25) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(56, 189, 248, 0.18) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(2, 132, 199, 0.15) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(15, 23, 42, 0.6) 0px, transparent 50%);
   background-attachment: fixed;
 }
 
@@ -99,8 +99,8 @@ select option {
 }
 .glass-input-light:focus {
   background: #ffffff;
-  border-color: #0284c7;
-  box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.15), inset 0 2px 4px 0 rgba(0, 0, 0, 0.02);
+  border-color: #1d4ed8;
+  box-shadow: 0 0 0 4px rgba(29, 78, 216, 0.18), inset 0 2px 4px 0 rgba(0, 0, 0, 0.02);
 }
 
 .glass-input-dark {

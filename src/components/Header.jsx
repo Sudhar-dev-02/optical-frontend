@@ -57,21 +57,23 @@ export default function Header({ isOnline, isDarkMode, setIsDarkMode, onToggleMo
             <div className="flex items-center gap-1.5 sm:gap-2 truncate">
               <h1 className="text-base sm:text-xl font-brand font-semibold tracking-tight truncate flex items-center gap-0.5">
                 <span className={isDarkMode ? 'text-slate-100' : 'text-slate-900'}>Optics</span>
-                <span className="text-sky-500 font-medium">India</span>
+                <span className="text-blue-700 dark:text-sky-400 font-bold">India</span>
               </h1>
               <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold tracking-wide hidden sm:flex items-center gap-1 border ${
                 isDarkMode 
                   ? 'bg-cyan-950/80 border-cyan-800 text-cyan-300' 
-                  : 'bg-blue-50 border-blue-200/80 text-blue-700'
+                  : 'bg-blue-50 border-blue-200/80 text-blue-800'
               }`}>
-                <Sparkles className="w-2.5 h-2.5 text-cyan-500" /> POS v2.0
+                <Sparkles className="w-2.5 h-2.5 text-blue-600 dark:text-cyan-500" /> POS v2.0
               </span>
             </div>
             <p className={`text-[10px] sm:text-[11px] flex items-center gap-1 sm:gap-1.5 font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
               <span className="truncate">Optical Billing</span>
               <span className="opacity-40">•</span>
-              <span className="flex items-center gap-1 font-semibold text-sky-500 shrink-0">
-                <Phone className="w-3 h-3" /> +91 90432 29107 / +91 99524 17748
+              <span className="flex items-center gap-1 font-bold text-blue-700 dark:text-sky-400 shrink-0">
+                <Phone className="w-3 h-3 text-blue-700 dark:text-sky-400" />
+                <span className="hidden sm:inline">+91 90432 29107 / +91 99524 17748</span>
+                <span className="sm:hidden">+91 90432 29107</span>
               </span>
             </p>
           </div>
@@ -82,11 +84,11 @@ export default function Header({ isOnline, isDarkMode, setIsDarkMode, onToggleMo
           {/* Active Logged In User Badge */}
           {currentUser && (
             <div className={`hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] font-bold ${
-              currentUser.role === 'admin'
-                ? 'bg-indigo-500/15 border-indigo-500/30 text-indigo-400'
-                : 'bg-sky-500/15 border-sky-500/30 text-sky-400'
+              isDarkMode 
+                ? 'bg-sky-500/15 border-sky-500/30 text-sky-400' 
+                : 'bg-blue-50 border-blue-200 text-blue-800'
             }`}>
-              {currentUser.role === 'admin' ? <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" /> : <UserCheck className="w-3.5 h-3.5 text-sky-400" />}
+              {currentUser.role === 'admin' ? <ShieldCheck className="w-3.5 h-3.5 text-blue-700 dark:text-sky-400" /> : <UserCheck className="w-3.5 h-3.5 text-blue-700 dark:text-sky-400" />}
               <span>{currentUser.role === 'admin' ? 'Admin' : 'Sales'}: <strong>{currentUser.phone}</strong></span>
             </div>
           )}
@@ -96,18 +98,18 @@ export default function Header({ isOnline, isDarkMode, setIsDarkMode, onToggleMo
             onClick={() => setIsDarkMode(!isDarkMode)}
             className={`px-3 py-1.5 rounded-full border flex items-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95 ${
               isDarkMode 
-                ? 'bg-slate-800/90 border-slate-700 text-amber-400 hover:bg-slate-700' 
+                ? 'bg-slate-800/90 border-slate-700 text-cyan-400 hover:bg-slate-700' 
                 : 'bg-slate-100/90 border-slate-300/80 text-slate-800 hover:bg-slate-200'
             }`}
           >
             {isDarkMode ? (
               <>
-                <Sun className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                <Sun className="w-3.5 h-3.5 text-cyan-400 fill-cyan-400" />
                 <span className="text-slate-200 font-bold hidden sm:inline">Light</span>
               </>
             ) : (
               <>
-                <Moon className="w-3.5 h-3.5 text-indigo-600 fill-indigo-600" />
+                <Moon className="w-3.5 h-3.5 text-sky-500 fill-sky-500" />
                 <span className="text-slate-800 font-bold hidden sm:inline">Dark</span>
               </>
             )}
@@ -127,7 +129,7 @@ export default function Header({ isOnline, isDarkMode, setIsDarkMode, onToggleMo
           {onLogout && (
             <button
               onClick={onLogout}
-              className="px-2.5 py-1.5 rounded-xl bg-rose-500/15 border border-rose-500/30 hover:bg-rose-600 text-rose-400 hover:text-white font-bold text-[11px] flex items-center gap-1 transition-all cursor-pointer shadow-sm"
+              className="px-2.5 py-1.5 rounded-xl bg-sky-500/15 border border-sky-500/30 hover:bg-sky-600 text-sky-400 hover:text-white font-bold text-[11px] flex items-center gap-1 transition-all cursor-pointer shadow-sm"
               title="Logout from session"
             >
               <LogOut className="w-3.5 h-3.5" />

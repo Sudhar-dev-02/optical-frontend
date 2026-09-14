@@ -251,7 +251,7 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
           <span className="font-semibold">{rCyl || '-'}</span>
           <span className="font-semibold">{rAxi || '-'}</span>
           <span className="font-bold text-amber-500">{rAdd || '-'}</span>
-          <span className="opacity-70 text-[9px]">{rVa || '-'}</span>
+          <span className="opacity-70 text-[9px] truncate" title={rVa || ''}>{rVa || '-'}</span>
         </div>
 
         {/* Left Eye LE Box / Row */}
@@ -268,7 +268,7 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
           <span className="font-semibold">{lCyl || '-'}</span>
           <span className="font-semibold">{lAxi || '-'}</span>
           <span className="font-bold text-amber-500">{lAdd || '-'}</span>
-          <span className="opacity-70 text-[9px]">{lVa || '-'}</span>
+          <span className="opacity-70 text-[9px] truncate" title={lVa || ''}>{lVa || '-'}</span>
         </div>
 
         {/* Optional PD / RI details */}
@@ -361,8 +361,8 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
       <div className={`${panelClass} p-4 sm:p-5 rounded-2xl sm:rounded-3xl`}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-400/20 pb-3 mb-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-black bg-gradient-to-r from-emerald-400 via-teal-500 to-sky-600 bg-clip-text text-transparent flex items-center gap-2">
-              <TrendingUp className="w-6 h-6 text-emerald-500" /> Sales & Revenue Reports Dashboard
+            <h1 className="text-xl sm:text-2xl font-black bg-gradient-to-r from-blue-800 via-blue-600 to-indigo-700 dark:from-sky-400 dark:via-blue-500 dark:to-indigo-400 bg-clip-text text-transparent flex items-center gap-2">
+              <TrendingUp className="w-6 h-6 text-blue-700 dark:text-sky-400" /> Sales & Revenue Reports Dashboard
             </h1>
             <p className={`text-xs font-semibold mt-0.5 ${labelClass}`}>
               Comprehensive Financial Metrics, Payment Mode Breakdowns, and Inventory Analytics
@@ -370,7 +370,7 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono font-bold px-3 py-1 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+            <span className="text-xs font-mono font-bold px-3 py-1 rounded-xl bg-blue-50 dark:bg-sky-500/15 border border-blue-200 dark:border-sky-500/30 text-blue-800 dark:text-sky-400">
               Admin Exclusive
             </span>
           </div>
@@ -382,11 +382,11 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
           <div className={`p-4 rounded-2xl border transition-all shadow-xs ${
             isDarkMode ? 'bg-slate-900/60 border-slate-800' : 'bg-white/80 border-slate-200'
           }`}>
-            <div className="flex items-center justify-between text-slate-400 font-bold mb-1">
-              <span className="text-slate-500 dark:text-slate-400">Gross Sales</span>
-              <DollarSign className="w-4 h-4 text-sky-500" />
+            <div className="flex items-center justify-between text-slate-600 dark:text-slate-400 font-bold mb-1">
+              <span>Gross Sales</span>
+              <DollarSign className="w-4 h-4 text-blue-700 dark:text-sky-400" />
             </div>
-            <div className="text-xl sm:text-2xl font-black font-mono text-sky-500">
+            <div className="text-xl sm:text-2xl font-black font-mono text-blue-900 dark:text-sky-400">
               ₹ {summaryMetrics.grossSales.toFixed(2)}
             </div>
             <div className="text-[10px] opacity-70 font-semibold mt-0.5">
@@ -396,29 +396,29 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
 
           {/* Card 2: Total Sale */}
           <div className={`p-4 rounded-2xl border transition-all shadow-xs ${
-            isDarkMode ? 'bg-emerald-950/40 border-emerald-800/40' : 'bg-emerald-50/80 border-emerald-200'
+            isDarkMode ? 'bg-sky-950/40 border-sky-800/40' : 'bg-blue-50/80 border-blue-200'
           }`}>
-            <div className="flex items-center justify-between text-emerald-500 font-bold mb-1">
+            <div className="flex items-center justify-between text-blue-800 dark:text-sky-400 font-bold mb-1">
               <span>Total Sale</span>
-              <ShoppingBag className="w-4 h-4 text-emerald-500" />
+              <ShoppingBag className="w-4 h-4 text-blue-700 dark:text-sky-400" />
             </div>
-            <div className="text-xl sm:text-2xl font-black font-mono text-emerald-500">
+            <div className="text-xl sm:text-2xl font-black font-mono text-blue-900 dark:text-sky-400">
               ₹ {summaryMetrics.totalSale.toFixed(2)}
             </div>
-            <div className="text-[10px] opacity-70 font-semibold mt-0.5">
+            <div className="text-[10px] opacity-70 font-semibold mt-0.5 text-blue-800 dark:text-sky-400/80">
               Total sale amount
             </div>
           </div>
 
           {/* Card 3: Total Balance */}
           <div className={`p-4 rounded-2xl border transition-all shadow-xs ${
-            isDarkMode ? 'bg-rose-950/40 border-rose-800/40' : 'bg-rose-50/80 border-rose-200'
+            isDarkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-slate-50 border-slate-200'
           }`}>
-            <div className="flex items-center justify-between text-rose-500 font-bold mb-1">
+            <div className="flex items-center justify-between text-blue-800 dark:text-sky-300 font-bold mb-1">
               <span>Total Balance</span>
-              <AlertCircle className="w-4 h-4 text-rose-500" />
+              <AlertCircle className="w-4 h-4 text-blue-700 dark:text-sky-400" />
             </div>
-            <div className="text-xl sm:text-2xl font-black font-mono text-rose-500">
+            <div className="text-xl sm:text-2xl font-black font-mono text-blue-900 dark:text-sky-300">
               ₹ {summaryMetrics.totalBalance.toFixed(2)}
             </div>
             <div className="text-[10px] opacity-70 font-semibold mt-0.5">
@@ -428,16 +428,16 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
 
           {/* Card 4: Total Delivery */}
           <div className={`p-4 rounded-2xl border transition-all shadow-xs ${
-            isDarkMode ? 'bg-amber-950/40 border-amber-800/40' : 'bg-amber-50/80 border-amber-200'
+            isDarkMode ? 'bg-sky-950/40 border-sky-800/40' : 'bg-blue-50/80 border-blue-200'
           }`}>
-            <div className="flex items-center justify-between text-amber-500 font-bold mb-1">
+            <div className="flex items-center justify-between text-blue-800 dark:text-sky-400 font-bold mb-1">
               <span>Total Delivery</span>
-              <Truck className="w-4 h-4 text-amber-500" />
+              <Truck className="w-4 h-4 text-blue-700 dark:text-sky-400" />
             </div>
-            <div className="text-xl sm:text-2xl font-black font-mono text-amber-500">
+            <div className="text-xl sm:text-2xl font-black font-mono text-blue-900 dark:text-sky-400">
               ₹ {summaryMetrics.totalDelivery.toFixed(2)}
             </div>
-            <div className="text-[10px] opacity-70 font-semibold mt-0.5">
+            <div className="text-[10px] opacity-70 font-semibold mt-0.5 text-blue-800 dark:text-sky-400/80">
               Delivery amount
             </div>
           </div>
@@ -449,7 +449,7 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-400/20 pb-3">
           <div>
             <h2 className="text-base font-bold flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-sky-500" /> Date Range Filter & Sales Entries
+              <Calendar className="w-4 h-4 text-blue-700 dark:text-sky-500" /> Date Range Filter & Sales Entries
             </h2>
             <p className="text-xs opacity-70 mt-0.5">
               Filter billing entries between dates and export directly to Excel with full Prescription (Lens Powers)
@@ -462,7 +462,7 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
             disabled={!hasDateSelected || filteredBills.length === 0}
             className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
               hasDateSelected && filteredBills.length > 0
-                ? 'bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white shadow-md shadow-emerald-600/30 cursor-pointer'
+                ? 'bg-blue-700 hover:bg-blue-800 dark:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 text-white shadow-md shadow-blue-600/30 cursor-pointer'
                 : 'bg-slate-400/20 text-slate-400 cursor-not-allowed border border-slate-400/20 opacity-60'
             }`}
             title={hasDateSelected && filteredBills.length > 0 ? "Export filtered records including Prescription to Microsoft Excel (.xlsx)" : "Select a date to view and export records"}
@@ -562,7 +562,7 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
               )}
             </span>
             {hasDateSelected && (
-              <span className="font-mono text-sky-500 font-bold">
+              <span className="font-mono text-blue-800 dark:text-sky-400 font-bold">
                 Filtered: {startDate || 'Beginning'} → {endDate || 'Today'}
               </span>
             )}
@@ -598,7 +598,7 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
                 <tr>
                   <td colSpan="13" className="p-12 text-center font-sans">
                     <div className="flex flex-col items-center justify-center gap-2 opacity-75">
-                      <Calendar className="w-8 h-8 text-sky-500 animate-pulse" />
+                      <Calendar className="w-8 h-8 text-blue-700 dark:text-sky-500 animate-pulse" />
                       <p className="text-sm font-bold">No Date Selected</p>
                       <p className="text-xs opacity-80">
                         Date select panna mattumey entries show aagum. Please pick a <strong>Start Date</strong> / <strong>End Date</strong> or click <strong>Today</strong> / <strong>This Month</strong> above.
@@ -651,7 +651,7 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
                       <td className="p-2.5 border-r border-slate-400/20 text-right text-amber-500">
                         {Number(b.discountAmount || 0).toFixed(2)}
                       </td>
-                      <td className="p-2.5 border-r border-slate-400/20 text-right font-bold text-sky-500">
+                      <td className="p-2.5 border-r border-slate-400/20 text-right font-bold text-blue-800 dark:text-sky-400">
                         {Number(b.netAmount || 0).toFixed(2)}
                       </td>
                       <td className="p-2.5 border-r border-slate-400/20 text-right text-emerald-500">

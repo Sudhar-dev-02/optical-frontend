@@ -13,18 +13,35 @@ import {
   Phone,
   Eye,
   ChevronRight,
-  Filter
+  Filter,
+  BarChart3
 } from 'lucide-react';
 
-export default function DashboardPage({ bills, isDarkMode, onNavigateToReminders, onNavigateToBilling, onSelectBill }) {
+export default function DashboardPage({ bills, isDarkMode, userRole = 'admin', onNavigateToReminders, onNavigateToBilling, onSelectBill }) {
   const [dateFilter, setDateFilter] = useState('all'); // 'all', 'today', 'overdue', 'upcoming'
   const [searchQuery, setSearchQuery] = useState('');
 
-  // 1. KPI Calculations
-  const totalSales = bills.reduce((acc, b) => acc + Number(b.netAmount || 0), 0);
-  const totalOrders = bills.length;
-  const totalBalance = bills.reduce((acc, b) => acc + Number(b.balanceAmount || 0), 0);
-  
+  const isAdmin = userRole === 'admin';
+
+  // 1. Today & Overall KPI Calculations
+  const todayStr = new Date().toISOString().substring(0, 10);
+
+  const isToday = (bill) => {
+    if (!bill) return false;
+    const bDate = bill.date ? String(bill.date).substring(0, 10) : '';
+    const cDate = bill.createdAt ? String(bill.createdAt).substring(0, 10) : '';
+    return bDate === todayStr || cDate === todayStr;
+  };
+
+  const todayBills = bills.filter(isToday);
+
+  const todaySales = todayBills.reduce((acc, b) => acc + Number(b.netAmount || b.totalAmount || 0), 0);
+  const todayAdvance = todayBills.reduce((acc, b) => acc + Number(b.advanceAmount || 0), 0);
+  const todayBalance = todayBills.reduce((acc, b) => acc + Number(b.balanceAmount || 0), 0);
+  const todayOrdersCount = todayBills.length;
+  const todayDeliveredCount = todayBills.filter(b => b.deliveryStatus === 'Delivered').length;
+  const todayPendingCount = todayOrdersCount - todayDeliveredCount;
+
   // Unique Customers count by phone or name
   const uniqueCustomers = new Set(
     bills.map(b => (b.customer?.phone || b.customer?.name || '').trim().toLowerCase())
@@ -34,9 +51,7 @@ export default function DashboardPage({ bills, isDarkMode, onNavigateToReminders
   const dueRemindersCount = bills.filter(b => (b.deliveryStatus || 'Pending') === 'Pending').length;
   const deliveredCount = bills.filter(b => b.deliveryStatus === 'Delivered').length;
 
-  // 2. Date Filtering for Customer Reminders
-  const todayStr = new Date().toISOString().substring(0, 10);
-
+  // 2. Date Filtering for Customer Reminders Table
   const filteredBills = bills.filter(bill => {
     // Search query filter
     const q = searchQuery.toLowerCase();
@@ -68,8 +83,8 @@ export default function DashboardPage({ bills, isDarkMode, onNavigateToReminders
           <h1 className={`text-2xl sm:text-3xl font-black tracking-tight flex items-center gap-3 ${
             isDarkMode ? 'text-white' : 'text-slate-900'
           }`}>
-            <span className="p-2 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30">
-              📊
+            <span className="p-2.5 rounded-2xl bg-gradient-to-tr from-blue-700 to-indigo-800 text-white shadow-lg shadow-blue-500/20 flex items-center justify-center">
+              <BarChart3 className="w-6 h-6 text-white" />
             </span>
             Executive Dashboard
           </h1>
@@ -80,137 +95,171 @@ export default function DashboardPage({ bills, isDarkMode, onNavigateToReminders
 
         <button
           onClick={onNavigateToReminders}
-          className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold text-xs sm:text-sm shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
+          className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-700 to-indigo-800 hover:from-blue-600 hover:to-indigo-700 text-white font-bold text-xs sm:text-sm shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
         >
-          <Bell className="w-4 h-4 animate-bounce" />
+          <Bell className="w-4 h-4 animate-bounce text-sky-300" />
           <span>Manage Delivery Reminders ({dueRemindersCount} Pending)</span>
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>
 
-      {/* KPI Cards Grid - 5 Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        {/* KPI 1: Total Sales */}
-        <div className={`p-5 rounded-2xl border transition-all duration-300 relative overflow-hidden group hover:scale-[1.02] shadow-xl ${
-          isDarkMode 
-            ? 'bg-slate-900/80 border-slate-800 text-slate-100 hover:border-emerald-500/40' 
-            : 'bg-white/90 border-slate-200/80 text-slate-900 hover:border-emerald-400'
-        }`}>
-          <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/20 transition-all" />
-          <div className="flex items-center justify-between">
-            <span className={`text-xs font-extrabold uppercase tracking-wider ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-              Total Sales
-            </span>
-            <div className="p-2.5 rounded-xl bg-emerald-500/15 text-emerald-500 font-bold border border-emerald-500/20">
-              <DollarSign className="w-5 h-5" />
+      {/* KPI Cards Grid - Today Metrics & Store Summary (2x2 Grid on Mobile) */}
+      <div className={`grid gap-2.5 sm:gap-3.5 ${
+        isAdmin 
+          ? 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6' 
+          : 'grid-cols-2 sm:grid-cols-2 lg:grid-cols-3'
+      }`}>
+        {/* Admin Exclusive KPI Cards */}
+        {isAdmin && (
+          <>
+            {/* KPI 1: Today Sales */}
+            <div className={`p-3 sm:p-4.5 rounded-2xl border transition-all duration-300 relative overflow-hidden group hover:scale-[1.02] shadow-xl ${
+              isDarkMode 
+                ? 'bg-slate-900/80 border-slate-800 text-slate-100 hover:border-sky-500/40' 
+                : 'bg-white/90 border-slate-200/80 text-slate-900 hover:border-blue-400'
+            }`}>
+              <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-blue-500/10 rounded-full blur-xl group-hover:bg-blue-500/20 transition-all" />
+              <div className="flex items-center justify-between gap-1">
+                <span className={`text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider truncate ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                  Today Sales
+                </span>
+                <div className="p-1.5 sm:p-2 rounded-xl bg-blue-50 dark:bg-sky-500/15 text-blue-800 dark:text-sky-400 font-bold border border-blue-200 dark:border-sky-500/20 shrink-0">
+                  <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </div>
+              </div>
+              <div className="mt-2 sm:mt-2.5">
+                <div className="text-lg sm:text-2xl font-black tracking-tight text-blue-900 dark:text-sky-400 truncate">
+                  ₹{todaySales.toLocaleString('en-IN')}
+                </div>
+                <p className={`text-[9px] sm:text-[10px] font-medium mt-0.5 sm:mt-1 truncate ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                  Net sales today
+                </p>
+              </div>
             </div>
-          </div>
-          <div className="mt-3">
-            <div className="text-2xl sm:text-3xl font-black tracking-tight text-emerald-500">
-              ₹{totalSales.toLocaleString('en-IN')}
-            </div>
-            <p className={`text-[11px] font-medium mt-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-              Cumulative revenue generated
-            </p>
-          </div>
-        </div>
 
-        {/* KPI 2: Total Orders */}
-        <div className={`p-5 rounded-2xl border transition-all duration-300 relative overflow-hidden group hover:scale-[1.02] shadow-xl ${
+            {/* KPI 2: Advance Today */}
+            <div className={`p-3 sm:p-4.5 rounded-2xl border transition-all duration-300 relative overflow-hidden group hover:scale-[1.02] shadow-xl ${
+              isDarkMode 
+                ? 'bg-slate-900/80 border-slate-800 text-slate-100 hover:border-sky-500/40' 
+                : 'bg-white/90 border-slate-200/80 text-slate-900 hover:border-blue-400'
+            }`}>
+              <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-blue-500/10 rounded-full blur-xl group-hover:bg-blue-500/20 transition-all" />
+              <div className="flex items-center justify-between gap-1">
+                <span className={`text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider truncate ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                  Advance Today
+                </span>
+                <div className="p-1.5 sm:p-2 rounded-xl bg-blue-50 dark:bg-sky-500/15 text-blue-800 dark:text-sky-400 font-bold border border-blue-200 dark:border-sky-500/20 shrink-0">
+                  <Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </div>
+              </div>
+              <div className="mt-2 sm:mt-2.5">
+                <div className="text-lg sm:text-2xl font-black tracking-tight text-blue-900 dark:text-sky-400 truncate">
+                  ₹{todayAdvance.toLocaleString('en-IN')}
+                </div>
+                <p className={`text-[9px] sm:text-[10px] font-medium mt-0.5 sm:mt-1 truncate ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                  Advance collected
+                </p>
+              </div>
+            </div>
+
+            {/* KPI 3: Balance Today */}
+            <div className={`p-3 sm:p-4.5 rounded-2xl border transition-all duration-300 relative overflow-hidden group hover:scale-[1.02] shadow-xl ${
+              isDarkMode 
+                ? 'bg-slate-900/80 border-slate-800 text-slate-100 hover:border-sky-500/40' 
+                : 'bg-white/90 border-slate-200/80 text-slate-900 hover:border-blue-400'
+            }`}>
+              <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-blue-500/10 rounded-full blur-xl group-hover:bg-blue-500/20 transition-all" />
+              <div className="flex items-center justify-between gap-1">
+                <span className={`text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider truncate ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                  Balance Today
+                </span>
+                <div className="p-1.5 sm:p-2 rounded-xl bg-blue-50 dark:bg-sky-500/15 text-blue-800 dark:text-sky-400 font-bold border border-blue-200 dark:border-sky-500/20 shrink-0">
+                  <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </div>
+              </div>
+              <div className="mt-2 sm:mt-2.5">
+                <div className="text-lg sm:text-2xl font-black tracking-tight text-blue-900 dark:text-sky-400 truncate">
+                  ₹{todayBalance.toLocaleString('en-IN')}
+                </div>
+                <p className={`text-[9px] sm:text-[10px] font-medium mt-0.5 sm:mt-1 truncate ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                  Balance due today
+                </p>
+              </div>
+            </div>
+
+            {/* KPI 4: Today Orders */}
+            <div className={`p-3 sm:p-4.5 rounded-2xl border transition-all duration-300 relative overflow-hidden group hover:scale-[1.02] shadow-xl ${
+              isDarkMode 
+                ? 'bg-slate-900/80 border-slate-800 text-slate-100 hover:border-sky-500/40' 
+                : 'bg-white/90 border-slate-200/80 text-slate-900 hover:border-blue-400'
+            }`}>
+              <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-blue-500/10 rounded-full blur-xl group-hover:bg-blue-500/20 transition-all" />
+              <div className="flex items-center justify-between gap-1">
+                <span className={`text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider truncate ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                  Today Orders
+                </span>
+                <div className="p-1.5 sm:p-2 rounded-xl bg-blue-50 dark:bg-sky-500/15 text-blue-800 dark:text-sky-400 font-bold border border-blue-200 dark:border-sky-500/20 shrink-0">
+                  <ShoppingBag className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </div>
+              </div>
+              <div className="mt-2 sm:mt-2.5">
+                <div className="text-lg sm:text-2xl font-black tracking-tight text-blue-900 dark:text-sky-400 truncate">
+                  {todayOrdersCount}
+                </div>
+                <p className={`text-[9px] sm:text-[10px] font-medium mt-0.5 sm:mt-1 truncate ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                  {todayDeliveredCount} Deliv • {todayPendingCount} Pend
+                </p>
+              </div>
+            </div>
+
+            {/* KPI 5: Total Customers */}
+            <div className={`p-3 sm:p-4.5 rounded-2xl border transition-all duration-300 relative overflow-hidden group hover:scale-[1.02] shadow-xl ${
+              isDarkMode 
+                ? 'bg-slate-900/80 border-slate-800 text-slate-100 hover:border-sky-500/40' 
+                : 'bg-white/90 border-slate-200/80 text-slate-900 hover:border-blue-400'
+            }`}>
+              <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-blue-500/10 rounded-full blur-xl group-hover:bg-blue-500/20 transition-all" />
+              <div className="flex items-center justify-between gap-1">
+                <span className={`text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider truncate ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                  Total Customers
+                </span>
+                <div className="p-1.5 sm:p-2 rounded-xl bg-blue-50 dark:bg-sky-500/15 text-blue-800 dark:text-sky-400 font-bold border border-blue-200 dark:border-sky-500/20 shrink-0">
+                  <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </div>
+              </div>
+              <div className="mt-2 sm:mt-2.5">
+                <div className="text-lg sm:text-2xl font-black tracking-tight text-blue-900 dark:text-sky-400 truncate">
+                  {uniqueCustomers}
+                </div>
+                <p className={`text-[9px] sm:text-[10px] font-medium mt-0.5 sm:mt-1 truncate ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                  Patient profiles
+                </p>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* KPI 6: Reminders Count (Visible to Salesperson & Admin) */}
+        <div className={`p-3 sm:p-4.5 rounded-2xl border transition-all duration-300 relative overflow-hidden group hover:scale-[1.02] shadow-xl ${
           isDarkMode 
-            ? 'bg-slate-900/80 border-slate-800 text-slate-100 hover:border-blue-500/40' 
+            ? 'bg-slate-900/80 border-slate-800 text-slate-100 hover:border-sky-500/40' 
             : 'bg-white/90 border-slate-200/80 text-slate-900 hover:border-blue-400'
         }`}>
-          <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-blue-500/10 rounded-full blur-xl group-hover:bg-blue-500/20 transition-all" />
-          <div className="flex items-center justify-between">
-            <span className={`text-xs font-extrabold uppercase tracking-wider ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-              Total Orders
-            </span>
-            <div className="p-2.5 rounded-xl bg-blue-500/15 text-blue-500 font-bold border border-blue-500/20">
-              <ShoppingBag className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="text-2xl sm:text-3xl font-black tracking-tight text-blue-500">
-              {totalOrders}
-            </div>
-            <p className={`text-[11px] font-medium mt-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-              {deliveredCount} Delivered • {dueRemindersCount} Pending
-            </p>
-          </div>
-        </div>
-
-        {/* KPI 3: Total Balance Due */}
-        <div className={`p-5 rounded-2xl border transition-all duration-300 relative overflow-hidden group hover:scale-[1.02] shadow-xl ${
-          isDarkMode 
-            ? 'bg-slate-900/80 border-slate-800 text-slate-100 hover:border-rose-500/40' 
-            : 'bg-white/90 border-slate-200/80 text-slate-900 hover:border-rose-400'
-        }`}>
-          <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-rose-500/10 rounded-full blur-xl group-hover:bg-rose-500/20 transition-all" />
-          <div className="flex items-center justify-between">
-            <span className={`text-xs font-extrabold uppercase tracking-wider ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-              Total Balance
-            </span>
-            <div className="p-2.5 rounded-xl bg-rose-500/15 text-rose-500 font-bold border border-rose-500/20">
-              <Wallet className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="text-2xl sm:text-3xl font-black tracking-tight text-rose-500">
-              ₹{totalBalance.toLocaleString('en-IN')}
-            </div>
-            <p className={`text-[11px] font-medium mt-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-              Outstanding customer receivables
-            </p>
-          </div>
-        </div>
-
-        {/* KPI 4: Total Customers */}
-        <div className={`p-5 rounded-2xl border transition-all duration-300 relative overflow-hidden group hover:scale-[1.02] shadow-xl ${
-          isDarkMode 
-            ? 'bg-slate-900/80 border-slate-800 text-slate-100 hover:border-indigo-500/40' 
-            : 'bg-white/90 border-slate-200/80 text-slate-900 hover:border-indigo-400'
-        }`}>
-          <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-indigo-500/10 rounded-full blur-xl group-hover:bg-indigo-500/20 transition-all" />
-          <div className="flex items-center justify-between">
-            <span className={`text-xs font-extrabold uppercase tracking-wider ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-              Total Customers
-            </span>
-            <div className="p-2.5 rounded-xl bg-indigo-500/15 text-indigo-500 font-bold border border-indigo-500/20">
-              <Users className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="text-2xl sm:text-3xl font-black tracking-tight text-indigo-500">
-              {uniqueCustomers}
-            </div>
-            <p className={`text-[11px] font-medium mt-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-              Registered patient profiles
-            </p>
-          </div>
-        </div>
-
-        {/* KPI 5: Reminders Count */}
-        <div className={`p-5 rounded-2xl border transition-all duration-300 relative overflow-hidden group hover:scale-[1.02] shadow-xl ${
-          isDarkMode 
-            ? 'bg-slate-900/80 border-slate-800 text-slate-100 hover:border-amber-500/40' 
-            : 'bg-white/90 border-slate-200/80 text-slate-900 hover:border-amber-400'
-        }`}>
-          <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-amber-500/10 rounded-full blur-xl group-hover:bg-amber-500/20 transition-all" />
-          <div className="flex items-center justify-between">
-            <span className={`text-xs font-extrabold uppercase tracking-wider ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+          <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-blue-500/10 rounded-full blur-xl group-hover:bg-blue-500/20 transition-all" />
+          <div className="flex items-center justify-between gap-1">
+            <span className={`text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider truncate ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
               Due Reminders
             </span>
-            <div className="p-2.5 rounded-xl bg-amber-500/15 text-amber-500 font-bold border border-amber-500/20">
-              <Bell className="w-5 h-5" />
+            <div className="p-1.5 sm:p-2 rounded-xl bg-blue-50 dark:bg-sky-500/15 text-blue-800 dark:text-sky-400 font-bold border border-blue-200 dark:border-sky-500/20 shrink-0">
+              <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
-          <div className="mt-3">
-            <div className="text-2xl sm:text-3xl font-black tracking-tight text-amber-500">
+          <div className="mt-2 sm:mt-2.5">
+            <div className="text-lg sm:text-2xl font-black tracking-tight text-blue-900 dark:text-sky-400 truncate">
               {dueRemindersCount}
             </div>
-            <p className={`text-[11px] font-medium mt-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-              Pending delivery notifications
+            <p className={`text-[9px] sm:text-[10px] font-medium mt-0.5 sm:mt-1 truncate ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+              Pending deliveries
             </p>
           </div>
         </div>
@@ -228,7 +277,7 @@ export default function DashboardPage({ bills, isDarkMode, onNavigateToReminders
             <h2 className={`text-lg sm:text-xl font-bold flex items-center gap-2.5 ${
               isDarkMode ? 'text-slate-100' : 'text-slate-800'
             }`}>
-              <Calendar className="w-5 h-5 text-sky-500" />
+              <Calendar className="w-5 h-5 text-blue-700 dark:text-sky-500" />
               Customer Delivery Schedule & Reminders
             </h2>
             <p className={`text-xs mt-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
@@ -245,7 +294,7 @@ export default function DashboardPage({ bills, isDarkMode, onNavigateToReminders
                 placeholder="Search name, phone, bill..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className={`w-full sm:w-60 pl-9 pr-3 py-2 text-xs font-semibold rounded-xl border focus:outline-none focus:ring-2 focus:ring-sky-500 ${
+                className={`w-full sm:w-60 pl-9 pr-3 py-2 text-xs font-semibold rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   isDarkMode 
                     ? 'bg-slate-950/80 border-slate-700 text-slate-200 placeholder-slate-500' 
                     : 'bg-slate-100 border-slate-300 text-slate-800 placeholder-slate-400'
@@ -259,7 +308,7 @@ export default function DashboardPage({ bills, isDarkMode, onNavigateToReminders
                 onClick={() => setDateFilter('all')}
                 className={`px-3 py-1.5 rounded-lg cursor-pointer transition-all ${
                   dateFilter === 'all'
-                    ? 'bg-sky-500 text-white font-bold shadow-md'
+                    ? 'bg-blue-700 dark:bg-sky-500 text-white font-bold shadow-md'
                     : isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -269,7 +318,7 @@ export default function DashboardPage({ bills, isDarkMode, onNavigateToReminders
                 onClick={() => setDateFilter('today')}
                 className={`px-3 py-1.5 rounded-lg cursor-pointer transition-all ${
                   dateFilter === 'today'
-                    ? 'bg-sky-500 text-white font-bold shadow-md'
+                    ? 'bg-blue-700 dark:bg-sky-500 text-white font-bold shadow-md'
                     : isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -279,7 +328,7 @@ export default function DashboardPage({ bills, isDarkMode, onNavigateToReminders
                 onClick={() => setDateFilter('overdue')}
                 className={`px-3 py-1.5 rounded-lg cursor-pointer transition-all ${
                   dateFilter === 'overdue'
-                    ? 'bg-rose-500 text-white font-bold shadow-md'
+                    ? 'bg-blue-900 dark:bg-sky-700 text-white font-bold shadow-md'
                     : isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -289,7 +338,7 @@ export default function DashboardPage({ bills, isDarkMode, onNavigateToReminders
                 onClick={() => setDateFilter('upcoming')}
                 className={`px-3 py-1.5 rounded-lg cursor-pointer transition-all ${
                   dateFilter === 'upcoming'
-                    ? 'bg-emerald-500 text-white font-bold shadow-md'
+                    ? 'bg-blue-800 dark:bg-sky-600 text-white font-bold shadow-md'
                     : isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -299,134 +348,268 @@ export default function DashboardPage({ bills, isDarkMode, onNavigateToReminders
           </div>
         </div>
 
-        {/* Customer Info Table */}
-        <div className="overflow-x-auto rounded-2xl border border-slate-700/20">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className={`border-b font-extrabold uppercase tracking-wider ${
-                isDarkMode 
-                  ? 'bg-slate-950/60 border-slate-800 text-slate-400' 
-                  : 'bg-slate-100 border-slate-200 text-slate-600'
-              }`}>
-                <th className="py-3 px-4">Bill No</th>
-                <th className="py-3 px-4">Customer Info</th>
-                <th className="py-3 px-4">Delivery Date</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4">Net Amount</th>
-                <th className="py-3 px-4">Balance</th>
-                <th className="py-3 px-4 text-center">Action</th>
-              </tr>
-            </thead>
-            <tbody className={`divide-y font-medium ${
-              isDarkMode ? 'divide-slate-800 text-slate-200' : 'divide-slate-200 text-slate-800'
-            }`}>
-              {filteredBills.length === 0 ? (
-                <tr>
-                  <td colSpan="7" className="py-8 text-center text-slate-400 font-semibold">
-                    No customer delivery records match the current filter.
-                  </td>
-                </tr>
-              ) : (
-                filteredBills.map((bill) => {
-                  const isDelivered = bill.deliveryStatus === 'Delivered';
-                  const isOverdue = !isDelivered && bill.deliveryDate && bill.deliveryDate < todayStr;
+        {/* Customer Info Container: Desktop Table + Mobile Cards */}
+        {filteredBills.length === 0 ? (
+          <div className={`p-8 text-center rounded-2xl border font-semibold text-slate-400 ${
+            isDarkMode ? 'bg-slate-950/40 border-slate-800' : 'bg-slate-50 border-slate-200'
+          }`}>
+            No customer delivery records match the current filter.
+          </div>
+        ) : (
+          <>
+            {/* 1. Desktop Table View (>= md) */}
+            <div className="hidden md:block overflow-x-auto rounded-2xl border border-slate-700/20">
+              <table className="w-full min-w-[700px] text-left border-collapse text-xs">
+                <thead>
+                  <tr className={`border-b font-extrabold uppercase tracking-wider ${
+                    isDarkMode 
+                      ? 'bg-slate-950/60 border-slate-800 text-slate-400' 
+                      : 'bg-slate-100 border-slate-200 text-slate-600'
+                  }`}>
+                    <th className="py-3 px-4">Bill No</th>
+                    <th className="py-3 px-4">Customer Info</th>
+                    <th className="py-3 px-4">Delivery Date</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4">Net Amount</th>
+                    <th className="py-3 px-4">Advance</th>
+                    <th className="py-3 px-4">Balance</th>
+                    <th className="py-3 px-4 text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody className={`divide-y font-medium ${
+                  isDarkMode ? 'divide-slate-800 text-slate-200' : 'divide-slate-200 text-slate-800'
+                }`}>
+                  {filteredBills.map((bill) => {
+                    const isDelivered = bill.deliveryStatus === 'Delivered';
+                    const isOverdue = !isDelivered && bill.deliveryDate && bill.deliveryDate < todayStr;
 
-                  return (
-                    <tr 
-                      key={bill._id || bill.billNo}
-                      className={`transition-colors duration-150 ${
-                        isDarkMode ? 'hover:bg-slate-800/40' : 'hover:bg-slate-50'
-                      }`}
-                    >
-                      {/* Bill No */}
-                      <td className="py-3 px-4 font-bold text-sky-400">
-                        #{bill.billNo}
-                      </td>
+                    return (
+                      <tr 
+                        key={bill._id || bill.billNo}
+                        className={`transition-colors duration-150 ${
+                          isDarkMode ? 'hover:bg-slate-800/40' : 'hover:bg-slate-50'
+                        }`}
+                      >
+                        {/* Bill No */}
+                        <td className="py-3 px-4 font-bold text-blue-800 dark:text-sky-400">
+                          #{bill.billNo}
+                        </td>
+
+                        {/* Customer Info */}
+                        <td className="py-3 px-4">
+                          <div className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                            {bill.customer?.name || 'N/A'}
+                          </div>
+                          <div className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
+                            <Phone className="w-3 h-3 text-blue-700 dark:text-sky-400" />
+                            <span>{bill.customer?.phone || 'No Phone'}</span>
+                            {bill.customer?.mrdNo && (
+                              <span className="opacity-75">• MRD: {bill.customer.mrdNo}</span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Delivery Date */}
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-1.5 font-bold font-mono">
+                            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                            <span>{bill.deliveryDate || bill.date || 'N/A'}</span>
+                          </div>
+                          {isOverdue && (
+                            <span className="text-[10px] text-blue-800 dark:text-sky-400 font-bold flex items-center gap-1 mt-0.5">
+                              <AlertTriangle className="w-3 h-3" /> Overdue
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Status */}
+                        <td className="py-3 px-4">
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold border ${
+                            isDelivered 
+                              ? 'bg-blue-50 dark:bg-sky-500/15 border-blue-200 dark:border-sky-500/30 text-blue-800 dark:text-sky-400'
+                              : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                          }`}>
+                            {isDelivered ? (
+                              <>
+                                <CheckCircle2 className="w-3 h-3" /> Delivered
+                              </>
+                            ) : (
+                              <>
+                                <Clock className="w-3 h-3 animate-pulse text-blue-700 dark:text-sky-400" /> Pending
+                              </>
+                            )}
+                          </span>
+                        </td>
+
+                        {/* Net Amount */}
+                        <td className="py-3 px-4 font-extrabold text-slate-900 dark:text-slate-300">
+                          ₹{Number(bill.netAmount || 0).toLocaleString('en-IN')}
+                        </td>
+
+                        {/* Advance */}
+                        <td className="py-3 px-4 font-bold text-emerald-700 dark:text-emerald-400">
+                          ₹{Number(bill.advanceAmount || 0).toLocaleString('en-IN')}
+                        </td>
+
+                        {/* Balance */}
+                        <td className="py-3 px-4">
+                          <span className={`font-black ${
+                            Number(bill.balanceAmount || 0) > 0 ? 'text-blue-800 dark:text-sky-400' : 'text-slate-700 dark:text-slate-300'
+                          }`}>
+                            ₹{Number(bill.balanceAmount || 0).toLocaleString('en-IN')}
+                          </span>
+                        </td>
+
+                        {/* Action */}
+                        <td className="py-3 px-4 text-center">
+                          <button
+                            onClick={() => {
+                              if (onSelectBill) onSelectBill(bill);
+                              if (onNavigateToBilling) onNavigateToBilling();
+                            }}
+                            className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
+                              isDarkMode 
+                                ? 'bg-slate-800 border-slate-700 text-sky-400 hover:bg-sky-500 hover:text-white' 
+                                : 'bg-blue-50 border-blue-200 text-blue-800 hover:bg-blue-700 hover:text-white'
+                            }`}
+                            title="View Bill in POS"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* 2. Mobile Cards View (< md) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 md:hidden">
+              {filteredBills.map((bill) => {
+                const isDelivered = bill.deliveryStatus === 'Delivered';
+                const isOverdue = !isDelivered && bill.deliveryDate && bill.deliveryDate < todayStr;
+
+                return (
+                  <div
+                    key={bill._id || bill.billNo}
+                    className={`p-4 rounded-2xl border transition-all shadow-lg flex flex-col justify-between relative overflow-hidden ${
+                      isDarkMode 
+                        ? 'bg-slate-900/90 border-slate-800 text-slate-100' 
+                        : 'bg-white border-slate-200 text-slate-900'
+                    }`}
+                  >
+                    {/* Top Accent Bar */}
+                    <div className={`absolute top-0 left-0 right-0 h-1.5 ${
+                      isDelivered ? 'bg-emerald-500' : isOverdue ? 'bg-rose-500' : 'bg-blue-600'
+                    }`} />
+
+                    <div>
+                      {/* Top Header Row */}
+                      <div className="flex items-center justify-between gap-2 mb-3 pt-1">
+                        <span className="px-3 py-1 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-700 dark:text-sky-400 font-mono font-black text-xs">
+                          #{bill.billNo}
+                        </span>
+
+                        <div className="flex items-center gap-1.5">
+                          {isOverdue && (
+                            <span className="px-2 py-0.5 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-800 dark:text-rose-400 font-extrabold text-[10px] flex items-center gap-1">
+                              <AlertTriangle className="w-3 h-3 text-rose-700 dark:text-rose-400" /> Overdue
+                            </span>
+                          )}
+                          <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold flex items-center gap-1 border ${
+                            isDelivered
+                              ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-800 dark:text-emerald-400'
+                              : 'bg-blue-500/15 border-blue-500/30 text-blue-800 dark:text-sky-400'
+                          }`}>
+                            {isDelivered ? <CheckCircle2 className="w-3 h-3" /> : <Clock className="w-3 h-3 animate-pulse" />}
+                            {isDelivered ? 'Delivered' : 'Pending'}
+                          </span>
+                        </div>
+                      </div>
 
                       {/* Customer Info */}
-                      <td className="py-3 px-4">
-                        <div className="font-bold text-sm">
-                          {bill.customer?.name || 'N/A'}
-                        </div>
-                        <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-0.5">
-                          <Phone className="w-3 h-3 text-sky-400" />
-                          <span>{bill.customer?.phone || 'No Phone'}</span>
-                          {bill.customer?.mrdNo && (
-                            <span className="opacity-75">• MRD: {bill.customer.mrdNo}</span>
+                      <div className="space-y-2 mb-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <h3 className="text-base font-black tracking-tight text-slate-900 dark:text-slate-100">
+                              {bill.customer?.name || 'Unnamed Customer'}
+                            </h3>
+                            {bill.customer?.mrdNo && (
+                              <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400 font-medium">
+                                MRD: {bill.customer.mrdNo}
+                              </div>
+                            )}
+                          </div>
+
+                          {bill.customer?.phone && (
+                            <a 
+                              href={`tel:${bill.customer.phone}`}
+                              className="px-2.5 py-1 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 dark:bg-sky-500/15 dark:border-sky-500/30 dark:text-sky-400 text-xs font-mono font-bold flex items-center gap-1 shrink-0"
+                            >
+                              <Phone className="w-3 h-3 text-blue-700 dark:text-sky-400" />
+                              <span>{bill.customer.phone}</span>
+                            </a>
                           )}
                         </div>
-                      </td>
 
-                      {/* Delivery Date */}
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-1.5 font-bold font-mono">
-                          <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{bill.deliveryDate || bill.date || 'N/A'}</span>
+                        {/* Delivery Schedule details */}
+                        <div className={`p-2.5 rounded-xl border text-xs space-y-1.5 ${
+                          isDarkMode ? 'bg-slate-950/60 border-slate-800' : 'bg-slate-50 border-slate-200'
+                        }`}>
+                          <div className="flex justify-between items-center text-slate-500 dark:text-slate-400 font-medium">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3.5 h-3.5 text-blue-700 dark:text-sky-400" /> Delivery Date:
+                            </span>
+                            <span className="font-bold text-slate-900 dark:text-slate-100 font-mono">
+                              {bill.deliveryDate || bill.date || 'N/A'}
+                            </span>
+                          </div>
                         </div>
-                        {isOverdue && (
-                          <span className="text-[10px] text-rose-500 font-bold flex items-center gap-1 mt-0.5">
-                            <AlertTriangle className="w-3 h-3" /> Overdue
-                          </span>
-                        )}
-                      </td>
 
-                      {/* Status */}
-                      <td className="py-3 px-4">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold border ${
-                          isDelivered 
-                            ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
-                            : 'bg-amber-500/15 border-amber-500/30 text-amber-400'
-                        }`}>
-                          {isDelivered ? (
-                            <>
-                              <CheckCircle2 className="w-3 h-3" /> Delivered
-                            </>
-                          ) : (
-                            <>
-                              <Clock className="w-3 h-3 animate-pulse" /> Pending
-                            </>
-                          )}
-                        </span>
-                      </td>
+                        {/* Financial Summary */}
+                        <div className="grid grid-cols-3 gap-2 p-2 rounded-xl bg-slate-500/10 border border-slate-400/20 text-xs text-center">
+                          <div>
+                            <div className="text-[9px] text-slate-500 dark:text-slate-400 font-bold uppercase">Net Bill</div>
+                            <div className="font-extrabold text-slate-900 dark:text-slate-100">
+                              ₹{Number(bill.netAmount || 0).toLocaleString('en-IN')}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-[9px] text-slate-500 dark:text-slate-400 font-bold uppercase">Advance</div>
+                            <div className="font-extrabold text-emerald-700 dark:text-emerald-400">
+                              ₹{Number(bill.advanceAmount || 0).toLocaleString('en-IN')}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-[9px] text-slate-500 dark:text-slate-400 font-bold uppercase">Balance</div>
+                            <div className={`font-black ${
+                              Number(bill.balanceAmount || 0) > 0 ? 'text-blue-800 dark:text-sky-400' : 'text-slate-700 dark:text-slate-300'
+                            }`}>
+                              ₹{Number(bill.balanceAmount || 0).toLocaleString('en-IN')}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 
-                      {/* Net Amount */}
-                      <td className="py-3 px-4 font-extrabold text-slate-300">
-                        ₹{Number(bill.netAmount || 0).toLocaleString('en-IN')}
-                      </td>
-
-                      {/* Balance */}
-                      <td className="py-3 px-4">
-                        <span className={`font-black ${
-                          Number(bill.balanceAmount || 0) > 0 ? 'text-rose-400' : 'text-emerald-400'
-                        }`}>
-                          ₹{Number(bill.balanceAmount || 0).toLocaleString('en-IN')}
-                        </span>
-                      </td>
-
-                      {/* Action */}
-                      <td className="py-3 px-4 text-center">
-                        <button
-                          onClick={() => {
-                            if (onSelectBill) onSelectBill(bill);
-                            if (onNavigateToBilling) onNavigateToBilling();
-                          }}
-                          className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
-                            isDarkMode 
-                              ? 'bg-slate-800 border-slate-700 text-sky-400 hover:bg-sky-500 hover:text-white' 
-                              : 'bg-slate-100 border-slate-300 text-sky-600 hover:bg-sky-500 hover:text-white'
-                          }`}
-                          title="View Bill in POS"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                    {/* Action Button */}
+                    <button
+                      onClick={() => {
+                        if (onSelectBill) onSelectBill(bill);
+                        if (onNavigateToBilling) onNavigateToBilling();
+                      }}
+                      className="w-full py-2 px-3 rounded-xl bg-blue-700 hover:bg-blue-600 text-white font-bold text-xs shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 mt-1"
+                    >
+                      <Eye className="w-4 h-4" />
+                      <span>View Bill in POS</span>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

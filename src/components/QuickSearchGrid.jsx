@@ -61,7 +61,7 @@ export default function QuickSearchGrid({
         }`}
       >
         {/* Prescription Header */}
-        <div className={`grid grid-cols-6 gap-1 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-center border-b ${
+        <div className={`grid grid-cols-5 gap-1 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-center border-b ${
           isDarkMode 
             ? 'bg-slate-900/90 border-slate-800 text-slate-400' 
             : 'bg-slate-100/90 border-slate-200 text-slate-600'
@@ -71,11 +71,11 @@ export default function QuickSearchGrid({
           <span>CYL</span>
           <span>AXIS</span>
           <span>ADD</span>
-          <span>V/A</span>
+          {/* <span>V/A</span> */}
         </div>
 
         {/* Right Eye RE Box / Row */}
-        <div className={`grid grid-cols-6 gap-1 px-2 py-1 items-center text-center border-b ${
+        <div className={`grid grid-cols-5 gap-1 px-2 py-1 items-center text-center border-b ${
           isDarkMode 
             ? 'border-slate-800/70 bg-rose-950/25 text-slate-200' 
             : 'border-slate-100 bg-rose-50/70 text-slate-800'
@@ -88,11 +88,11 @@ export default function QuickSearchGrid({
           <span className="font-semibold">{rCyl || '-'}</span>
           <span className="font-semibold">{rAxi || '-'}</span>
           <span className="font-bold text-amber-500">{rAdd || '-'}</span>
-          <span className="opacity-70 text-[9px]">{rVa || '-'}</span>
+          {/* <span className="opacity-70 text-[9px] truncate" title={rVa || ''}>{rVa || '-'}</span> */}
         </div>
 
         {/* Left Eye LE Box / Row */}
-        <div className={`grid grid-cols-6 gap-1 px-2 py-1 items-center text-center ${
+        <div className={`grid grid-cols-5 gap-1 px-2 py-1 items-center text-center ${
           isDarkMode 
             ? 'bg-sky-950/25 text-slate-200' 
             : 'bg-sky-50/70 text-slate-800'
@@ -105,7 +105,7 @@ export default function QuickSearchGrid({
           <span className="font-semibold">{lCyl || '-'}</span>
           <span className="font-semibold">{lAxi || '-'}</span>
           <span className="font-bold text-amber-500">{lAdd || '-'}</span>
-          <span className="opacity-70 text-[9px]">{lVa || '-'}</span>
+          {/* <span className="opacity-70 text-[9px] truncate" title={lVa || ''}>{lVa || '-'}</span> */}
         </div>
 
         {/* Optional PD / RI details */}

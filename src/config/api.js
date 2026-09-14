@@ -3,6 +3,7 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localho
 
 export const BILLS_API = `${API_BASE_URL}/bills`;
 export const CATALOG_API = `${API_BASE_URL}/catalog`;
+export const CUSTOMERS_API = `${API_BASE_URL}/customers`;
 export const HEALTH_API = `${API_BASE_URL}/health`;
 
 export default API_BASE_URL;
