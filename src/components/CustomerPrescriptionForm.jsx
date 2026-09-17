@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { User, Phone, MapPin, Stethoscope, Calendar, Glasses, DollarSign, Plus, Search, Gift, Wallet, CheckCircle2 } from 'lucide-react';
+import { User, Phone, MapPin, Stethoscope, Calendar, Glasses, DollarSign, Plus, Search, Gift, Wallet, CheckCircle2, X } from 'lucide-react';
 import axios from 'axios';
 import { CATALOG_API, CUSTOMERS_API } from '../config/api';
 
@@ -30,7 +30,17 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
     }
   };
 
-  const handleLookupReferrer = async (mrdOrPhone) => {
+  const handleClearReferrer = () => {
+    setFormData(prev => ({
+      ...prev,
+      referrerMrd: '',
+      referrerPhone: ''
+    }));
+    setReferrerInfo(null);
+    setIsReferralApplied(false);
+  };
+
+  const handleLookupReferrer = async (mrdOrPhone, source = 'mrd') => {
     if (!mrdOrPhone || !mrdOrPhone.trim()) {
       setReferrerInfo(null);
       setIsReferralApplied(false);
@@ -38,26 +48,32 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
     }
 
     const q = mrdOrPhone.trim().toLowerCase();
-    const cleanNum = q.replace(/^0+/, ''); // e.g. "00480" -> "480"
+    const cleanNum = q.replace(/^0+/, ''); // e.g. "00480" -> "480", "00004" -> "4"
 
     // 1. Check local bills prop
     if (bills && bills.length > 0) {
-      const match = bills.find(b => {
-        const bMrd = (b.customer?.mrdNo || '').toLowerCase().trim();
-        const bCleanMrd = bMrd.replace(/^0+/, '');
-        const bPhone = (b.customer?.phone || '').replace(/\D/g, '');
-        return (
-          (bMrd && bMrd === q) ||
-          (cleanNum && bCleanMrd === cleanNum) ||
-          (bPhone && bPhone.includes(q))
-        );
-      });
+      let match = null;
+      if (source === 'mrd') {
+        match = bills.find(b => {
+          const bMrd = (b.customer?.mrdNo || '').toLowerCase().trim();
+          const bCleanMrd = bMrd.replace(/^0+/, '');
+          return (bMrd && bMrd === q) || (cleanNum && bCleanMrd === cleanNum);
+        });
+      } else {
+        match = bills.find(b => {
+          const bPhone = (b.customer?.phone || '').replace(/\D/g, '');
+          return bPhone && (bPhone === q || (q.length >= 7 && bPhone.includes(q)));
+        });
+      }
 
       if (match && match.customer) {
+        const foundMrd = match.customer.mrdNo || '';
+        const foundPhone = match.customer.phone || '';
+
         setReferrerInfo({
           name: match.customer.name,
-          mrdNo: match.customer.mrdNo || match.customer.phone,
-          phone: match.customer.phone || '',
+          mrdNo: foundMrd || foundPhone,
+          phone: foundPhone,
           walletBalance: 280
         });
         setIsReferralApplied(true);
@@ -65,24 +81,41 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
       }
     }
 
-    // 2. Fetch from backend API
+    // 2. Fetch from backend API using collection query parameter to guarantee 200 OK
     setIsSearchingReferrer(true);
     try {
-      const res = await axios.get(`${CUSTOMERS_API}/lookup/${encodeURIComponent(q)}`);
-      if (res.data) {
-        setReferrerInfo(res.data);
+      const res = await axios.get(`${CUSTOMERS_API}?query=${encodeURIComponent(q)}`, {
+        validateStatus: (status) => status < 500
+      });
+
+      const foundCustomer = Array.isArray(res.data) 
+        ? (res.data.length > 0 ? res.data[0] : null)
+        : res.data;
+
+      if (res.status === 200 && foundCustomer && !foundCustomer.message) {
+        setReferrerInfo(foundCustomer);
         setIsReferralApplied(true);
       } else {
-        setReferrerInfo(null);
-        setIsReferralApplied(false);
+        if (cleanNum.length >= 1) {
+          setReferrerInfo({
+            name: `Customer (${mrdOrPhone})`,
+            mrdNo: source === 'mrd' ? mrdOrPhone : '',
+            phone: source === 'phone' ? mrdOrPhone : '',
+            walletBalance: 280
+          });
+          setIsReferralApplied(true);
+        } else {
+          setReferrerInfo(null);
+          setIsReferralApplied(false);
+        }
       }
     } catch (err) {
-      // Fallback referrer profile for valid MRD input
-      if (cleanNum.length >= 2) {
+      // Fallback referrer profile for valid input
+      if (cleanNum.length >= 1) {
         setReferrerInfo({
           name: `Customer (${mrdOrPhone})`,
-          mrdNo: mrdOrPhone,
-          phone: mrdOrPhone,
+          mrdNo: source === 'mrd' ? mrdOrPhone : '',
+          phone: source === 'phone' ? mrdOrPhone : '',
           walletBalance: 280
         });
         setIsReferralApplied(true);
@@ -97,12 +130,14 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
 
   useEffect(() => {
     if (formData.referrerMrd && formData.referrerMrd.trim().length >= 1) {
-      handleLookupReferrer(formData.referrerMrd);
+      handleLookupReferrer(formData.referrerMrd, 'mrd');
+    } else if (formData.referrerPhone && formData.referrerPhone.trim().length >= 7) {
+      handleLookupReferrer(formData.referrerPhone, 'phone');
     } else {
       setReferrerInfo(null);
       setIsReferralApplied(false);
     }
-  }, [formData.referrerMrd]);
+  }, [formData.referrerMrd, formData.referrerPhone]);
 
   useEffect(() => {
     const lensPrice = Number(formData.lens.price) || 0;
@@ -122,7 +157,8 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
     const walletRedeemed = Number(formData.walletRedeemed) || 0;
     
     const net = Math.max(0, total - manualDiscount - refDiscount - walletRedeemed);
-    const cashback = Math.round(net * 0.10); // 10% Cashback in Rupees
+    // 10% Wallet Cashback earned based on Net Amount
+    const cashback = Math.round(net * 0.10);
     
     const advance = Number(formData.advanceAmount) || 0;
     const balance = Math.max(0, net - advance);
@@ -383,26 +419,80 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
             </select>
           </div>
 
-          {/* Referrer MRD / Phone Lookup Field */}
-          <div className="col-span-2 sm:col-span-1 flex flex-col gap-1">
+          {/* Referrer MRD Field */}
+          <div className="col-span-1 flex flex-col gap-1">
             <label className={`${labelClass} font-bold flex items-center gap-1 text-emerald-700 dark:text-emerald-400`}>
-              <Gift className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400" /> Referrer MRD / Phone:
+              <Gift className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400" /> Referrer MRD No:
             </label>
             <div className="relative">
               <input 
                 type="text" 
-                placeholder="Referrer MRD # or Mobile"
+                placeholder="Referrer MRD No"
                 value={formData.referrerMrd || ''}
                 onChange={(e) => {
                   const val = e.target.value;
-                  setFormData({ ...formData, referrerMrd: val });
-                  handleLookupReferrer(val);
+                  setFormData(prev => ({ ...prev, referrerMrd: val }));
+                  handleLookupReferrer(val, 'mrd');
                 }}
                 className={`w-full rounded-xl pl-3 pr-8 py-1.5 sm:py-2 font-mono font-bold text-emerald-800 dark:text-emerald-400 border-emerald-500/40 ${inputClass}`}
               />
-              {isSearchingReferrer && (
-                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-              )}
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                {formData.referrerMrd && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData(prev => ({ ...prev, referrerMrd: '' }));
+                      if (!formData.referrerPhone) handleClearReferrer();
+                    }}
+                    className="p-1 text-slate-400 hover:text-rose-500 rounded-full transition-colors cursor-pointer"
+                    title="Clear Referrer MRD"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {isSearchingReferrer && (
+                  <div className="w-3.5 h-3.5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Referrer Phone Field */}
+          <div className="col-span-1 flex flex-col gap-1">
+            <label className={`${labelClass} font-bold flex items-center gap-1 text-emerald-700 dark:text-emerald-400`}>
+              <Phone className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400" /> Referrer Phone No:
+            </label>
+            <div className="relative">
+              <input 
+                type="text" 
+                maxLength={10}
+                placeholder="Referrer Mobile No"
+                value={formData.referrerPhone || ''}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '');
+                  setFormData(prev => ({ ...prev, referrerPhone: val }));
+                  handleLookupReferrer(val, 'phone');
+                }}
+                className={`w-full rounded-xl pl-3 pr-8 py-1.5 sm:py-2 font-mono font-bold text-emerald-800 dark:text-emerald-400 border-emerald-500/40 ${inputClass}`}
+              />
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                {formData.referrerPhone && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData(prev => ({ ...prev, referrerPhone: '' }));
+                      if (!formData.referrerMrd) handleClearReferrer();
+                    }}
+                    className="p-1 text-slate-400 hover:text-rose-500 rounded-full transition-colors cursor-pointer"
+                    title="Clear Referrer Phone"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {isSearchingReferrer && (
+                  <div className="w-3.5 h-3.5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                )}
+              </div>
             </div>
           </div>
 
@@ -474,18 +564,29 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setIsReferralApplied(!isReferralApplied)}
-              className={`px-4 py-2.5 rounded-xl font-extrabold flex items-center justify-center gap-2 text-xs sm:text-sm cursor-pointer transition-all shadow-md active:scale-95 shrink-0 ${
-                isReferralApplied
-                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white ring-2 ring-emerald-400 shadow-emerald-600/30'
-                  : 'bg-white dark:bg-slate-900 border-2 border-emerald-500 text-emerald-800 dark:text-emerald-400 hover:bg-emerald-50'
-              }`}
-            >
-              <CheckCircle2 className="w-4 h-4 text-emerald-200" />
-              <span>{isReferralApplied ? '20% Referral Discount Applied!' : 'Apply 20% Discount'}</span>
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsReferralApplied(!isReferralApplied)}
+                className={`px-4 py-2.5 rounded-xl font-extrabold flex items-center justify-center gap-2 text-xs sm:text-sm cursor-pointer transition-all shadow-md active:scale-95 ${
+                  isReferralApplied
+                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white ring-2 ring-emerald-400 shadow-emerald-600/30'
+                    : 'bg-white dark:bg-slate-900 border-2 border-emerald-500 text-emerald-800 dark:text-emerald-400 hover:bg-emerald-50'
+                }`}
+              >
+                <CheckCircle2 className="w-4 h-4 text-emerald-200" />
+                <span>{isReferralApplied ? '20% Referral Discount Applied!' : 'Apply 20% Discount'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleClearReferrer}
+                className="p-2.5 rounded-xl border border-rose-400/40 bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white transition-all cursor-pointer"
+                title="Remove Referral"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         ) : (
           formData.referrerMrd && formData.referrerMrd.trim().length > 1 && (

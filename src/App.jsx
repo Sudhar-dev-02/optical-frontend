@@ -45,6 +45,7 @@ const defaultFormState = {
   discountAmount: '',
   referralDiscount: 0,
   referrerMrd: '',
+  referrerPhone: '',
   walletRedeemed: 0,
   cashbackEarned: 0,
   netAmount: 0,
@@ -367,12 +368,16 @@ function AppContent() {
   const filteredBills = bills.filter(b => {
     if (!searchQuery || !searchQuery.trim()) return false;
     const q = searchQuery.trim().toLowerCase();
-    return (
-      (b.customer?.name && b.customer.name.toLowerCase().includes(q)) ||
-      (b.customer?.phone && b.customer.phone.includes(q)) ||
-      (b.customer?.mrdNo && b.customer.mrdNo.includes(q)) ||
-      (b.billNo && b.billNo.toString().includes(q))
-    );
+    const cleanNum = q.replace(/^0+/, '');
+
+    const nameMatch = b.customer?.name && b.customer.name.toLowerCase().includes(q);
+    const mrdNo = (b.customer?.mrdNo || '').toLowerCase().trim();
+    const cleanMrd = mrdNo.replace(/^0+/, '');
+    const mrdMatch = mrdNo.includes(q) || (cleanNum && cleanMrd === cleanNum);
+    const billNoMatch = b.billNo && (b.billNo.toString() === q || b.billNo.toString() === cleanNum || b.billNo.toString().includes(q));
+    const phoneMatch = b.customer?.phone && (q.length >= 7 ? b.customer.phone.includes(q) : b.customer.phone === q);
+
+    return nameMatch || mrdMatch || billNoMatch || phoneMatch;
   });
 
   // Dedicated /login Route & Authentication Guard
