@@ -15,6 +15,7 @@ import LoginPage from './components/LoginPage';
 import StaffSetupPage from './components/StaffSetupPage';
 import ReportsPage from './components/ReportsPage';
 import CustomerInfoPage from './components/CustomerInfoPage';
+import WalletPage from './components/WalletPage';
 import DeliveryModal from './components/DeliveryModal';
 import { BILLS_API as API_BASE } from './config/api';
 
@@ -518,6 +519,36 @@ function AppContent() {
                   <FollowUpPage 
                     bills={bills}
                     isDarkMode={isDarkMode}
+                  />
+                </main>
+              } 
+            />
+
+            {/* Wallet & Loyalty Hub */}
+            <Route 
+              path="/wallet" 
+              element={
+                <main className="flex-1 w-full p-4.5 max-w-[1920px] mx-auto">
+                  <WalletPage 
+                    bills={bills}
+                    isDarkMode={isDarkMode}
+                    userRole={currentUser?.role}
+                    onSelectCustomerForBilling={(cust) => {
+                      // Pre-fill billing form with customer
+                      setFormData(prev => ({
+                        ...prev,
+                        customer: {
+                          ...prev.customer,
+                          name: cust.name || '',
+                          phone: cust.phone || '',
+                          mrdNo: cust.mrdNo || '',
+                          address: cust.address || '',
+                          gender: cust.gender || '',
+                          age: cust.age || ''
+                        }
+                      }));
+                      navigate('/billing');
+                    }}
                   />
                 </main>
               } 

@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { User, Phone, MapPin, Stethoscope, Calendar, Glasses, DollarSign, Plus, Search, Gift, Wallet, CheckCircle2, X } from 'lucide-react';
 import axios from 'axios';
 import { CATALOG_API, CUSTOMERS_API } from '../config/api';
+import { calculateCustomerWallet } from '../utils/wallet';
 
 export default function CustomerPrescriptionForm({ formData, setFormData, isEditing, isDarkMode, onToggleSearch, isSearchPanelOpen, userRole = 'admin', bills = [] }) {
   const [customOrderTakenOptions, setCustomOrderTakenOptions] = useState([]);
@@ -14,6 +15,11 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
   const [referrerInfo, setReferrerInfo] = useState(null);
   const [isReferralApplied, setIsReferralApplied] = useState(false);
   const [isSearchingReferrer, setIsSearchingReferrer] = useState(false);
+
+  // Dynamic available wallet balance for current customer
+  const currentCustomerWalletBalance = useMemo(() => {
+    return calculateCustomerWallet(formData.customer?.mrdNo || formData.customer?.phone, bills);
+  }, [formData.customer?.mrdNo, formData.customer?.phone, bills]);
 
   useEffect(() => {
     fetchCatalog();
@@ -69,12 +75,13 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
       if (match && match.customer) {
         const foundMrd = match.customer.mrdNo || '';
         const foundPhone = match.customer.phone || '';
+        const calculatedWallet = calculateCustomerWallet(foundMrd || foundPhone, bills);
 
         setReferrerInfo({
           name: match.customer.name,
           mrdNo: foundMrd || foundPhone,
           phone: foundPhone,
-          walletBalance: 280
+          walletBalance: calculatedWallet
         });
         setIsReferralApplied(true);
         return;
@@ -93,15 +100,20 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
         : res.data;
 
       if (res.status === 200 && foundCustomer && !foundCustomer.message) {
-        setReferrerInfo(foundCustomer);
+        const calculatedWallet = calculateCustomerWallet(foundCustomer.mrdNo || foundCustomer.phone, bills) || foundCustomer.walletBalance || 0;
+        setReferrerInfo({
+          ...foundCustomer,
+          walletBalance: calculatedWallet
+        });
         setIsReferralApplied(true);
       } else {
         if (cleanNum.length >= 1) {
+          const calculatedWallet = calculateCustomerWallet(mrdOrPhone, bills);
           setReferrerInfo({
             name: `Customer (${mrdOrPhone})`,
             mrdNo: source === 'mrd' ? mrdOrPhone : '',
             phone: source === 'phone' ? mrdOrPhone : '',
-            walletBalance: 280
+            walletBalance: calculatedWallet
           });
           setIsReferralApplied(true);
         } else {
@@ -112,11 +124,12 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
     } catch (err) {
       // Fallback referrer profile for valid input
       if (cleanNum.length >= 1) {
+        const calculatedWallet = calculateCustomerWallet(mrdOrPhone, bills);
         setReferrerInfo({
           name: `Customer (${mrdOrPhone})`,
           mrdNo: source === 'mrd' ? mrdOrPhone : '',
           phone: source === 'phone' ? mrdOrPhone : '',
-          walletBalance: 280
+          walletBalance: calculatedWallet
         });
         setIsReferralApplied(true);
       } else {
@@ -559,7 +572,7 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
                 </div>
                 <div className="text-xs font-bold text-emerald-800 dark:text-emerald-400 mt-1 flex items-center gap-1.5">
                   <Wallet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                  <span>Referrer Wallet Balance: <strong className="text-sm font-mono font-black text-emerald-900 dark:text-emerald-300">₹{Number(referrerInfo.walletBalance || 280).toLocaleString('en-IN')} Rupees</strong></span>
+                  <span>Referrer Wallet Balance: <strong className="text-sm font-mono font-black text-emerald-900 dark:text-emerald-300">₹{Number(referrerInfo.walletBalance || 0).toLocaleString('en-IN')} Rupees</strong></span>
                 </div>
               </div>
             </div>
@@ -945,17 +958,42 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
 
               {/* Wallet Redeem Row */}
               <div className="flex items-center justify-between text-amber-800 dark:text-amber-400 font-bold">
-                <span className="flex items-center gap-1">
-                  <Wallet className="w-3.5 h-3.5" /> Wallet Redeem:
-                </span>
-                <input 
-                  type="text" 
-                  inputMode="decimal"
-                  placeholder="₹ 0"
-                  value={formData.walletRedeemed || ''}
-                  onChange={(e) => setFormData({ ...formData, walletRedeemed: e.target.value.replace(/[^0-9.]/g, '') })}
-                  className={`w-20 sm:w-24 rounded-lg px-2 py-1 text-right font-mono text-amber-800 dark:text-amber-400 font-bold ${inputClass}`}
-                />
+                <div className="flex flex-col">
+                  <span className="flex items-center gap-1">
+                    <Wallet className="w-3.5 h-3.5" /> Wallet Redeem:
+                  </span>
+                  {currentCustomerWalletBalance > 0 && (
+                    <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">
+                      (Avail: ₹{currentCustomerWalletBalance.toLocaleString('en-IN')})
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  {currentCustomerWalletBalance > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const maxRedeem = Math.min(
+                          currentCustomerWalletBalance,
+                          Math.max(0, (formData.totalAmount || 0) - (Number(formData.discountAmount) || 0) - (Number(formData.referralDiscount) || 0))
+                        );
+                        setFormData(prev => ({ ...prev, walletRedeemed: maxRedeem > 0 ? String(maxRedeem) : '' }));
+                      }}
+                      className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-800 dark:text-amber-300 hover:bg-amber-500/30 cursor-pointer transition-colors"
+                      title="Redeem Max Available Customer Wallet"
+                    >
+                      Max
+                    </button>
+                  )}
+                  <input 
+                    type="text" 
+                    inputMode="decimal"
+                    placeholder="₹ 0"
+                    value={formData.walletRedeemed || ''}
+                    onChange={(e) => setFormData({ ...formData, walletRedeemed: e.target.value.replace(/[^0-9.]/g, '') })}
+                    className={`w-20 sm:w-24 rounded-lg px-2 py-1 text-right font-mono text-amber-800 dark:text-amber-400 font-bold ${inputClass}`}
+                  />
+                </div>
               </div>
 
               <div className="flex items-center justify-between pt-1.5 border-t border-slate-400/20">

@@ -12,7 +12,8 @@ import {
   PhoneCall,
   BarChart3,
   Users,
-  UserPlus
+  UserPlus,
+  Wallet
 } from 'lucide-react';
 import logoImg from '../assets/logo.jpeg';
 
@@ -35,6 +36,7 @@ export default function Sidebar({
     { id: 'billing', label: 'Billing & POS', icon: FileText, color: 'from-blue-600 to-indigo-700', badge: null },
     { id: 'reminders', label: 'Reminders', icon: Bell, color: 'from-blue-600 to-indigo-700', badge: pendingCount > 0 ? pendingCount : null },
     { id: 'followup', label: 'Follow-Up', icon: PhoneCall, color: 'from-blue-600 to-indigo-700', badge: null },
+    { id: 'wallet', label: 'Wallet Hub', icon: Wallet, color: 'from-blue-600 to-indigo-700', badge: null },
     ...(userRole === 'admin' ? [
       { id: 'reports', label: 'Reports', icon: BarChart3, color: 'from-blue-600 to-indigo-700', badge: null },
       { id: 'customers', label: 'Customer Info', icon: Users, color: 'from-blue-600 to-indigo-700', badge: null },
