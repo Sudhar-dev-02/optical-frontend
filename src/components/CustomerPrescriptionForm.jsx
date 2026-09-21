@@ -14,6 +14,7 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
   const [dbCatalog, setDbCatalog] = useState(null);
   const [referrerInfo, setReferrerInfo] = useState(null);
   const [isReferralApplied, setIsReferralApplied] = useState(false);
+  const [isCashbackApplied, setIsCashbackApplied] = useState(true);
   const [isSearchingReferrer, setIsSearchingReferrer] = useState(false);
 
   // Dynamic available wallet balance for current customer
@@ -40,7 +41,8 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
     setFormData(prev => ({
       ...prev,
       referrerMrd: '',
-      referrerPhone: ''
+      referrerPhone: '',
+      referralDiscount: 0
     }));
     setReferrerInfo(null);
     setIsReferralApplied(false);
@@ -166,12 +168,13 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
     const manualDiscount = Number(formData.discountAmount) || 0;
     
     // 20% Referral Discount if Referral is applied
-    const refDiscount = isReferralApplied ? Math.round(total * 0.20) : (Number(formData.referralDiscount) || 0);
+    const refDiscount = isReferralApplied ? Math.round(total * 0.20) : 0;
     const walletRedeemed = Number(formData.walletRedeemed) || 0;
     
-    const net = Math.max(0, total - manualDiscount - refDiscount - walletRedeemed);
-    // 10% Wallet Cashback earned based on Net Amount
-    const cashback = Math.round(net * 0.10);
+    const subNet = Math.max(0, total - manualDiscount - refDiscount - walletRedeemed);
+    // 10% Wallet Cashback discount earned based on Net Amount if applied
+    const cashback = isCashbackApplied ? Math.round(subNet * 0.10) : 0;
+    const net = Math.max(0, subNet - cashback);
     
     const advance = Number(formData.advanceAmount) || 0;
     const balance = Math.max(0, net - advance);
@@ -188,7 +191,7 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
     formData.lens.qty, formData.lens.price,
     formData.frame.qty, formData.frame.price,
     formData.discountAmount, formData.advanceAmount,
-    formData.walletRedeemed, isReferralApplied
+    formData.walletRedeemed, isReferralApplied, isCashbackApplied
   ]);
 
   const handleCustomerChange = (field, value) => {
@@ -956,43 +959,67 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
                 </div>
               )}
 
-              {/* Wallet Redeem Row */}
-              <div className="flex items-center justify-between text-amber-800 dark:text-amber-400 font-bold">
-                <div className="flex flex-col">
-                  <span className="flex items-center gap-1">
-                    <Wallet className="w-3.5 h-3.5" /> Wallet Redeem:
+              {/* Wallet Redeem Row for Existing Customer Points */}
+              <div className="flex flex-col gap-1.5 p-2 rounded-xl border border-amber-500/30 bg-amber-500/5 dark:bg-amber-500/10 text-amber-900 dark:text-amber-300 font-bold text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Wallet className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    <span>Wallet Points Redeem:</span>
                   </span>
                   {currentCustomerWalletBalance > 0 && (
-                    <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">
+                    <span className="text-xs font-mono font-black text-amber-700 dark:text-amber-300">
                       (Avail: ₹{currentCustomerWalletBalance.toLocaleString('en-IN')})
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-1.5">
-                  {currentCustomerWalletBalance > 0 && (
+
+                <div className="flex items-center justify-between gap-2">
+                  {currentCustomerWalletBalance > 0 ? (
                     <button
                       type="button"
                       onClick={() => {
-                        const maxRedeem = Math.min(
-                          currentCustomerWalletBalance,
-                          Math.max(0, (formData.totalAmount || 0) - (Number(formData.discountAmount) || 0) - (Number(formData.referralDiscount) || 0))
-                        );
-                        setFormData(prev => ({ ...prev, walletRedeemed: maxRedeem > 0 ? String(maxRedeem) : '' }));
+                        const isRedeemed = Number(formData.walletRedeemed) > 0;
+                        if (isRedeemed) {
+                          setFormData(prev => ({ ...prev, walletRedeemed: '' }));
+                        } else {
+                          const maxRedeem = Math.min(
+                            currentCustomerWalletBalance,
+                            Math.max(0, (formData.totalAmount || 0) - (Number(formData.discountAmount) || 0) - (Number(formData.referralDiscount) || 0))
+                          );
+                          setFormData(prev => ({ ...prev, walletRedeemed: maxRedeem > 0 ? String(maxRedeem) : '' }));
+                        }
                       }}
-                      className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-800 dark:text-amber-300 hover:bg-amber-500/30 cursor-pointer transition-colors"
-                      title="Redeem Max Available Customer Wallet"
+                      className={`px-2.5 py-1 rounded-lg text-xs font-extrabold flex items-center gap-1 cursor-pointer transition-all shadow-xs active:scale-95 ${
+                        Number(formData.walletRedeemed) > 0
+                          ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-600/20'
+                          : 'bg-white dark:bg-slate-900 border border-amber-400 text-amber-800 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-slate-800'
+                      }`}
+                      title={Number(formData.walletRedeemed) > 0 ? 'Click to unapply wallet points' : `Click to apply available ₹${currentCustomerWalletBalance} points`}
                     >
-                      Max
+                      {Number(formData.walletRedeemed) > 0 ? (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-amber-200" />
+                          <span>Applied (₹{formData.walletRedeemed})</span>
+                        </>
+                      ) : (
+                        <span>Apply ₹{currentCustomerWalletBalance} Points</span>
+                      )}
                     </button>
+                  ) : (
+                    <span className="text-[11px] font-mono opacity-60">₹0 Points Available</span>
                   )}
-                  <input 
-                    type="text" 
-                    inputMode="decimal"
-                    placeholder="₹ 0"
-                    value={formData.walletRedeemed || ''}
-                    onChange={(e) => setFormData({ ...formData, walletRedeemed: e.target.value.replace(/[^0-9.]/g, '') })}
-                    className={`w-20 sm:w-24 rounded-lg px-2 py-1 text-right font-mono text-amber-800 dark:text-amber-400 font-bold ${inputClass}`}
-                  />
+
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs font-mono">- ₹</span>
+                    <input 
+                      type="text" 
+                      inputMode="decimal"
+                      placeholder="0"
+                      value={formData.walletRedeemed || ''}
+                      onChange={(e) => setFormData({ ...formData, walletRedeemed: e.target.value.replace(/[^0-9.]/g, '') })}
+                      className={`w-16 sm:w-20 rounded-lg px-2 py-1 text-right font-mono text-amber-800 dark:text-amber-400 font-bold ${inputClass}`}
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -1001,15 +1028,39 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
                 <span className="font-mono font-black text-blue-800 dark:text-sky-400 text-base">₹ {formData.netAmount.toFixed(2)}</span>
               </div>
 
-              {/* 10% Cashback Preview Badge */}
-              <div className="p-2.5 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-sky-500/15 dark:to-blue-600/15 border border-blue-200 dark:border-sky-500/30 text-blue-900 dark:text-sky-300 flex items-center justify-between text-xs font-bold shadow-xs">
-                <div className="flex items-center gap-1.5">
-                  <Wallet className="w-4 h-4 text-blue-700 dark:text-sky-400 animate-pulse" />
-                  <span>10% Wallet Cashback:</span>
+              {/* 10% Cashback Preview Badge with Apply/Unapply Toggle */}
+              <div className={`p-2.5 rounded-xl border flex items-center justify-between text-xs font-bold transition-all shadow-xs ${
+                isCashbackApplied
+                  ? 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-sky-500/15 dark:to-blue-600/15 border-blue-200 dark:border-sky-500/30 text-blue-900 dark:text-sky-300'
+                  : 'bg-slate-100 dark:bg-slate-800/60 border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400'
+              }`}>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <Wallet className={`w-4 h-4 ${isCashbackApplied ? 'text-blue-700 dark:text-sky-400 animate-pulse' : 'text-slate-400'}`} />
+                  <span>10% Wallet Cashback Off:</span>
+                  <span className="font-mono font-extrabold text-sm ml-0.5">
+                    {isCashbackApplied ? `- ₹ ${formData.cashbackEarned || 0}.00` : '₹ 0.00 (Unapplied)'}
+                  </span>
                 </div>
-                <span className="font-mono font-extrabold text-sm text-blue-800 dark:text-sky-400">
-                  +₹{formData.cashbackEarned || 0} Rupees
-                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setIsCashbackApplied(!isCashbackApplied)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-extrabold flex items-center gap-1 cursor-pointer transition-all shadow-xs active:scale-95 shrink-0 ${
+                    isCashbackApplied
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/20'
+                      : 'bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
+                  title={isCashbackApplied ? 'Click to unapply 10% cashback discount' : 'Click to apply 10% cashback discount'}
+                >
+                  {isCashbackApplied ? (
+                    <>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-blue-200" />
+                      <span>Applied</span>
+                    </>
+                  ) : (
+                    <span>Apply</span>
+                  )}
+                </button>
               </div>
 
               <div className="flex items-center justify-between">
