@@ -134,9 +134,6 @@ export default function Sidebar({
                   <span className={brandTitleClass}>Optics</span>
                   <span className="text-blue-700 dark:text-sky-400 font-bold">India</span>
                 </h2>
-                <p className={subtitleClass}>
-                  <Sparkles className="w-3 h-3 text-sky-400" /> POS v2.0
-                </p>
               </div>
             )}
           </div>

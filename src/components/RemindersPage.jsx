@@ -4,7 +4,6 @@ import {
   CheckCircle2, 
   Clock, 
   Phone, 
-  Send, 
   Search, 
   Calendar, 
   User, 
@@ -20,7 +19,7 @@ import DeliveryModal from './DeliveryModal';
 
 const STORE_PHONE = '+91 90432 29107 / +91 99524 17748';
 
-export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, onSendSMS }) {
+export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, onSendSMS, onToggleSMS }) {
   const [activeTab, setActiveTab] = useState('pending'); // 'pending' | 'delivered'
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState('table'); // 'table' | 'cards'
@@ -62,6 +61,27 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
       : `Your optical order (Bill #${bill.billNo}) is ready for pickup/delivery! Please visit us or contact ${STORE_PHONE}.`;
     const msg = `Hello ${bill.customer?.name || 'Valued Customer'}, greetings from Optics India! ${statusMsg}`;
     return `https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(msg)}`;
+  };
+
+  // Open WhatsApp and Auto-Mark as Sent
+  const handleSendWhatsApp = (e, bill) => {
+    e.preventDefault();
+    const link = getWhatsAppLink(bill);
+    window.open(link, '_blank', 'noopener,noreferrer');
+    if (onToggleSMS) {
+      onToggleSMS(bill, true);
+    } else if (onSendSMS) {
+      onSendSMS(bill);
+    }
+  };
+
+  // Trigger SMS and Mark as Sent
+  const handleSendSMS = (bill) => {
+    if (onSendSMS) {
+      onSendSMS(bill);
+    } else if (onToggleSMS) {
+      onToggleSMS(bill, true);
+    }
   };
 
   const panelClass = isDarkMode ? 'glass-panel-dark' : 'glass-panel-light';
@@ -315,7 +335,8 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
 
                           {/* Action Buttons */}
                           <td className="p-3 text-center">
-                            <div className="flex items-center justify-center gap-1.5">
+                            <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                              {/* 1) Delivery Toggle / Modal */}
                               {activeTab === 'pending' ? (
                                 <button
                                   onClick={() => handleOpenDeliveryModal(bill)}
@@ -336,26 +357,35 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
                                 </button>
                               )}
 
-                              {bill.customer?.phone && (
-                                <>
-                                  <a
-                                    href={getWhatsAppLink(bill)}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="p-1.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 hover:bg-blue-700 hover:text-white dark:bg-sky-500/20 dark:border-sky-500/40 dark:text-sky-400 dark:hover:bg-sky-500 transition-all cursor-pointer"
-                                    title="Send WhatsApp Reminder"
-                                  >
-                                    <MessageSquare className="w-4 h-4" />
-                                  </a>
+                              {/* 2) Explicit Mark as Sent Toggle Button */}
+                              <button
+                                type="button"
+                                onClick={() => onToggleSMS && onToggleSMS(bill)}
+                                className={`px-2.5 py-1.5 rounded-xl border font-bold text-xs flex items-center gap-1 transition-all cursor-pointer ${
+                                  bill.smsSent
+                                    ? 'bg-emerald-100 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-200'
+                                    : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                                }`}
+                                title={bill.smsSent ? 'Reminder marked as Sent. Click to toggle.' : 'Click to mark reminder as Sent'}
+                              >
+                                <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                                <span>{bill.smsSent ? 'Sent ✓' : 'Mark Sent'}</span>
+                              </button>
 
-                                  <button
-                                    onClick={() => onSendSMS && onSendSMS(bill)}
-                                    className="p-1.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 hover:bg-blue-700 hover:text-white dark:bg-sky-500/20 dark:border-sky-500/40 dark:text-sky-400 dark:hover:bg-sky-500 transition-all cursor-pointer"
-                                    title="Send SMS Reminder"
-                                  >
-                                    <Send className="w-4 h-4" />
-                                  </button>
-                                </>
+                              {/* 3) WhatsApp Action Button */}
+                              {bill.customer?.phone && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleSendWhatsApp(e, bill)}
+                                  className={`p-1.5 rounded-xl border transition-all cursor-pointer flex items-center justify-center ${
+                                    bill.smsSent
+                                      ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-600 hover:text-white dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300'
+                                      : 'bg-blue-50 border-blue-200 text-blue-800 hover:bg-blue-700 hover:text-white dark:bg-sky-500/20 dark:border-sky-500/40 dark:text-sky-400 dark:hover:bg-sky-500'
+                                  }`}
+                                  title="Send WhatsApp Reminder & Mark as Sent"
+                                >
+                                  <MessageSquare className="w-4 h-4" />
+                                </button>
                               )}
                             </div>
                           </td>
@@ -399,9 +429,16 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
                     <div>
                       {/* Top Row: Bill # & Status Pills */}
                       <div className="flex items-center justify-between gap-2 mb-3 pt-1">
-                        <span className="px-3 py-1 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-700 dark:text-sky-400 font-mono font-black text-xs">
-                          #{bill.billNo}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="px-3 py-1 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-700 dark:text-sky-400 font-mono font-black text-xs">
+                            #{bill.billNo}
+                          </span>
+                          {bill.smsSent && (
+                            <span className="px-2 py-0.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-400 font-extrabold text-[10px] flex items-center gap-1">
+                              <Check className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" /> SENT
+                            </span>
+                          )}
+                        </div>
 
                         <div className="flex items-center gap-1.5">
                           {isOverdue && (
@@ -508,11 +545,12 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
                     </div>
 
                     {/* Action Controls */}
-                    <div className="flex items-center gap-2 pt-2 border-t border-slate-700/20">
+                    <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-700/20">
+                      {/* Delivery Button */}
                       {activeTab === 'pending' ? (
                         <button
                           onClick={() => handleOpenDeliveryModal(bill)}
-                          className="flex-1 py-2.5 px-3 rounded-xl bg-blue-700 hover:bg-blue-600 text-white font-bold text-xs shadow-md flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
+                          className="flex-1 py-2 px-3 rounded-xl bg-blue-700 hover:bg-blue-600 text-white font-bold text-xs shadow-md flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
                         >
                           <Truck className="w-4 h-4" />
                           <span>Need to Delivery</span>
@@ -520,7 +558,7 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
                       ) : (
                         <button
                           onClick={() => onToggleStatus && onToggleStatus(billId, 'Pending')}
-                          className="flex-1 py-2.5 px-3 rounded-xl bg-emerald-700/20 border border-emerald-500/30 text-emerald-800 dark:text-emerald-400 hover:bg-emerald-700 hover:text-white font-bold text-xs shadow-md flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
+                          className="flex-1 py-2 px-3 rounded-xl bg-emerald-700/20 border border-emerald-500/30 text-emerald-800 dark:text-emerald-400 hover:bg-emerald-700 hover:text-white font-bold text-xs shadow-md flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
                           title="Delivered (Click to revert to Pending)"
                         >
                           <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
@@ -528,26 +566,35 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
                         </button>
                       )}
 
-                      {bill.customer?.phone && (
-                        <>
-                          <a
-                            href={getWhatsAppLink(bill)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-2.5 rounded-xl border font-bold text-xs transition-all cursor-pointer flex items-center justify-center bg-blue-50 border-blue-200 text-blue-800 hover:bg-blue-700 hover:text-white dark:bg-sky-500/20 dark:border-sky-500/40 dark:text-sky-400 dark:hover:bg-sky-500"
-                            title="Send WhatsApp Reminder"
-                          >
-                            <MessageSquare className="w-4 h-4" />
-                          </a>
+                      {/* Explicit Mark Sent Button */}
+                      <button
+                        type="button"
+                        onClick={() => onToggleSMS && onToggleSMS(bill)}
+                        className={`px-3 py-2 rounded-xl border text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                          bill.smsSent
+                            ? 'bg-emerald-100 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-200'
+                            : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                        }`}
+                        title={bill.smsSent ? 'Reminder marked as Sent. Click to toggle.' : 'Click to mark reminder as Sent'}
+                      >
+                        <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                        <span>{bill.smsSent ? 'Sent ✓' : 'Mark Sent'}</span>
+                      </button>
 
-                          <button
-                            onClick={() => onSendSMS && onSendSMS(bill)}
-                            className="p-2.5 rounded-xl border font-bold text-xs transition-all cursor-pointer flex items-center justify-center bg-blue-50 border-blue-200 text-blue-800 hover:bg-blue-700 hover:text-white dark:bg-sky-500/20 dark:border-sky-500/40 dark:text-sky-400 dark:hover:bg-sky-500"
-                            title="Send SMS Reminder"
-                          >
-                            <Send className="w-4 h-4" />
-                          </button>
-                        </>
+                      {/* WhatsApp Icon */}
+                      {bill.customer?.phone && (
+                        <button
+                          type="button"
+                          onClick={(e) => handleSendWhatsApp(e, bill)}
+                          className={`p-2 rounded-xl border font-bold text-xs transition-all cursor-pointer flex items-center justify-center ${
+                            bill.smsSent
+                              ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-600 hover:text-white dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300'
+                              : 'bg-blue-50 border-blue-200 text-blue-800 hover:bg-blue-700 hover:text-white dark:bg-sky-500/20 dark:border-sky-500/40 dark:text-sky-400 dark:hover:bg-sky-500'
+                          }`}
+                          title="Send WhatsApp Reminder & Mark as Sent"
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                        </button>
                       )}
                     </div>
                   </div>

@@ -59,13 +59,6 @@ export default function Header({ isOnline, isDarkMode, setIsDarkMode, onToggleMo
                 <span className={isDarkMode ? 'text-slate-100' : 'text-slate-900'}>Optics</span>
                 <span className="text-blue-700 dark:text-sky-400 font-bold">India</span>
               </h1>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold tracking-wide hidden sm:flex items-center gap-1 border ${
-                isDarkMode 
-                  ? 'bg-cyan-950/80 border-cyan-800 text-cyan-300' 
-                  : 'bg-blue-50 border-blue-200/80 text-blue-800'
-              }`}>
-                <Sparkles className="w-2.5 h-2.5 text-blue-600 dark:text-cyan-500" /> POS v2.0
-              </span>
             </div>
             <p className={`text-[10px] sm:text-[11px] flex items-center gap-1 sm:gap-1.5 font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
               <span className="truncate">Optical Billing</span>

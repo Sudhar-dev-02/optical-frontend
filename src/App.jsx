@@ -340,12 +340,57 @@ function AppContent() {
   };
 
   const handleSendSMS = async (billRecord) => {
+    const targetId = billRecord._id || billRecord.billNo;
     try {
-      await axios.post(`${API_BASE}/${billRecord._id || billRecord.billNo}/send-sms`);
-      showNotification(`SMS notification sent to ${billRecord.customer?.name} (${billRecord.customer?.phone})`, 'success');
+      await axios.post(`${API_BASE}/${targetId}/send-sms`);
+      showNotification(`SMS/WhatsApp notification sent to ${billRecord.customer?.name} (${billRecord.customer?.phone})`, 'success');
     } catch (err) {
-      showNotification(`SMS notification triggered for ${billRecord.customer?.name}`, 'success');
+      showNotification(`SMS/WhatsApp notification triggered for ${billRecord.customer?.name}`, 'success');
     }
+
+    setBills(prev => prev.map(b => 
+      (b._id === targetId || b.billNo === targetId) ? { ...b, smsSent: true } : b
+    ));
+  };
+
+  const handleToggleSMS = async (billRecord, forcedStatus = null) => {
+    const targetId = billRecord._id || billRecord.billNo;
+    const newStatus = forcedStatus !== null ? forcedStatus : !billRecord.smsSent;
+    try {
+      await axios.patch(`${API_BASE}/${targetId}/toggle-sms`, { sent: newStatus });
+      showNotification(newStatus ? `Reminder marked as Sent for Bill #${billRecord.billNo}` : `Reminder marked as Pending for Bill #${billRecord.billNo}`, 'success');
+    } catch (err) {
+      console.warn('Network issue toggling SMS status, updated locally.');
+      showNotification(`Reminder marked as ${newStatus ? 'Sent' : 'Pending'} (local)`, 'info');
+    }
+
+    setBills(prev => prev.map(b => 
+      (b._id === targetId || b.billNo === targetId) ? { ...b, smsSent: newStatus } : b
+    ));
+  };
+
+  const handleUpdateFollowUpStatus = async (targetId, status = 'Sent', type = null) => {
+    const targetBill = bills.find(b => b._id === targetId || b.billNo === targetId);
+    try {
+      await axios.patch(`${API_BASE}/${targetId}/followup`, { status, type });
+      showNotification(`Follow-up for Bill #${targetBill?.billNo || targetId} marked as "${status}"`, 'success');
+    } catch (err) {
+      console.warn('Network issue updating follow-up status, updated locally.');
+      showNotification(`Follow-up for Bill #${targetBill?.billNo || targetId} marked as "${status}" (local)`, 'info');
+    }
+
+    setBills(prev => prev.map(b => {
+      if (b._id === targetId || b.billNo === targetId) {
+        const now = new Date().toISOString();
+        const details = { ...(b.followUpDetails || {}), lastContactedAt: now };
+        if (type === 'service') details.serviceSentAt = now;
+        if (type === 'feedback') details.feedbackSentAt = now;
+        if (type === 'eyecheck') details.eyeCheckSentAt = now;
+
+        return { ...b, followUpStatus: status, followUpDetails: details };
+      }
+      return b;
+    }));
   };
 
   const handleSelectBill = (billRecord) => {
@@ -507,6 +552,7 @@ function AppContent() {
                     isDarkMode={isDarkMode}
                     onToggleStatus={handleDeliveryToggleById}
                     onSendSMS={handleSendSMS}
+                    onToggleSMS={handleToggleSMS}
                   />
                 </main>
               } 
@@ -519,6 +565,7 @@ function AppContent() {
                   <FollowUpPage 
                     bills={bills}
                     isDarkMode={isDarkMode}
+                    onUpdateBillStatus={handleUpdateFollowUpStatus}
                   />
                 </main>
               } 
