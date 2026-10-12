@@ -141,8 +141,8 @@ export default function StaffSetupPage({
       <div className={`${panelClass} p-4 sm:p-5 rounded-2xl sm:rounded-3xl`}>
         <div className="flex items-center justify-between border-b border-slate-400/20 pb-3 mb-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-black bg-gradient-to-r from-blue-800 via-blue-600 to-indigo-700 dark:from-sky-400 dark:via-blue-500 dark:to-indigo-400 bg-clip-text text-transparent flex items-center gap-2">
-              <UserPlus className="w-6 h-6 text-blue-700 dark:text-sky-400" /> Staff & Login Setup Manager
+            <h1 className="text-xl sm:text-2xl font-black text-[#0B2D5B] dark:text-[#D4AF37] flex items-center gap-2">
+              <UserPlus className="w-6 h-6 text-[#D4AF37]" /> Staff & Login Setup Manager
             </h1>
             <p className={`text-xs font-semibold mt-0.5 ${labelClass}`}>
               Register & Manage Staff Profiles (Name, Phone, Emergency Contact, Qualification, Age, Address & Login PIN)
@@ -150,7 +150,7 @@ export default function StaffSetupPage({
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono font-bold px-3 py-1 rounded-xl bg-blue-50 dark:bg-sky-500/15 border border-blue-200 dark:border-sky-500/30 text-blue-800 dark:text-sky-400">
+            <span className="text-xs font-mono font-bold px-3 py-1 rounded-xl bg-[#0B2D5B]/10 dark:bg-[#0B2D5B]/30 border border-[#0B2D5B]/20 text-[#0B2D5B] dark:text-[#D4AF37]">
               Admin Control Panel
             </span>
           </div>
@@ -163,7 +163,7 @@ export default function StaffSetupPage({
             <div className="flex flex-col gap-1">
               <label className={`${labelClass} font-bold`}>1) *Staff Full Name:</label>
               <div className="relative">
-                <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-blue-700 dark:text-sky-400" />
+                <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#D4AF37]" />
                 <input
                   type="text"
                   placeholder="e.g. Ramesh Kumar"
@@ -178,7 +178,7 @@ export default function StaffSetupPage({
             <div className="flex flex-col gap-1">
               <label className={`${labelClass} font-bold`}>2) *Mobile Number (Login ID):</label>
               <div className="relative">
-                <Phone className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-blue-700 dark:text-sky-400" />
+                <Phone className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#D4AF37]" />
                 <input
                   type="text"
                   maxLength={10}
@@ -194,7 +194,7 @@ export default function StaffSetupPage({
             <div className="flex flex-col gap-1">
               <label className={`${labelClass} font-bold`}>3) Emergency Contact No:</label>
               <div className="relative">
-                <AlertCircle className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-blue-700 dark:text-sky-400" />
+                <AlertCircle className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#D4AF37]" />
                 <input
                   type="text"
                   maxLength={10}
@@ -210,7 +210,7 @@ export default function StaffSetupPage({
             <div className="flex flex-col gap-1">
               <label className={`${labelClass} font-bold`}>4) Qualification:</label>
               <div className="relative">
-                <GraduationCap className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-blue-700 dark:text-sky-400" />
+                <GraduationCap className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#D4AF37]" />
                 <input
                   type="text"
                   placeholder="e.g. B.Optom / Diploma in Optometry"
@@ -268,7 +268,7 @@ export default function StaffSetupPage({
               <div className="flex flex-col gap-1">
                 <label className={`${labelClass} font-bold`}>*Login PIN (4-digit):</label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-blue-700 dark:text-sky-400" />
+                  <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#D4AF37]" />
                   <input
                     type="password"
                     maxLength={4}
@@ -297,9 +297,9 @@ export default function StaffSetupPage({
           <div className="pt-1 flex justify-end">
             <button
               type="submit"
-              className="w-full sm:w-auto py-2.5 px-6 rounded-xl bg-gradient-to-r from-blue-700 to-indigo-800 hover:brightness-110 text-white font-extrabold text-xs shadow-lg flex items-center justify-center gap-2 cursor-pointer transition-all"
+              className="w-full sm:w-auto py-2.5 px-6 rounded-xl bg-gradient-to-r from-[#D4AF37] via-[#E5C358] to-[#B89025] hover:brightness-110 text-[#061833] font-black text-xs shadow-lg flex items-center justify-center gap-2 cursor-pointer transition-all"
             >
-              <UserPlus className="w-4 h-4" />
+              <UserPlus className="w-4 h-4 text-[#061833]" />
               <span>Add Salesperson Staff</span>
             </button>
           </div>
@@ -308,7 +308,7 @@ export default function StaffSetupPage({
         {/* Feedback Message */}
         {msg && (
           <div className={`mt-3 p-3 rounded-xl border text-xs font-semibold ${
-            msg.type === 'success' ? 'bg-blue-50 border-blue-200 text-blue-900 dark:bg-sky-500/15 dark:border-sky-500/40 dark:text-sky-400' : 'bg-rose-50 border-rose-200 text-rose-900 dark:bg-sky-950/80 dark:border-sky-800 dark:text-sky-300'
+            msg.type === 'success' ? 'bg-[#0B2D5B]/10 border-[#0B2D5B]/30 text-[#0B2D5B] dark:text-[#D4AF37]' : 'bg-rose-50 border-rose-200 text-rose-900 dark:bg-rose-950/80 dark:border-rose-800 dark:text-rose-300'
           }`}>
             {msg.text}
           </div>
@@ -318,8 +318,8 @@ export default function StaffSetupPage({
       {/* Registered Staff List */}
       <div className={`${panelClass} p-4 sm:p-5 rounded-2xl sm:rounded-3xl space-y-3`}>
         <div className="flex items-center justify-between border-b border-slate-400/20 pb-2">
-          <h2 className="text-sm sm:text-base font-bold flex items-center gap-2">
-            <Shield className="w-4 h-4 text-blue-700 dark:text-sky-400" /> Registered Staff Directory ({registeredStaff.length + 2})
+          <h2 className="text-sm sm:text-base font-bold flex items-center gap-2 text-[#0B2D5B] dark:text-[#D4AF37]">
+            <Shield className="w-4 h-4 text-[#D4AF37]" /> Registered Staff Directory ({registeredStaff.length + 2})
           </h2>
           <span className="text-[11px] opacity-70 font-semibold">Admin & Salesperson Directory</span>
         </div>
@@ -327,38 +327,38 @@ export default function StaffSetupPage({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
           {/* Default Primary Admin Card */}
           <div className={`p-4 rounded-2xl border transition-all ${
-            isDarkMode ? 'bg-sky-950/40 border-sky-800/40' : 'bg-blue-50/80 border-blue-200'
+            isDarkMode ? 'bg-[#0B2D5B]/20 border-[#D4AF37]/30' : 'bg-[#0B2D5B]/5 border-[#0B2D5B]/20'
           }`}>
             <div className="flex items-center justify-between mb-2">
-              <span className="font-extrabold text-blue-800 dark:text-sky-400 flex items-center gap-1.5">
-                <Shield className="w-4 h-4 text-blue-700 dark:text-sky-400" /> Admin (Primary)
+              <span className="font-extrabold text-[#0B2D5B] dark:text-[#D4AF37] flex items-center gap-1.5">
+                <Shield className="w-4 h-4 text-[#D4AF37]" /> Admin (Primary)
               </span>
-              <span className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-sky-500/20 text-blue-900 dark:text-sky-300 font-extrabold text-[10px]">
+              <span className="px-2 py-0.5 rounded-full bg-[#D4AF37]/20 text-[#0B2D5B] dark:text-[#D4AF37] font-extrabold text-[10px]">
                 SYSTEM ADMIN
               </span>
             </div>
             <div className="space-y-1 font-mono text-[11px]">
               <div>Name: <strong>Optics India Admin</strong></div>
-              <div>Phone: <strong className="text-blue-800 dark:text-sky-400">+91 733 933 4042</strong></div>
+              <div>Phone: <strong className="text-[#0B2D5B] dark:text-[#D4AF37]">+91 733 933 4042</strong></div>
               <div>PIN: <strong>**** (1234)</strong></div>
             </div>
           </div>
 
           {/* Default Demo Salesperson Card */}
           <div className={`p-4 rounded-2xl border transition-all ${
-            isDarkMode ? 'bg-sky-950/40 border-sky-800/40' : 'bg-blue-50/80 border-blue-200'
+            isDarkMode ? 'bg-[#0B2D5B]/20 border-[#D4AF37]/30' : 'bg-[#0B2D5B]/5 border-[#0B2D5B]/20'
           }`}>
             <div className="flex items-center justify-between mb-2">
-              <span className="font-extrabold text-blue-800 dark:text-sky-400 flex items-center gap-1.5">
-                <User className="w-4 h-4 text-blue-700 dark:text-sky-400" /> Default Salesperson
+              <span className="font-extrabold text-[#0B2D5B] dark:text-[#D4AF37] flex items-center gap-1.5">
+                <User className="w-4 h-4 text-[#D4AF37]" /> Default Salesperson
               </span>
-              <span className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-sky-500/20 text-blue-900 dark:text-sky-300 font-extrabold text-[10px]">
+              <span className="px-2 py-0.5 rounded-full bg-[#D4AF37]/20 text-[#0B2D5B] dark:text-[#D4AF37] font-extrabold text-[10px]">
                 SALES EXECUTIVE
               </span>
             </div>
             <div className="space-y-1 font-mono text-[11px]">
               <div>Name: <strong>Sales Staff Demo</strong></div>
-              <div>Phone: <strong className="text-blue-800 dark:text-sky-400">+91 9123456789</strong></div>
+              <div>Phone: <strong className="text-[#0B2D5B] dark:text-[#D4AF37]">+91 9123456789</strong></div>
               <div>PIN: <strong>**** (1111)</strong></div>
             </div>
           </div>
@@ -368,14 +368,14 @@ export default function StaffSetupPage({
             <div
               key={staff.id}
               className={`p-4 rounded-2xl border transition-all relative group space-y-2.5 ${
-                isDarkMode ? 'bg-slate-900/60 border-slate-800' : 'bg-white/80 border-slate-200'
+                isDarkMode ? 'bg-[#061833]/80 border-[#0B2D5B]/40 hover:border-[#D4AF37]/40' : 'bg-white border-[#0B2D5B]/20 hover:border-[#D4AF37]/40'
               }`}
             >
               <div className="flex items-center justify-between border-b border-slate-400/20 pb-2">
-                <span className="font-extrabold text-blue-900 dark:text-sky-400 flex items-center gap-1.5 text-sm">
-                  <User className="w-4 h-4 text-blue-700 dark:text-sky-400" /> {staff.name}
+                <span className="font-extrabold text-[#0B2D5B] dark:text-[#D4AF37] flex items-center gap-1.5 text-sm">
+                  <User className="w-4 h-4 text-[#D4AF37]" /> {staff.name}
                 </span>
-                <span className="px-2 py-0.5 rounded-full font-extrabold text-[10px] uppercase bg-blue-50 dark:bg-sky-500/20 border border-blue-200 dark:border-sky-500/30 text-blue-800 dark:text-sky-400">
+                <span className="px-2 py-0.5 rounded-full font-extrabold text-[10px] uppercase bg-[#0B2D5B]/10 dark:bg-[#0B2D5B]/30 border border-[#0B2D5B]/20 text-[#0B2D5B] dark:text-[#D4AF37]">
                   {staff.role || 'Salesperson'}
                 </span>
               </div>
@@ -384,30 +384,30 @@ export default function StaffSetupPage({
               <div className="grid grid-cols-1 gap-1.5 font-mono text-[11px]">
                 <div className="flex justify-between">
                   <span className="opacity-70">Mobile Login:</span>
-                  <strong className="text-blue-800 dark:text-sky-400">+91 {staff.phone}</strong>
+                  <strong className="text-[#0B2D5B] dark:text-[#D4AF37]">+91 {staff.phone}</strong>
                 </div>
                 {staff.emergencyPhone && (
                   <div className="flex justify-between">
                     <span className="opacity-70">Emergency Contact:</span>
-                    <strong className="text-blue-800 dark:text-sky-300">+91 {staff.emergencyPhone}</strong>
+                    <strong className="text-[#0B2D5B] dark:text-[#D4AF37]">+91 {staff.emergencyPhone}</strong>
                   </div>
                 )}
                 {staff.qualification && (
                   <div className="flex justify-between">
                     <span className="opacity-70">Qualification:</span>
-                    <strong className="text-blue-800 dark:text-sky-300">{staff.qualification}</strong>
+                    <strong className="text-[#0B2D5B] dark:text-[#D4AF37]">{staff.qualification}</strong>
                   </div>
                 )}
                 {staff.age && (
                   <div className="flex justify-between">
                     <span className="opacity-70">Age:</span>
-                    <strong className="text-slate-800 dark:text-sky-300">{staff.age} yrs</strong>
+                    <strong className="text-slate-800 dark:text-slate-200">{staff.age} yrs</strong>
                   </div>
                 )}
                 {staff.gender && (
                   <div className="flex justify-between">
                     <span className="opacity-70">Gender:</span>
-                    <strong className="text-slate-800 dark:text-sky-300">{staff.gender}</strong>
+                    <strong className="text-slate-800 dark:text-slate-200">{staff.gender}</strong>
                   </div>
                 )}
                 {staff.address && (
@@ -427,9 +427,9 @@ export default function StaffSetupPage({
                 <button
                   type="button"
                   onClick={() => setEditingStaff(staff)}
-                  className="py-1 px-2 rounded-xl bg-blue-50 dark:bg-sky-500/15 border border-blue-200 dark:border-sky-500/30 hover:bg-blue-100 dark:hover:bg-sky-600 text-blue-800 dark:text-sky-400 dark:hover:text-white font-bold text-[11px] transition-all flex items-center justify-center gap-1 cursor-pointer"
+                  className="py-1 px-2 rounded-xl bg-[#0B2D5B]/10 dark:bg-[#0B2D5B]/30 border border-[#0B2D5B]/30 hover:bg-[#0B2D5B] text-[#0B2D5B] dark:text-[#D4AF37] hover:text-[#D4AF37] font-bold text-[11px] transition-all flex items-center justify-center gap-1 cursor-pointer"
                 >
-                  <Edit className="w-3 h-3" />
+                  <Edit className="w-3 h-3 text-[#D4AF37]" />
                   <span>Edit Profile</span>
                 </button>
 
@@ -450,10 +450,10 @@ export default function StaffSetupPage({
       {/* Edit Staff Profile Modal */}
       {editingStaff && (
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`${panelClass} max-w-lg w-full p-5 sm:p-6 rounded-3xl shadow-2xl border border-white/20 space-y-4 animate-in zoom-in-95 duration-200`}>
+          <div className={`${panelClass} max-w-lg w-full p-5 sm:p-6 rounded-3xl shadow-2xl border border-[#D4AF37]/30 space-y-4 animate-in zoom-in-95 duration-200`}>
             <div className="flex items-center justify-between border-b border-slate-400/20 pb-3">
-              <h3 className="text-base font-extrabold flex items-center gap-2 text-sky-400">
-                <Edit className="w-5 h-5" /> Edit Staff Profile: {editingStaff.name}
+              <h3 className="text-base font-extrabold flex items-center gap-2 text-[#0B2D5B] dark:text-[#D4AF37]">
+                <Edit className="w-5 h-5 text-[#D4AF37]" /> Edit Staff Profile: {editingStaff.name}
               </h3>
               <button
                 onClick={() => setEditingStaff(null)}
@@ -587,9 +587,9 @@ export default function StaffSetupPage({
                 </button>
                 <button
                   type="submit"
-                  className="py-2 px-5 rounded-xl bg-gradient-to-r from-sky-500 to-emerald-600 hover:brightness-110 text-white font-extrabold flex items-center gap-1.5 shadow-md cursor-pointer"
+                  className="py-2 px-5 rounded-xl bg-gradient-to-r from-[#D4AF37] via-[#E5C358] to-[#B89025] hover:brightness-110 text-[#061833] font-black flex items-center gap-1.5 shadow-md cursor-pointer"
                 >
-                  <Save className="w-4 h-4" />
+                  <Save className="w-4 h-4 text-[#061833]" />
                   <span>Save Profile</span>
                 </button>
               </div>

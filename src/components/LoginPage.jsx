@@ -83,37 +83,37 @@ export default function LoginPage({ onLoginSuccess, registeredStaff = [], isDark
     <div className={`min-h-screen w-full flex items-center justify-center p-4 ${bgClass}`}>
       <div className={`${panelClass} max-w-md w-full p-6 sm:p-8 rounded-3xl shadow-2xl space-y-6 relative overflow-hidden border border-white/20`}>
         {/* Glow accent */}
-        <div className="absolute -top-20 -right-20 w-40 h-40 bg-sky-500/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-blue-600/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -top-20 -right-20 w-40 h-40 bg-[#D4AF37]/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-[#0B2D5B]/30 rounded-full blur-3xl pointer-events-none" />
 
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="w-20 h-20 rounded-3xl bg-white mx-auto flex items-center justify-center border border-slate-200/80 shadow-xl overflow-hidden ring-4 ring-white/30">
+          <div className="w-20 h-20 rounded-3xl bg-[#0B2D5B] mx-auto flex items-center justify-center border border-[#D4AF37]/50 shadow-xl overflow-hidden ring-4 ring-[#D4AF37]/20 p-1.5">
             <img 
               src={logoImg} 
               alt="Optics India Logo" 
-              className="w-full h-full object-contain scale-130" 
+              className="w-full h-full object-contain scale-110 rounded-2xl" 
             />
           </div>
           
           <h1 className="text-3xl font-brand font-semibold tracking-tight flex items-center justify-center gap-0.5">
-            <span className={isDarkMode ? 'text-slate-100' : 'text-slate-900'}>Optics</span>
-            <span className="text-blue-700 dark:text-sky-400 font-medium">India</span>
+            <span className={isDarkMode ? 'text-slate-100' : 'text-[#0B2D5B]'}>Optics</span>
+            <span className="text-[#D4AF37] font-extrabold tracking-wide">India</span>
           </h1>
           <p className="text-xs font-semibold opacity-70 flex items-center justify-center gap-1">
-            <Sparkles className="w-3.5 h-3.5 text-blue-700 dark:text-cyan-400" /> POS & Inventory Management System
+            <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" /> POS & Inventory Management System
           </p>
         </div>
 
         {/* Role Selection Tabs */}
-        <div className="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-slate-500/10 border border-slate-400/20 text-xs font-bold">
+        <div className="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-[#0B2D5B]/10 dark:bg-[#061833] border border-[#0B2D5B]/20 dark:border-[#D4AF37]/30 text-xs font-bold">
           <button
             type="button"
             onClick={() => { setRole('salesperson'); setErrorMsg(''); }}
             className={`py-2 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 ${
               role === 'salesperson'
-                ? 'bg-blue-700 dark:bg-sky-500 text-white shadow-md'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-500/20'
+                ? 'bg-[#0B2D5B] text-[#D4AF37] border border-[#D4AF37]/40 shadow-md'
+                : 'text-slate-500 dark:text-slate-400 hover:text-[#0B2D5B] dark:hover:text-[#D4AF37] hover:bg-[#0B2D5B]/10'
             }`}
           >
             <UserCheck className="w-4 h-4" />
@@ -125,8 +125,8 @@ export default function LoginPage({ onLoginSuccess, registeredStaff = [], isDark
             onClick={() => { setRole('admin'); setErrorMsg(''); }}
             className={`py-2 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 ${
               role === 'admin'
-                ? 'bg-blue-800 dark:bg-sky-600 text-white shadow-md'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-500/20'
+                ? 'bg-[#0B2D5B] text-[#D4AF37] border border-[#D4AF37]/40 shadow-md'
+                : 'text-slate-500 dark:text-slate-400 hover:text-[#0B2D5B] dark:hover:text-[#D4AF37] hover:bg-[#0B2D5B]/10'
             }`}
           >
             <ShieldCheck className="w-4 h-4" />
@@ -136,7 +136,7 @@ export default function LoginPage({ onLoginSuccess, registeredStaff = [], isDark
 
         {/* Error Alert */}
         {errorMsg && (
-          <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 dark:bg-sky-950/80 dark:border-sky-800 dark:text-sky-300 text-xs font-semibold text-center animate-in fade-in duration-200">
+          <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 dark:bg-rose-950/40 dark:border-rose-800 dark:text-rose-300 text-xs font-semibold text-center animate-in fade-in duration-200">
             {errorMsg}
           </div>
         )}
@@ -149,7 +149,7 @@ export default function LoginPage({ onLoginSuccess, registeredStaff = [], isDark
               {role === 'admin' ? 'Admin Phone Number:' : 'Salesperson Phone Number:'}
             </label>
             <div className="relative">
-              <Phone className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-blue-700 dark:text-sky-400" />
+              <Phone className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#D4AF37]" />
               <input
                 type="text"
                 maxLength={10}
@@ -165,7 +165,7 @@ export default function LoginPage({ onLoginSuccess, registeredStaff = [], isDark
           <div className="space-y-1.5">
             <label className="block opacity-80 font-bold">4-Digit Security PIN:</label>
             <div className="relative">
-              <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-blue-700 dark:text-sky-400" />
+              <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#D4AF37]" />
               <input
                 type={showPin ? 'text' : 'password'}
                 maxLength={4}
@@ -187,7 +187,7 @@ export default function LoginPage({ onLoginSuccess, registeredStaff = [], isDark
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full py-3 rounded-2xl text-white font-extrabold text-sm shadow-xl flex items-center justify-center gap-2 cursor-pointer transition-all duration-200 bg-gradient-to-r from-blue-700 to-indigo-800 hover:brightness-110 shadow-blue-500/25"
+            className="w-full py-3 rounded-2xl text-[#061833] font-black text-sm shadow-xl flex items-center justify-center gap-2 cursor-pointer transition-all duration-200 bg-gradient-to-r from-[#D4AF37] via-[#E5C358] to-[#B89025] hover:from-[#E5C358] hover:to-[#D4AF37] shadow-[#D4AF37]/30 ring-1 ring-amber-200/50"
           >
             <span>Sign In as {role === 'admin' ? 'Admin' : 'Salesperson'}</span>
             <ArrowRight className="w-4 h-4" />
@@ -201,7 +201,7 @@ export default function LoginPage({ onLoginSuccess, registeredStaff = [], isDark
             <button
               type="button"
               onClick={() => fillDemoCredentials('admin')}
-              className="px-3 py-1 rounded-xl bg-blue-50 dark:bg-sky-500/15 border border-blue-200 dark:border-sky-500/30 text-blue-800 dark:text-sky-400 hover:bg-blue-100 dark:hover:bg-sky-500/25 text-[11px] font-bold transition-all cursor-pointer"
+              className="px-3 py-1 rounded-xl bg-[#0B2D5B]/10 dark:bg-[#0B2D5B]/50 border border-[#0B2D5B]/20 dark:border-[#D4AF37]/30 text-[#0B2D5B] dark:text-[#D4AF37] hover:bg-[#0B2D5B]/20 text-[11px] font-bold transition-all cursor-pointer"
             >
               👑 Admin (+91 733 933 4042)
             </button>
@@ -209,7 +209,7 @@ export default function LoginPage({ onLoginSuccess, registeredStaff = [], isDark
             <button
               type="button"
               onClick={() => fillDemoCredentials('salesperson')}
-              className="px-3 py-1 rounded-xl bg-blue-50 dark:bg-sky-500/15 border border-blue-200 dark:border-sky-500/30 text-blue-800 dark:text-sky-400 hover:bg-blue-100 dark:hover:bg-sky-500/25 text-[11px] font-bold transition-all cursor-pointer"
+              className="px-3 py-1 rounded-xl bg-[#0B2D5B]/10 dark:bg-[#0B2D5B]/50 border border-[#0B2D5B]/20 dark:border-[#D4AF37]/30 text-[#0B2D5B] dark:text-[#D4AF37] hover:bg-[#0B2D5B]/20 text-[11px] font-bold transition-all cursor-pointer"
             >
               👤 Salesperson Demo
             </button>

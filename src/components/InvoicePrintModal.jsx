@@ -21,12 +21,12 @@ export default function InvoicePrintModal({ bill, isDuplicate, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-3xl w-full text-slate-100 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-[#061833] border border-[#0B2D5B] rounded-2xl max-w-3xl w-full text-slate-100 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Modal Top Bar */}
-        <div className="bg-slate-950 px-5 py-3 border-b border-slate-800 flex items-center justify-between">
+        <div className="bg-[#0B2D5B] px-5 py-3 border-b border-[#D4AF37]/30 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Printer className="w-5 h-5 text-cyan-400" />
-            <h2 className="font-bold text-sm uppercase tracking-wider text-cyan-300">
+            <Printer className="w-5 h-5 text-[#D4AF37]" />
+            <h2 className="font-bold text-sm uppercase tracking-wider text-[#D4AF37]">
               {isDuplicate ? 'DUPLICATE BILL RECEIPT' : 'OPTICAL BILL INVOICE'} #{bill.billNo}
             </h2>
           </div>
@@ -34,13 +34,13 @@ export default function InvoicePrintModal({ bill, isDuplicate, onClose }) {
           <div className="flex items-center gap-3">
             <button
               onClick={handlePrint}
-              className="px-4 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition flex items-center gap-1.5 shadow"
+              className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-[#D4AF37] to-[#B89025] hover:from-[#E5C358] hover:to-[#D4AF37] text-[#061833] text-xs font-black transition flex items-center gap-1.5 shadow-md cursor-pointer"
             >
-              <Printer className="w-4 h-4" /> Print Receipt
+              <Printer className="w-4 h-4 text-[#061833]" /> Print Receipt
             </button>
             <button
               onClick={onClose}
-              className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition"
+              className="p-1 rounded-lg bg-[#0B2D5B]/40 hover:bg-[#0B2D5B] border border-[#D4AF37]/30 text-[#D4AF37] hover:text-white transition cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -48,7 +48,7 @@ export default function InvoicePrintModal({ bill, isDuplicate, onClose }) {
         </div>
 
         {/* Printable Receipt Body */}
-        <div className="p-6 overflow-y-auto bg-slate-950 text-slate-900 print-area" ref={printRef}>
+        <div className="p-6 overflow-y-auto bg-[#061833] text-slate-900 print-area" ref={printRef}>
           <div className="bg-white p-6 rounded-xl text-slate-900 shadow-inner font-sans relative border border-slate-300">
             {/* Watermark for Duplicate Bill */}
             {isDuplicate && (
@@ -60,17 +60,17 @@ export default function InvoicePrintModal({ bill, isDuplicate, onClose }) {
             )}
 
             {/* Header / Shop Info */}
-            <div className="text-center border-b-2 border-slate-900 pb-3 mb-4 space-y-1">
-              <div className="w-16 h-16 rounded-2xl bg-white mx-auto flex items-center justify-center border border-slate-200 shadow-sm overflow-hidden mb-1">
+            <div className="text-center border-b-2 border-[#0B2D5B] pb-3 mb-4 space-y-1">
+              <div className="w-16 h-16 rounded-2xl bg-[#0B2D5B] mx-auto flex items-center justify-center border border-[#D4AF37]/40 shadow-sm overflow-hidden mb-1 p-1">
                 <img 
                   src={logoImg} 
                   alt="Optics India Logo" 
-                  className="w-full h-full object-contain scale-130" 
+                  className="w-full h-full object-contain scale-110 rounded-xl" 
                 />
               </div>
-              <h1 className="text-2xl font-brand font-semibold tracking-tight text-slate-900 flex items-center justify-center gap-0.5">
+              <h1 className="text-2xl font-brand font-semibold tracking-tight text-[#0B2D5B] flex items-center justify-center gap-0.5">
                 <span>Optics</span>
-                <span className="text-sky-500 font-medium">India</span>
+                <span className="text-[#D4AF37] font-extrabold tracking-wide">India</span>
               </h1>
               <p className="text-xs font-semibold text-slate-700">Optical Company & Prescription Specialists</p>
               <p className="text-[11px] text-slate-600">Tiruvannamalai -3. Ph: +91 90432 29107 / +91 99524 17748</p>
@@ -223,6 +223,12 @@ export default function InvoicePrintModal({ bill, isDuplicate, onClose }) {
                   <span className="font-sans">Balance Amount:</span>
                   <span className="text-sm">₹ {(bill.balanceAmount || 0).toFixed(2)}</span>
                 </div>
+                {bill.cashbackEarned > 0 && (
+                  <div className="flex justify-between text-emerald-700 text-[11px] pt-1 border-t border-dashed border-slate-300">
+                    <span className="font-sans font-semibold">Cashback to Wallet:</span>
+                    <span className="font-bold">+ ₹ {(bill.cashbackEarned || 0).toFixed(2)}</span>
+                  </div>
+                )}
               </div>
             </div>
 

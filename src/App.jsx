@@ -172,35 +172,36 @@ function AppContent() {
     showNotification(`Bill #${billRecord.billNo} loaded into form.`, 'success');
   };
 
+  const getNextSequentialBillNo = (billList = bills) => {
+    if (!billList || billList.length === 0) return 6854;
+    const maxNo = billList.reduce((max, b) => {
+      const num = Number(b.billNo);
+      return !isNaN(num) && num > max ? num : max;
+    }, 0);
+    return maxNo > 0 ? maxNo + 1 : 6854;
+  };
+
   const fetchBills = async (query = '') => {
     try {
       const res = await axios.get(`${API_BASE}?query=${query}`);
-      setBills(res.data);
+      const fetchedBills = res.data || [];
+      setBills(fetchedBills);
       setIsOnline(true);
+      return fetchedBills;
     } catch (err) {
       console.warn('Backend server offline or unreachable, using local state persistence.');
       setIsOnline(false);
+      return bills;
     }
   };
 
-  const fetchNextBillNo = async () => {
-    // Keep billNo un-prefilled as requested by user
-    setFormData(prev => ({
-      ...defaultFormState,
-      billNo: ''
-    }));
-  };
-
-  useEffect(() => {
-    fetchBills();
-  }, []);
-
-  const resetFormFields = () => {
+  const resetFormFields = (currentBills = bills) => {
     setActiveBillId(null);
     setIsEditing(false);
+    const nextBillNo = getNextSequentialBillNo(currentBills);
     setFormData({
       ...defaultFormState,
-      billNo: '',
+      billNo: nextBillNo,
       customer: {
         ...defaultFormState.customer,
         gender: ''
@@ -208,9 +209,21 @@ function AppContent() {
     });
   };
 
+  useEffect(() => {
+    const initBills = async () => {
+      const fetched = await fetchBills();
+      const nextNo = getNextSequentialBillNo(fetched);
+      setFormData(prev => ({
+        ...prev,
+        billNo: prev.billNo ? prev.billNo : nextNo
+      }));
+    };
+    initBills();
+  }, []);
+
   const handleNew = () => {
-    resetFormFields();
-    showNotification('Form reset. Ready for new customer entry.', 'info');
+    resetFormFields(bills);
+    showNotification('Form reset. Next continuous bill number assigned.', 'info');
   };
 
   const handleSave = async () => {
@@ -219,32 +232,35 @@ function AppContent() {
       return;
     }
 
-    let savedBillNo = formData.billNo || 'New';
+    let savedBillNo = formData.billNo || getNextSequentialBillNo(bills);
     const customerName = formData.customer.name;
+    const savePayload = { ...formData, billNo: Number(savedBillNo) || savedBillNo };
 
     try {
       if (isEditing && activeBillId) {
-        await axios.put(`${API_BASE}/${activeBillId}`, formData);
+        await axios.put(`${API_BASE}/${activeBillId}`, savePayload);
       } else {
-        const res = await axios.post(API_BASE, formData);
+        const res = await axios.post(API_BASE, savePayload);
         if (res.data?.billNo) {
           savedBillNo = res.data.billNo;
         }
       }
-      fetchBills();
-      resetFormFields();
+      const updatedList = await fetchBills();
+      resetFormFields(updatedList);
       showNotification(`Customer "${customerName}" info & Bill #${savedBillNo} saved successfully!`, 'success');
     } catch (err) {
       const existingIdx = bills.findIndex(b => b.billNo === formData.billNo);
+      let updatedList;
       if (existingIdx >= 0) {
-        const updated = [...bills];
-        updated[existingIdx] = { ...formData, _id: bills[existingIdx]._id };
-        setBills(updated);
+        updatedList = [...bills];
+        updatedList[existingIdx] = { ...savePayload, _id: bills[existingIdx]._id };
+        setBills(updatedList);
       } else {
-        const newRecord = { ...formData, _id: 'bill_' + Date.now() };
-        setBills([newRecord, ...bills]);
+        const newRecord = { ...savePayload, _id: 'bill_' + Date.now() };
+        updatedList = [newRecord, ...bills];
+        setBills(updatedList);
       }
-      resetFormFields();
+      resetFormFields(updatedList);
       showNotification(`Customer "${customerName}" info & Bill #${savedBillNo} saved successfully!`, 'success');
     }
   };
@@ -452,10 +468,10 @@ function AppContent() {
       {/* Toast Alert Banner */}
       {toastMessage && (
         <div className={`fixed top-16 right-6 z-50 px-4 py-3 rounded-2xl shadow-2xl border text-xs font-bold flex items-center gap-2 animate-bounce backdrop-blur-md ${
-          toastMessage.type === 'success' ? 'bg-blue-50 border-blue-300 text-blue-900 dark:bg-sky-500/20 dark:border-sky-500/50 dark:text-sky-400' :
-          toastMessage.type === 'error' ? 'bg-rose-50 border-rose-200 text-rose-900 dark:bg-sky-950/80 dark:border-sky-800 dark:text-sky-300' :
-          toastMessage.type === 'warning' ? 'bg-amber-50 border-amber-200 text-amber-900 dark:bg-sky-900/60 dark:border-sky-700 dark:text-sky-300' :
-          'bg-blue-50 border-blue-300 text-blue-900 dark:bg-sky-500/20 dark:border-sky-500/50 dark:text-sky-400'
+          toastMessage.type === 'success' ? 'bg-[#0B2D5B]/95 border-[#D4AF37] text-[#D4AF37] shadow-xl shadow-[#0B2D5B]/40' :
+          toastMessage.type === 'error' ? 'bg-rose-950/90 border border-rose-500 text-rose-200 shadow-xl' :
+          toastMessage.type === 'warning' ? 'bg-amber-950/90 border border-[#D4AF37] text-amber-200 shadow-xl' :
+          'bg-[#0B2D5B]/95 border-[#D4AF37] text-[#D4AF37] shadow-xl shadow-[#0B2D5B]/40'
         }`}>
           <span>{toastMessage.text}</span>
         </div>

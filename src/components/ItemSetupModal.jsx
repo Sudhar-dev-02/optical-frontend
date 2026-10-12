@@ -162,14 +162,14 @@ export default function ItemSetupModal({ onClose, userRole = 'admin' }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white border border-slate-300 rounded-2xl max-w-4xl w-full text-slate-900 shadow-2xl overflow-hidden my-6">
-        <div className="bg-slate-100 px-5 py-3.5 border-b border-slate-200 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 bg-[#061833]/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-white border border-[#0B2D5B]/20 rounded-2xl max-w-4xl w-full text-slate-900 shadow-2xl overflow-hidden my-6">
+        <div className="bg-[#0B2D5B] px-5 py-3.5 border-b border-[#D4AF37]/30 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-purple-100 text-purple-600">
-              <PackagePlus className="w-6 h-6" />
+            <div className="p-2 rounded-xl bg-[#D4AF37] text-[#061833]">
+              <PackagePlus className="w-6 h-6 text-[#061833]" />
             </div>
-            <h2 className="text-base font-black text-slate-900">
+            <h2 className="text-base font-black text-[#D4AF37] tracking-wide">
               {isAdmin 
                 ? 'ADMIN MASTER SETUP & CATALOG MANAGER (DATABASE PERSISTENT)' 
                 : 'ITEM SETUP & CATALOG MANAGER'}
@@ -178,11 +178,11 @@ export default function ItemSetupModal({ onClose, userRole = 'admin' }) {
 
           <div className="flex items-center gap-2">
             {saveStatus && (
-              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 animate-pulse">
+              <span className="text-xs font-bold text-emerald-400 bg-emerald-950/60 px-2.5 py-1 rounded-full border border-emerald-500/40 animate-pulse">
                 {saveStatus}
               </span>
             )}
-            <button onClick={onClose} className="p-1 rounded-lg bg-slate-200 text-slate-600 hover:text-slate-900">
+            <button onClick={onClose} className="p-1.5 rounded-xl bg-[#0B2D5B]/60 border border-[#D4AF37]/30 text-[#D4AF37] hover:bg-[#D4AF37] hover:text-[#061833] transition-all cursor-pointer">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -197,17 +197,17 @@ export default function ItemSetupModal({ onClose, userRole = 'admin' }) {
 
           {/* Section 1: Staff & Doctor Setup (Admin Only) */}
           {isAdmin && (
-            <div className="border border-purple-200 bg-purple-50/40 p-3 rounded-2xl space-y-3">
-              <h3 className="font-black text-purple-900 text-xs uppercase tracking-wider flex items-center gap-1.5 border-b border-purple-200 pb-1">
-                <UserCheck className="w-4 h-4 text-purple-600" /> Order Taken Staff & Prescribed By Doctors (Admin Setup)
+            <div className="border border-[#0B2D5B]/20 bg-[#0B2D5B]/5 p-3 rounded-2xl space-y-3">
+              <h3 className="font-black text-[#0B2D5B] text-xs uppercase tracking-wider flex items-center gap-1.5 border-b border-[#0B2D5B]/15 pb-1">
+                <UserCheck className="w-4 h-4 text-[#D4AF37]" /> Order Taken Staff & Prescribed By Doctors (Admin Setup)
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Order Taken Staff */}
-                <div className="bg-white p-3 rounded-xl border border-purple-200 shadow-xs">
-                  <h4 className="font-bold text-purple-800 mb-2 flex items-center justify-between">
+                <div className="bg-white p-3 rounded-xl border border-[#0B2D5B]/20 shadow-xs">
+                  <h4 className="font-bold text-[#0B2D5B] mb-2 flex items-center justify-between">
                     <span>Order Taken Staff List</span>
-                    <span className="text-[10px] bg-purple-100 text-purple-900 px-1.5 py-0.5 rounded font-mono">{orderTakenOptions.length} staff</span>
+                    <span className="text-[10px] bg-[#0B2D5B]/10 text-[#0B2D5B] px-1.5 py-0.5 rounded font-mono font-bold">{orderTakenOptions.length} staff</span>
                   </h4>
                   <div className="flex gap-1.5 mb-2">
                     <input 
@@ -217,13 +217,13 @@ export default function ItemSetupModal({ onClose, userRole = 'admin' }) {
                       onChange={(e) => setNewOrderTaken(e.target.value)}
                       className="flex-1 bg-white border border-slate-300 rounded-md px-2 py-1 text-slate-800"
                     />
-                    <button onClick={addOrderTaken} className="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 rounded-md text-white font-bold">
+                    <button onClick={addOrderTaken} className="px-2.5 py-1 bg-[#0B2D5B] hover:bg-[#143E77] border border-[#D4AF37]/40 rounded-md text-[#D4AF37] font-bold cursor-pointer">
                       <Plus className="w-4 h-4" />
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
                     {orderTakenOptions.map((item, idx) => (
-                      <span key={idx} className="px-2 py-0.5 rounded bg-purple-50 border border-purple-200 text-purple-900 font-mono text-[11px] font-semibold">
+                      <span key={idx} className="px-2 py-0.5 rounded bg-[#0B2D5B]/5 border border-[#0B2D5B]/15 text-[#0B2D5B] font-mono text-[11px] font-semibold">
                         {item}
                       </span>
                     ))}
@@ -231,10 +231,10 @@ export default function ItemSetupModal({ onClose, userRole = 'admin' }) {
                 </div>
 
                 {/* Prescribed By Doctors */}
-                <div className="bg-white p-3 rounded-xl border border-purple-200 shadow-xs">
-                  <h4 className="font-bold text-purple-800 mb-2 flex items-center justify-between flex items-center gap-1">
-                    <span className="flex items-center gap-1"><Stethoscope className="w-3.5 h-3.5 text-purple-600" /> Prescribed By (Doctors / Hospitals)</span>
-                    <span className="text-[10px] bg-purple-100 text-purple-900 px-1.5 py-0.5 rounded font-mono">{prescribedByOptions.length} items</span>
+                <div className="bg-white p-3 rounded-xl border border-[#0B2D5B]/20 shadow-xs">
+                  <h4 className="font-bold text-[#0B2D5B] mb-2 flex items-center justify-between flex items-center gap-1">
+                    <span className="flex items-center gap-1"><Stethoscope className="w-3.5 h-3.5 text-[#D4AF37]" /> Prescribed By (Doctors / Hospitals)</span>
+                    <span className="text-[10px] bg-[#0B2D5B]/10 text-[#0B2D5B] px-1.5 py-0.5 rounded font-mono font-bold">{prescribedByOptions.length} items</span>
                   </h4>
                   <div className="flex gap-1.5 mb-2">
                     <input 
@@ -244,13 +244,13 @@ export default function ItemSetupModal({ onClose, userRole = 'admin' }) {
                       onChange={(e) => setNewPrescribedBy(e.target.value)}
                       className="flex-1 bg-white border border-slate-300 rounded-md px-2 py-1 text-slate-800"
                     />
-                    <button onClick={addPrescribedBy} className="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 rounded-md text-white font-bold">
+                    <button onClick={addPrescribedBy} className="px-2.5 py-1 bg-[#0B2D5B] hover:bg-[#143E77] border border-[#D4AF37]/40 rounded-md text-[#D4AF37] font-bold cursor-pointer">
                       <Plus className="w-4 h-4" />
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
                     {prescribedByOptions.map((item, idx) => (
-                      <span key={idx} className="px-2 py-0.5 rounded bg-purple-50 border border-purple-200 text-purple-900 font-mono text-[11px] font-semibold">
+                      <span key={idx} className="px-2 py-0.5 rounded bg-[#0B2D5B]/5 border border-[#0B2D5B]/15 text-[#0B2D5B] font-mono text-[11px] font-semibold">
                         {item}
                       </span>
                     ))}
@@ -426,8 +426,8 @@ export default function ItemSetupModal({ onClose, userRole = 'admin' }) {
           </div>
 
           <div className="flex justify-end pt-2">
-            <button onClick={onClose} className="px-5 py-2 bg-slate-800 hover:bg-slate-900 rounded-lg text-white font-bold flex items-center gap-1.5">
-              <Check className="w-4 h-4 text-emerald-400" /> Done
+            <button onClick={onClose} className="px-5 py-2 bg-[#0B2D5B] hover:bg-[#143E77] border border-[#D4AF37]/40 rounded-xl text-[#D4AF37] font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-md">
+              <Check className="w-4 h-4 text-[#D4AF37]" /> Done
             </button>
           </div>
         </div>

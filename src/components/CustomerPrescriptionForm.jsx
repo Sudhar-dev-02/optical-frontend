@@ -171,10 +171,10 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
     const refDiscount = isReferralApplied ? Math.round(total * 0.20) : 0;
     const walletRedeemed = Number(formData.walletRedeemed) || 0;
     
-    const subNet = Math.max(0, total - manualDiscount - refDiscount - walletRedeemed);
-    // 10% Wallet Cashback discount earned based on Net Amount if applied
-    const cashback = isCashbackApplied ? Math.round(subNet * 0.10) : 0;
-    const net = Math.max(0, subNet - cashback);
+    // Net Amount is what the customer actually pays today (Total - discounts - redeemed points)
+    const net = Math.max(0, total - manualDiscount - refDiscount - walletRedeemed);
+    // 10% Wallet Cashback earned based on Net Amount, credited to customer wallet (does not deduct from net amount)
+    const cashback = isCashbackApplied ? Math.round(net * 0.10) : 0;
     
     const advance = Number(formData.advanceAmount) || 0;
     const balance = Math.max(0, net - advance);
@@ -297,20 +297,20 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
   };
 
   const panelClass = isDarkMode ? 'glass-panel-dark' : 'glass-panel-light';
-  const inputClass = isDarkMode ? 'glass-input-dark text-slate-100' : 'glass-input-light text-slate-900';
-  const labelClass = isDarkMode ? 'text-slate-300' : 'text-slate-700';
+  const inputClass = isDarkMode ? 'glass-input-dark text-slate-100' : 'glass-input-light text-[#0B2D5B]';
+  const labelClass = isDarkMode ? 'text-slate-200' : 'text-[#0B2D5B]/90';
 
   return (
     <div className="flex flex-col gap-3 sm:gap-3.5">
       {/* SECTION 1: Customer Entry */}
       <div className={`${panelClass} p-3.5 sm:p-4.5 rounded-2xl sm:rounded-3xl transition-all duration-300`}>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 border-b border-slate-400/20 pb-2.5 sm:pb-3 gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 border-b border-[#0B2D5B]/15 dark:border-[#D4AF37]/20 pb-2.5 sm:pb-3 gap-2">
           <div className="flex items-center gap-2">
-            <span className="text-sky-500 font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5">
-              <User className="w-4 h-4 text-sky-500" /> Customer Entry
+            <span className="text-[#0B2D5B] dark:text-[#D4AF37] font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5">
+              <User className="w-4 h-4 text-[#D4AF37]" /> Customer Entry
             </span>
             {isEditing && (
-              <span className="text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-400 font-bold">
+              <span className="text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/40 text-[#D4AF37] font-bold">
                 Editing #{formData.billNo}
               </span>
             )}
@@ -399,15 +399,21 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
             />
           </div>
 
-          {/* 4) *Bill No */}
+          {/* 4) *Bill No (Continuous Auto Generated) */}
           <div className="col-span-1 flex flex-col gap-1">
-            <label className={`${labelClass} font-bold`}>4) *Bill No:</label>
+            <div className="flex items-center justify-between">
+              <label className={`${labelClass} font-bold`}>4) *Bill No:</label>
+              <span className="text-[10px] font-extrabold text-[#0B2D5B] dark:text-[#D4AF37] bg-[#0B2D5B]/10 dark:bg-[#0B2D5B]/40 px-1.5 py-0.5 rounded border border-[#0B2D5B]/20 dark:border-[#D4AF37]/30">
+                Auto Generated
+              </span>
+            </div>
             <input 
               type="text" 
-              placeholder="Bill No"
+              placeholder="Auto Generated"
               value={formData.billNo || ''}
-              onChange={(e) => setFormData({ ...formData, billNo: e.target.value })}
-              className={`w-full rounded-xl px-3 py-1.5 sm:py-2 font-mono font-bold text-blue-800 dark:text-sky-400 ${inputClass}`}
+              readOnly={true}
+              title="Bill number is continuously auto-generated in sequence and cannot be typed manually"
+              className={`w-full rounded-xl px-3 py-1.5 sm:py-2 font-mono font-bold text-[#0B2D5B] dark:text-[#D4AF37] cursor-not-allowed bg-slate-100/90 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 select-none shadow-inner`}
             />
           </div>
 
@@ -636,10 +642,10 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
         {/* Prescription Eye Power Matrix (Left 7 Cols) */}
         <div className={`${panelClass} lg:col-span-7 p-3.5 sm:p-4.5 rounded-2xl sm:rounded-3xl`}>
           {/* SECTION 2: Prescription Rx Powers */}
-          <div className="mt-3.5 pt-3 border-t border-slate-400/20">
+          <div className="mt-3.5 pt-3 border-t border-[#0B2D5B]/15 dark:border-[#D4AF37]/20">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sky-500 font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5">
-                <Glasses className="w-4 h-4 text-sky-500" /> Prescription
+              <span className="text-[#0B2D5B] dark:text-[#D4AF37] font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5">
+                <Glasses className="w-4 h-4 text-[#D4AF37]" /> Prescription
               </span>
               <span className="opacity-60 text-[10px] sm:text-[11px] uppercase font-bold font-mono">RE & LE Powers</span>
             </div>
@@ -654,21 +660,20 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
                   <div>CYL</div>
                   <div>AXIS</div>
                   <div>ADD</div>
-                  {/* <div>VA.</div> */}
                 </div>
 
                 {/* Right Eye RE */}
                 <div className={`grid grid-cols-5 gap-1.5 items-center mb-2 p-2 rounded-xl border transition-all ${
-                  isDarkMode ? 'bg-sky-950/30 border-sky-800/40' : 'bg-blue-50/80 border-blue-200'
+                  isDarkMode ? 'bg-[#0B2D5B]/40 border-[#D4AF37]/30' : 'bg-[#0B2D5B]/5 border-[#0B2D5B]/20'
                 }`}>
-                  <span className="font-extrabold text-xs text-blue-800 dark:text-sky-400 pl-1">RE</span>
+                  <span className="font-extrabold text-xs text-[#0B2D5B] dark:text-[#D4AF37] pl-1">RE</span>
                   <input 
                     type="text"
                     list="sphOptionsList"
                     placeholder="SPH"
                     value={formData.prescription?.rightEye?.sph || ''}
                     onChange={(e) => handleRxChange('rightEye', 'sph', e.target.value.replace(/[^0-9+\-.\splanoPLANO]/gi, ''))}
-                    className={`w-full rounded-lg px-1.5 py-1 font-mono font-bold text-sky-500 text-[11px] ${inputClass}`}
+                    className={`w-full rounded-lg px-1.5 py-1 font-mono font-bold text-[#0B2D5B] dark:text-[#D4AF37] text-[11px] ${inputClass}`}
                   />
                   <input 
                     type="text"
@@ -694,29 +699,20 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
                     onChange={(e) => handleRxChange('rightEye', 'add', e.target.value.replace(/[^0-9+\-.\s]/gi, ''))}
                     className={`w-full rounded-lg px-1.5 py-1 font-mono text-[11px] ${inputClass}`}
                   />
-                  {/* <input 
-                    type="text"
-                    list="vaOptionsList"
-                    placeholder="VA"
-                    title="Enter Visual Acuity or Comments (e.g., 6/6, 6/6-2, PH 6/6, CF, NIP, J1)"
-                    value={formData.prescription?.rightEye?.va || ''}
-                    onChange={(e) => handleRxChange('rightEye', 'va', e.target.value.replace(/[^0-9\/a-zA-Z\s+.\-]/g, ''))}
-                    className={`w-full rounded-lg px-1.5 py-1 font-mono text-[11px] ${inputClass}`}
-                  /> */}
                 </div>
 
                 {/* Left Eye LE */}
                 <div className={`grid grid-cols-5 gap-1.5 items-center mb-3 p-2 rounded-xl border transition-all ${
-                  isDarkMode ? 'bg-sky-950/30 border-sky-800/40' : 'bg-sky-500/10 border-sky-300/60'
+                  isDarkMode ? 'bg-[#0B2D5B]/40 border-[#D4AF37]/30' : 'bg-[#0B2D5B]/5 border-[#0B2D5B]/20'
                 }`}>
-                  <span className="font-extrabold text-xs text-sky-500 pl-1">LE</span>
+                  <span className="font-extrabold text-xs text-[#0B2D5B] dark:text-[#D4AF37] pl-1">LE</span>
                   <input 
                     type="text"
                     list="sphOptionsList"
                     placeholder="SPH"
                     value={formData.prescription?.leftEye?.sph || ''}
                     onChange={(e) => handleRxChange('leftEye', 'sph', e.target.value.replace(/[^0-9+\-.\splanoPLANO]/gi, ''))}
-                    className={`w-full rounded-lg px-1.5 py-1 font-mono font-bold text-sky-500 text-[11px] ${inputClass}`}
+                    className={`w-full rounded-lg px-1.5 py-1 font-mono font-bold text-[#0B2D5B] dark:text-[#D4AF37] text-[11px] ${inputClass}`}
                   />
                   <input 
                     type="text"
@@ -792,11 +788,11 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
             {/* LENS Row */}
             <div className="grid grid-cols-1 sm:flex sm:flex-nowrap items-center gap-2 min-w-0 w-full">
               <div className="flex items-center gap-1.5 min-w-0 flex-1 w-full">
-                <span className="font-extrabold w-12 shrink-0 text-sky-500">Lens:</span>
+                <span className="font-extrabold w-12 shrink-0 text-[#0B2D5B] dark:text-[#D4AF37]">Lens:</span>
                 <select 
                   value={formData.lens.type || ''}
                   onChange={(e) => handleProductChange('lens', 'type', e.target.value)}
-                  className={`flex-1 min-w-0 max-w-full rounded-lg px-2 py-1.5 font-semibold text-sky-500 truncate text-ellipsis ${inputClass}`}
+                  className={`flex-1 min-w-0 max-w-full rounded-lg px-2 py-1.5 font-semibold text-[#0B2D5B] dark:text-[#D4AF37] truncate text-ellipsis ${inputClass}`}
                 >
                   {lensTypeOptions.map(opt => <option key={opt} value={opt} className={isDarkMode ? 'bg-slate-900' : ''}>{opt || '-- Lens Type --'}</option>)}
                 </select>
@@ -815,7 +811,7 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
                   className={`flex-1 min-w-0 max-w-full rounded-lg px-2 py-1.5 font-medium truncate text-ellipsis ${inputClass}`}
                 >
                   {lensBrandOptions.map(opt => <option key={opt} value={opt} className={isDarkMode ? 'bg-slate-900' : ''}>{opt || '-- Brand --'}</option>)}
-                  <option value="__ADD_CUSTOM__" className={isDarkMode ? 'bg-slate-900 text-sky-400 font-bold' : 'text-sky-600 font-bold'}>+ Add Custom...</option>
+                  <option value="__ADD_CUSTOM__" className={isDarkMode ? 'bg-slate-900 text-[#D4AF37] font-bold' : 'text-[#0B2D5B] font-bold'}>+ Add Custom...</option>
                 </select>
 
                 <select 
@@ -846,7 +842,7 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
                   placeholder="Amount"
                   value={formData.lens.price}
                   onChange={(e) => handleProductChange('lens', 'price', e.target.value.replace(/[^0-9.]/g, ''))}
-                  className={`w-24 rounded-lg px-2 py-1.5 font-mono text-blue-800 dark:text-sky-400 font-bold text-right ${inputClass}`}
+                  className={`w-24 rounded-lg px-2 py-1.5 font-mono text-[#0B2D5B] dark:text-[#D4AF37] font-bold text-right ${inputClass}`}
                 />
               </div>
             </div>
@@ -854,11 +850,11 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
             {/* FRAME Row */}
             <div className="grid grid-cols-1 sm:flex sm:flex-nowrap items-center gap-2 min-w-0 w-full">
               <div className="flex items-center gap-1.5 min-w-0 flex-1 w-full">
-                <span className="font-extrabold w-12 shrink-0 text-blue-800 dark:text-sky-400">Frame:</span>
+                <span className="font-extrabold w-12 shrink-0 text-[#0B2D5B] dark:text-[#D4AF37]">Frame:</span>
                 <select 
                   value={formData.frame.type || ''}
                   onChange={(e) => handleProductChange('frame', 'type', e.target.value)}
-                  className={`flex-1 min-w-0 max-w-full rounded-lg px-2 py-1.5 font-semibold text-blue-800 dark:text-sky-400 truncate text-ellipsis ${inputClass}`}
+                  className={`flex-1 min-w-0 max-w-full rounded-lg px-2 py-1.5 font-semibold text-[#0B2D5B] dark:text-[#D4AF37] truncate text-ellipsis ${inputClass}`}
                 >
                   {frameTypeOptions.map(opt => <option key={opt} value={opt} className={isDarkMode ? 'bg-slate-900' : ''}>{opt}</option>)}
                 </select>
@@ -869,7 +865,7 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
                   className={`flex-1 min-w-0 max-w-full rounded-lg px-2 py-1.5 font-medium truncate text-ellipsis ${inputClass}`}
                 >
                   {frameBrandOptions.map(opt => <option key={opt} value={opt} className={isDarkMode ? 'bg-slate-900' : ''}>{opt}</option>)}
-                  <option value="__ADD_CUSTOM__" className={isDarkMode ? 'bg-slate-900 text-sky-400 font-bold' : 'text-blue-700 font-bold'}>+ Add Custom...</option>
+                  <option value="__ADD_CUSTOM__" className={isDarkMode ? 'bg-slate-900 text-[#D4AF37] font-bold' : 'text-[#0B2D5B] font-bold'}>+ Add Custom...</option>
                 </select>
 
                 <select 
@@ -900,7 +896,7 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
                   placeholder="Amount"
                   value={formData.frame.price}
                   onChange={(e) => handleProductChange('frame', 'price', e.target.value.replace(/[^0-9.]/g, ''))}
-                  className={`w-24 rounded-lg px-2 py-1.5 font-mono text-blue-800 dark:text-sky-400 font-bold text-right ${inputClass}`}
+                  className={`w-24 rounded-lg px-2 py-1.5 font-mono text-[#0B2D5B] dark:text-[#D4AF37] font-bold text-right ${inputClass}`}
                 />
               </div>
             </div>
@@ -922,9 +918,9 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
         {/* Financial Summary Panel (Right 5 Cols) */}
         <div className="lg:col-span-5 flex flex-col gap-3.5">
           <div className={`${panelClass} p-3.5 sm:p-4.5 rounded-2xl sm:rounded-3xl text-xs flex flex-col justify-between flex-1`}>
-            <div className="flex items-center justify-between border-b border-slate-400/20 pb-2 mb-3">
-              <span className="text-blue-800 dark:text-sky-400 font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5">
-                <DollarSign className="w-4 h-4 text-blue-800 dark:text-sky-400" /> Payment Summary
+            <div className="flex items-center justify-between border-b border-[#0B2D5B]/15 dark:border-[#D4AF37]/20 pb-2 mb-3">
+              <span className="text-[#0B2D5B] dark:text-[#D4AF37] font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5">
+                <DollarSign className="w-4 h-4 text-[#D4AF37]" /> Payment Summary
               </span>
               <span className="opacity-70 font-mono font-bold text-[11px]">INR ₹</span>
             </div>
@@ -1028,18 +1024,23 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
                 <span className="font-mono font-black text-blue-800 dark:text-sky-400 text-base">₹ {formData.netAmount.toFixed(2)}</span>
               </div>
 
-              {/* 10% Cashback Preview Badge with Apply/Unapply Toggle */}
+              {/* 10% Cashback to Wallet Preview Badge with Enable/Disable Toggle */}
               <div className={`p-2.5 rounded-xl border flex items-center justify-between text-xs font-bold transition-all shadow-xs ${
                 isCashbackApplied
-                  ? 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-sky-500/15 dark:to-blue-600/15 border-blue-200 dark:border-sky-500/30 text-blue-900 dark:text-sky-300'
+                  ? 'bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-900/20 border-emerald-300 dark:border-emerald-700/50 text-emerald-900 dark:text-emerald-300'
                   : 'bg-slate-100 dark:bg-slate-800/60 border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400'
               }`}>
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <Wallet className={`w-4 h-4 ${isCashbackApplied ? 'text-blue-700 dark:text-sky-400 animate-pulse' : 'text-slate-400'}`} />
-                  <span>10% Wallet Cashback Off:</span>
-                  <span className="font-mono font-extrabold text-sm ml-0.5">
-                    {isCashbackApplied ? `- ₹ ${formData.cashbackEarned || 0}.00` : '₹ 0.00 (Unapplied)'}
+                  <Wallet className={`w-4 h-4 ${isCashbackApplied ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`} />
+                  <span>10% Wallet Cashback:</span>
+                  <span className="font-mono font-extrabold text-sm ml-0.5 text-emerald-700 dark:text-emerald-400">
+                    {isCashbackApplied ? `+ ₹ ${formData.cashbackEarned || 0}.00` : '₹ 0.00 (Disabled)'}
                   </span>
+                  {isCashbackApplied && (
+                    <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/50 px-1.5 py-0.5 rounded-md">
+                      Adds to Wallet
+                    </span>
+                  )}
                 </div>
 
                 <button
@@ -1047,18 +1048,18 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
                   onClick={() => setIsCashbackApplied(!isCashbackApplied)}
                   className={`px-2.5 py-1 rounded-lg text-xs font-extrabold flex items-center gap-1 cursor-pointer transition-all shadow-xs active:scale-95 shrink-0 ${
                     isCashbackApplied
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/20'
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20'
                       : 'bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                   }`}
-                  title={isCashbackApplied ? 'Click to unapply 10% cashback discount' : 'Click to apply 10% cashback discount'}
+                  title={isCashbackApplied ? 'Click to disable 10% cashback for this order' : 'Click to enable 10% cashback for this order'}
                 >
                   {isCashbackApplied ? (
                     <>
-                      <CheckCircle2 className="w-3.5 h-3.5 text-blue-200" />
-                      <span>Applied</span>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-100" />
+                      <span>Enabled</span>
                     </>
                   ) : (
-                    <span>Apply</span>
+                    <span>Enable</span>
                   )}
                 </button>
               </div>
@@ -1100,9 +1101,9 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
                 />
               </div>
 
-              <div className="flex items-center justify-between pt-1.5 border-t border-slate-400/20">
-                <span className="text-blue-800 dark:text-sky-400 font-black">Bal.Amt:</span>
-                <span className="font-mono font-bold text-blue-800 dark:text-sky-400 text-sm">₹ {formData.balanceAmount.toFixed(2)}</span>
+              <div className="flex items-center justify-between pt-1.5 border-t border-[#0B2D5B]/15 dark:border-[#D4AF37]/20">
+                <span className="text-[#0B2D5B] dark:text-[#D4AF37] font-black">Bal.Amt:</span>
+                <span className="font-mono font-black text-[#0B2D5B] dark:text-[#D4AF37] text-base">₹ {formData.balanceAmount.toFixed(2)}</span>
               </div>
 
               <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-400/20">

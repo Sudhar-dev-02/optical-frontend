@@ -56,32 +56,32 @@ export default function Sidebar({
   const mobileDrawerClass = isMobileOpen ? 'translate-x-0 w-64' : '-translate-x-full md:translate-x-0';
   const widthCollapseClass = isCollapsed ? 'md:w-20' : 'md:w-64';
   const asideThemeClass = isDarkMode 
-    ? 'bg-slate-900/95 border-slate-800/80 text-slate-100 shadow-2xl shadow-slate-950/80' 
-    : 'bg-white/95 border-slate-200/80 text-slate-900 shadow-2xl shadow-slate-300/50';
+    ? 'bg-[#061833]/95 border-[#0B2D5B]/60 text-slate-100 shadow-2xl shadow-[#030d1e]/80' 
+    : 'bg-white/95 border-[#0B2D5B]/15 text-[#0B2D5B] shadow-2xl shadow-slate-300/50';
 
   const asideClassName = `fixed md:sticky top-0 bottom-0 left-0 z-50 h-screen select-none transition-all duration-300 flex flex-col justify-between border-r backdrop-blur-2xl ${mobileDrawerClass} ${widthCollapseClass} ${asideThemeClass}`;
 
   const headerAlignClass = isCollapsedView ? 'flex-col gap-2.5 justify-center py-3 px-2' : 'justify-between gap-3';
-  const headerClassName = `p-3.5 sm:p-4 border-b border-slate-700/20 flex items-center ${headerAlignClass}`;
+  const headerClassName = `p-3.5 sm:p-4 border-b border-[#0B2D5B]/20 dark:border-[#D4AF37]/20 flex items-center ${headerAlignClass}`;
 
   const logoWrapperClass = `flex items-center gap-3 overflow-hidden transition-all ${isCollapsedView ? 'justify-center w-full' : ''}`;
 
-  const brandTitleClass = isDarkMode ? 'text-slate-100' : 'text-slate-900';
-  const subtitleClass = `text-[10px] font-semibold tracking-wide flex items-center gap-1 ${isDarkMode ? 'text-sky-400' : 'text-blue-600'}`;
+  const brandTitleClass = isDarkMode ? 'text-slate-100' : 'text-[#0B2D5B]';
+  const subtitleClass = `text-[10px] font-semibold tracking-wide flex items-center gap-1 ${isDarkMode ? 'text-[#D4AF37]' : 'text-[#0B2D5B]'}`;
 
   const collapseBtnTheme = isDarkMode 
-    ? 'bg-slate-800/80 border-slate-700 text-slate-400 hover:text-white hover:bg-slate-700' 
-    : 'bg-slate-100 border-slate-300 text-slate-600 hover:text-slate-900 hover:bg-slate-200';
+    ? 'bg-[#0B2D5B]/60 border-[#D4AF37]/30 text-amber-200 hover:text-white hover:bg-[#0B2D5B]' 
+    : 'bg-[#0B2D5B]/10 border-[#0B2D5B]/20 text-[#0B2D5B] hover:text-[#0B2D5B] hover:bg-[#0B2D5B]/15';
   const collapseBtnSize = isCollapsedView ? 'w-9 h-9 p-0 shadow-sm' : 'p-1.5';
   const desktopCollapseBtnClass = `rounded-xl border transition-all cursor-pointer hidden md:flex items-center justify-center ${collapseBtnTheme} ${collapseBtnSize}`;
 
-  const mobileCloseBtnTheme = isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-100 border-slate-300 text-slate-700';
+  const mobileCloseBtnTheme = isDarkMode ? 'bg-[#0B2D5B] border-[#D4AF37]/40 text-[#D4AF37]' : 'bg-slate-100 border-[#0B2D5B]/20 text-[#0B2D5B]';
   const mobileCloseBtnClass = `p-1.5 rounded-xl border transition-all cursor-pointer flex md:hidden items-center justify-center ${mobileCloseBtnTheme}`;
 
-  const navHeaderLabelClass = `px-3 py-1 text-[10px] font-extrabold tracking-wider uppercase text-slate-400 ${isCollapsedView ? 'hidden' : 'block'}`;
+  const navHeaderLabelClass = `px-3 py-1 text-[10px] font-extrabold tracking-wider uppercase ${isDarkMode ? 'text-[#D4AF37]/70' : 'text-[#0B2D5B]/60'} ${isCollapsedView ? 'hidden' : 'block'}`;
 
   const themeBtnLayout = isCollapsedView ? 'w-12 h-12 p-0 mx-auto rounded-2xl' : 'w-full p-2.5 rounded-xl gap-2.5';
-  const themeBtnStyle = isDarkMode ? 'bg-slate-800/80 border-slate-700 text-sky-400 hover:bg-slate-700' : 'bg-slate-100 border-slate-300 text-blue-600 hover:bg-slate-200';
+  const themeBtnStyle = isDarkMode ? 'bg-[#0B2D5B]/60 border-[#D4AF37]/30 text-[#D4AF37] hover:bg-[#0B2D5B]' : 'bg-[#0B2D5B]/5 border-[#0B2D5B]/20 text-[#0B2D5B] hover:bg-[#0B2D5B]/10';
   const themeBtnClass = `border flex items-center justify-center transition-all cursor-pointer text-xs font-bold ${themeBtnLayout} ${themeBtnStyle}`;
 
   const getNavItemClassName = (item, isActive) => {
@@ -89,20 +89,20 @@ export default function Sidebar({
     const sizing = isCollapsedView ? 'w-12 h-12 p-0 mx-auto flex items-center justify-center rounded-2xl ' : 'w-full flex items-center gap-3.5 px-3.5 py-3 rounded-2xl ';
     let theme = '';
     if (isActive) {
-      theme = `bg-gradient-to-r ${item.color} text-white shadow-lg shadow-sky-500/25 ring-2 ring-white/30`;
+      theme = 'bg-gradient-to-r from-[#0B2D5B] to-[#143e77] text-[#D4AF37] shadow-lg shadow-[#0B2D5B]/40 ring-1.5 ring-[#D4AF37]/60 border border-[#D4AF37]/40';
     } else if (isDarkMode) {
-      theme = 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60';
+      theme = 'text-slate-300 hover:text-[#D4AF37] hover:bg-[#0B2D5B]/40';
     } else {
-      theme = 'text-slate-600 hover:text-slate-900 hover:bg-slate-100';
+      theme = 'text-[#0B2D5B]/80 hover:text-[#0B2D5B] hover:bg-[#0B2D5B]/10';
     }
     return `${base}${sizing}${theme}`;
   };
 
   const getNavBadgeClassName = (isActive) => {
     if (isActive) {
-      return 'px-2 py-0.5 rounded-full text-xs font-black transition-all bg-white/25 text-white';
+      return 'px-2 py-0.5 rounded-full text-xs font-black transition-all bg-[#D4AF37] text-[#061833] shadow-xs';
     }
-    return 'px-2 py-0.5 rounded-full text-xs font-black transition-all bg-sky-500/20 border border-sky-500/40 text-sky-400 animate-pulse';
+    return 'px-2 py-0.5 rounded-full text-xs font-black transition-all bg-[#D4AF37]/20 border border-[#D4AF37]/50 text-[#D4AF37] animate-pulse';
   };
 
   return (
@@ -132,7 +132,7 @@ export default function Sidebar({
               <div className="truncate">
                 <h2 className="text-lg font-brand font-semibold tracking-tight truncate flex items-center gap-0.5">
                   <span className={brandTitleClass}>Optics</span>
-                  <span className="text-blue-700 dark:text-sky-400 font-bold">India</span>
+                  <span className="text-[#D4AF37] font-extrabold">India</span>
                 </h2>
               </div>
             )}
@@ -218,13 +218,13 @@ export default function Sidebar({
           >
             {isDarkMode ? (
               <>
-                <Sun className="w-4 h-4 text-sky-400 shrink-0" />
+                <Sun className="w-4 h-4 text-[#D4AF37] shrink-0" />
                 {(!isCollapsed || isMobileOpen) && <span className="text-slate-200 font-bold truncate">Frosted Light</span>}
               </>
             ) : (
               <>
-                <Moon className="w-4 h-4 text-sky-600 shrink-0" />
-                {(!isCollapsed || isMobileOpen) && <span className="text-slate-800 font-bold truncate">Obsidian Dark</span>}
+                <Moon className="w-4 h-4 text-[#0B2D5B] shrink-0" />
+                {(!isCollapsed || isMobileOpen) && <span className="text-[#0B2D5B] font-bold truncate">Midnight Navy</span>}
               </>
             )}
           </button>

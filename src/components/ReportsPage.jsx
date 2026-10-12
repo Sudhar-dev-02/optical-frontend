@@ -1,19 +1,20 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  TrendingUp, 
-  DollarSign, 
-  PieChart, 
-  BarChart3, 
-  Calendar, 
-  ShoppingBag, 
-  AlertCircle, 
-  Truck, 
-  FileSpreadsheet, 
-  Search, 
+import {
+  TrendingUp,
+  DollarSign,
+  PieChart,
+  BarChart3,
+  Calendar,
+  ShoppingBag,
+  AlertCircle,
+  Truck,
+  FileSpreadsheet,
+  Search,
   RotateCcw,
   CheckCircle2,
   Clock,
-  Glasses
+  Glasses,
+  Users
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -76,12 +77,14 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
     const lensTypeCounts = {};
     const frameBrandCounts = {};
 
+    const activeBills = hasDateSelected || (searchQuery && searchQuery.trim()) ? filteredBills : bills;
+
     // Check if any bill has explicit deliveryAmount field
-    const hasExplicitDeliveryAmount = filteredBills.some(
+    const hasExplicitDeliveryAmount = activeBills.some(
       b => b.deliveryAmount !== undefined && b.deliveryAmount !== null && b.deliveryAmount !== '' && Number(b.deliveryAmount) > 0
     );
 
-    filteredBills.forEach(bill => {
+    activeBills.forEach(bill => {
       const net = Number(bill.netAmount ?? bill.totalAmount ?? 0);
       const bal = Number(bill.balanceAmount ?? 0);
       totalBalance += bal;
@@ -119,17 +122,27 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
     // Formula requested: Gross sales = total sale + delivery amount
     const grossSales = totalSale + totalDelivery;
 
+    // Total Customer (unique customer count in active bills)
+    const uniqueCustomerCount = new Set(
+      activeBills.map(b => (b.customer?.phone || b.customer?.name || '').trim().toLowerCase()).filter(Boolean)
+    ).size;
+
+    // Total Delivery Count (count of delivered orders in active bills)
+    const totalDeliveryCount = activeBills.filter(b => b.deliveryStatus === 'Delivered').length;
+
     return {
-      totalBills: filteredBills.length,
+      totalBills: activeBills.length,
       grossSales,
       totalSale,
       totalBalance,
       totalDelivery,
+      totalCustomer: uniqueCustomerCount,
+      totalDeliveryCount,
       payModeSplit: { cashTotal, upiTotal, cardTotal, onlineTotal, bankTotal },
       lensTypeCounts,
       frameBrandCounts
     };
-  }, [filteredBills]);
+  }, [filteredBills, bills, hasDateSelected, searchQuery]);
 
   // Quick Date Preset Handlers
   const handleSetToday = () => {
@@ -159,13 +172,13 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
     const rCyl = rx.rightEye?.cyl || rx.rightEye?.dv?.cylinder || '-';
     const rAxi = rx.rightEye?.axis || rx.rightEye?.dv?.axis || '-';
     const rAdd = rx.rightEye?.add || '-';
-    const rVa  = rx.rightEye?.va || '-';
+    const rVa = rx.rightEye?.va || '-';
 
     const lSph = rx.leftEye?.sph || rx.leftEye?.dv?.sphere || '-';
     const lCyl = rx.leftEye?.cyl || rx.leftEye?.dv?.cylinder || '-';
     const lAxi = rx.leftEye?.axis || rx.leftEye?.dv?.axis || '-';
     const lAdd = rx.leftEye?.add || '-';
-    const lVa  = rx.leftEye?.va || '-';
+    const lVa = rx.leftEye?.va || '-';
 
     const hasAny = [rSph, rCyl, rAxi, rAdd, rVa, lSph, lCyl, lAxi, lAdd, lVa].some(
       v => v && v !== '-' && String(v).trim() !== ''
@@ -194,13 +207,13 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
     const rCyl = rx.rightEye?.cyl || rx.rightEye?.dv?.cylinder || '';
     const rAxi = rx.rightEye?.axis || rx.rightEye?.dv?.axis || '';
     const rAdd = rx.rightEye?.add || '';
-    const rVa  = rx.rightEye?.va || '';
+    const rVa = rx.rightEye?.va || '';
 
     const lSph = rx.leftEye?.sph || rx.leftEye?.dv?.sphere || '';
     const lCyl = rx.leftEye?.cyl || rx.leftEye?.dv?.cylinder || '';
     const lAxi = rx.leftEye?.axis || rx.leftEye?.dv?.axis || '';
     const lAdd = rx.leftEye?.add || '';
-    const lVa  = rx.leftEye?.va || '';
+    const lVa = rx.leftEye?.va || '';
 
     const hasAnyPower = [rSph, rCyl, rAxi, rAdd, rVa, lSph, lCyl, lAxi, lAdd, lVa].some(
       v => v && v !== '-' && String(v).trim() !== ''
@@ -215,20 +228,18 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
     }
 
     return (
-      <div 
-        onClick={(e) => e.stopPropagation()} 
-        className={`rounded-lg border overflow-hidden text-[10px] font-mono shadow-xs min-w-[240px] max-w-[290px] my-0.5 ${
-          isDarkMode 
-            ? 'bg-slate-950/85 border-slate-700/70' 
-            : 'bg-white/95 border-slate-200 shadow-2xs'
-        }`}
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className={`rounded-lg border overflow-hidden text-[10px] font-mono shadow-xs min-w-[240px] max-w-[290px] my-0.5 ${isDarkMode
+          ? 'bg-slate-950/85 border-slate-700/70'
+          : 'bg-white/95 border-slate-200 shadow-2xs'
+          }`}
       >
         {/* Prescription Header */}
-        <div className={`grid grid-cols-6 gap-1 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-center border-b ${
-          isDarkMode 
-            ? 'bg-slate-900/90 border-slate-800 text-slate-400' 
-            : 'bg-slate-100/90 border-slate-200 text-slate-600'
-        }`}>
+        <div className={`grid grid-cols-6 gap-1 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-center border-b ${isDarkMode
+          ? 'bg-slate-900/90 border-slate-800 text-slate-400'
+          : 'bg-slate-100/90 border-slate-200 text-slate-600'
+          }`}>
           <span className="text-left font-sans font-bold">EYE</span>
           <span>SPH</span>
           <span>CYL</span>
@@ -238,11 +249,10 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
         </div>
 
         {/* Right Eye RE Box / Row */}
-        <div className={`grid grid-cols-6 gap-1 px-2 py-1 items-center text-center border-b ${
-          isDarkMode 
-            ? 'border-slate-800/70 bg-rose-950/25 text-slate-200' 
-            : 'border-slate-100 bg-rose-50/70 text-slate-800'
-        }`}>
+        <div className={`grid grid-cols-6 gap-1 px-2 py-1 items-center text-center border-b ${isDarkMode
+          ? 'border-slate-800/70 bg-rose-950/25 text-slate-200'
+          : 'border-slate-100 bg-rose-50/70 text-slate-800'
+          }`}>
           <span className="text-left font-black text-rose-500 font-sans text-[10px] flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0"></span>
             RE
@@ -255,11 +265,10 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
         </div>
 
         {/* Left Eye LE Box / Row */}
-        <div className={`grid grid-cols-6 gap-1 px-2 py-1 items-center text-center ${
-          isDarkMode 
-            ? 'bg-sky-950/25 text-slate-200' 
-            : 'bg-sky-50/70 text-slate-800'
-        }`}>
+        <div className={`grid grid-cols-6 gap-1 px-2 py-1 items-center text-center ${isDarkMode
+          ? 'bg-sky-950/25 text-slate-200'
+          : 'bg-sky-50/70 text-slate-800'
+          }`}>
           <span className="text-left font-black text-sky-500 font-sans text-[10px] flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-sky-500 shrink-0"></span>
             LE
@@ -273,9 +282,8 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
 
         {/* Optional PD / RI details */}
         {(rx.pd || rx.ri) && (
-          <div className={`flex items-center justify-between px-2 py-0.5 text-[9px] border-t font-sans ${
-            isDarkMode ? 'border-slate-800 bg-slate-900/60 text-slate-400' : 'border-slate-100 bg-slate-50 text-slate-500'
-          }`}>
+          <div className={`flex items-center justify-between px-2 py-0.5 text-[9px] border-t font-sans ${isDarkMode ? 'border-slate-800 bg-slate-900/60 text-slate-400' : 'border-slate-100 bg-slate-50 text-slate-500'
+            }`}>
             {rx.pd && <span><strong>PD:</strong> {rx.pd} mm</span>}
             {rx.ri && <span><strong>R.I:</strong> {rx.ri}</span>}
           </div>
@@ -350,19 +358,19 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
   };
 
   const panelClass = isDarkMode ? 'glass-panel-dark' : 'glass-panel-light';
-  const labelClass = isDarkMode ? 'text-slate-300' : 'text-slate-700';
-  const inputClass = isDarkMode 
-    ? 'bg-slate-900 border-slate-700 text-slate-100 focus:border-sky-500' 
-    : 'bg-white border-slate-300 text-slate-900 focus:border-sky-500';
+  const labelClass = isDarkMode ? 'text-slate-300' : 'text-[#0B2D5B]/80';
+  const inputClass = isDarkMode
+    ? 'bg-[#061833] border-[#0B2D5B] text-slate-100 focus:border-[#D4AF37]'
+    : 'bg-white border-[#0B2D5B]/20 text-[#0B2D5B] focus:border-[#D4AF37]';
 
   return (
     <div className="space-y-4 pb-12 animate-in fade-in duration-300">
-      {/* Top Banner & 4 KPI Boxes */}
+      {/* Top Banner & 6 KPI Boxes */}
       <div className={`${panelClass} p-4 sm:p-5 rounded-2xl sm:rounded-3xl`}>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-400/20 pb-3 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#0B2D5B]/15 dark:border-[#D4AF37]/20 pb-3 mb-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-black bg-gradient-to-r from-blue-800 via-blue-600 to-indigo-700 dark:from-sky-400 dark:via-blue-500 dark:to-indigo-400 bg-clip-text text-transparent flex items-center gap-2">
-              <TrendingUp className="w-6 h-6 text-blue-700 dark:text-sky-400" /> Sales & Revenue Reports Dashboard
+            <h1 className="text-xl sm:text-2xl font-black text-[#0B2D5B] dark:text-[#D4AF37] flex items-center gap-2">
+              <TrendingUp className="w-6 h-6 text-[#D4AF37]" /> Sales & Revenue Reports Dashboard
             </h1>
             <p className={`text-xs font-semibold mt-0.5 ${labelClass}`}>
               Comprehensive Financial Metrics, Payment Mode Breakdowns, and Inventory Analytics
@@ -370,55 +378,52 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono font-bold px-3 py-1 rounded-xl bg-blue-50 dark:bg-sky-500/15 border border-blue-200 dark:border-sky-500/30 text-blue-800 dark:text-sky-400">
+            <span className="text-xs font-mono font-bold px-3 py-1 rounded-xl bg-[#0B2D5B]/10 dark:bg-[#0B2D5B]/50 border border-[#0B2D5B]/20 dark:border-[#D4AF37]/30 text-[#0B2D5B] dark:text-[#D4AF37]">
               Admin Exclusive
             </span>
           </div>
         </div>
 
-        {/* 4 KPI Cards: Gross Sales, Total Sale, Total Balance, Total Delivery */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+        {/* 6 KPI Cards: Gross Sales, Total Sale, Total Balance, Total Delivery, Total Delivery Count, Total Customer */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
           {/* Card 1: Gross Sales = Total Sale + Delivery Amount */}
-          <div className={`p-4 rounded-2xl border transition-all shadow-xs ${
-            isDarkMode ? 'bg-slate-900/60 border-slate-800' : 'bg-white/80 border-slate-200'
-          }`}>
-            <div className="flex items-center justify-between text-slate-600 dark:text-slate-400 font-bold mb-1">
+          <div className={`p-4 rounded-2xl border transition-all shadow-xs ${isDarkMode ? 'bg-[#061833]/90 border-[#0B2D5B]/60' : 'bg-white/90 border-[#0B2D5B]/15'
+            }`}>
+            <div className="flex items-center justify-between text-[#0B2D5B]/80 dark:text-slate-300 font-bold mb-1">
               <span>Gross Sales</span>
-              <DollarSign className="w-4 h-4 text-blue-700 dark:text-sky-400" />
+              <DollarSign className="w-4 h-4 text-[#D4AF37]" />
             </div>
-            <div className="text-xl sm:text-2xl font-black font-mono text-blue-900 dark:text-sky-400">
+            <div className="text-xl sm:text-2xl font-black font-mono text-[#0B2D5B] dark:text-[#D4AF37]">
               ₹ {summaryMetrics.grossSales.toFixed(2)}
             </div>
             <div className="text-[10px] opacity-70 font-semibold mt-0.5">
-              value(total sale + delivery amount)
+              total sale + delivery amount
             </div>
           </div>
 
           {/* Card 2: Total Sale */}
-          <div className={`p-4 rounded-2xl border transition-all shadow-xs ${
-            isDarkMode ? 'bg-sky-950/40 border-sky-800/40' : 'bg-blue-50/80 border-blue-200'
-          }`}>
-            <div className="flex items-center justify-between text-blue-800 dark:text-sky-400 font-bold mb-1">
+          <div className={`p-4 rounded-2xl border transition-all shadow-xs ${isDarkMode ? 'bg-[#0B2D5B]/30 border-[#D4AF37]/30' : 'bg-[#0B2D5B]/5 border-[#0B2D5B]/20'
+            }`}>
+            <div className="flex items-center justify-between text-[#0B2D5B] dark:text-[#D4AF37] font-bold mb-1">
               <span>Total Sale</span>
-              <ShoppingBag className="w-4 h-4 text-blue-700 dark:text-sky-400" />
+              <ShoppingBag className="w-4 h-4 text-[#D4AF37]" />
             </div>
-            <div className="text-xl sm:text-2xl font-black font-mono text-blue-900 dark:text-sky-400">
+            <div className="text-xl sm:text-2xl font-black font-mono text-[#0B2D5B] dark:text-[#D4AF37]">
               ₹ {summaryMetrics.totalSale.toFixed(2)}
             </div>
-            <div className="text-[10px] opacity-70 font-semibold mt-0.5 text-blue-800 dark:text-sky-400/80">
+            <div className="text-[10px] opacity-70 font-semibold mt-0.5 text-[#0B2D5B]/80 dark:text-[#D4AF37]/80">
               Total sale amount
             </div>
           </div>
 
           {/* Card 3: Total Balance */}
-          <div className={`p-4 rounded-2xl border transition-all shadow-xs ${
-            isDarkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-slate-50 border-slate-200'
-          }`}>
-            <div className="flex items-center justify-between text-blue-800 dark:text-sky-300 font-bold mb-1">
+          <div className={`p-4 rounded-2xl border transition-all shadow-xs ${isDarkMode ? 'bg-[#061833]/90 border-[#0B2D5B]/60' : 'bg-slate-50 border-slate-200'
+            }`}>
+            <div className="flex items-center justify-between text-[#0B2D5B] dark:text-amber-300 font-bold mb-1">
               <span>Total Balance</span>
-              <AlertCircle className="w-4 h-4 text-blue-700 dark:text-sky-400" />
+              <AlertCircle className="w-4 h-4 text-amber-500" />
             </div>
-            <div className="text-xl sm:text-2xl font-black font-mono text-blue-900 dark:text-sky-300">
+            <div className="text-xl sm:text-2xl font-black font-mono text-amber-600 dark:text-amber-400">
               ₹ {summaryMetrics.totalBalance.toFixed(2)}
             </div>
             <div className="text-[10px] opacity-70 font-semibold mt-0.5">
@@ -426,21 +431,51 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
             </div>
           </div>
 
-          {/* Card 4: Total Delivery */}
-          <div className={`p-4 rounded-2xl border transition-all shadow-xs ${
-            isDarkMode ? 'bg-sky-950/40 border-sky-800/40' : 'bg-blue-50/80 border-blue-200'
-          }`}>
-            <div className="flex items-center justify-between text-blue-800 dark:text-sky-400 font-bold mb-1">
+          {/* Card 4: Total Delivery Amount */}
+          <div className={`p-4 rounded-2xl border transition-all shadow-xs ${isDarkMode ? 'bg-[#0B2D5B]/30 border-[#D4AF37]/30' : 'bg-[#0B2D5B]/5 border-[#0B2D5B]/20'
+            }`}>
+            <div className="flex items-center justify-between text-[#0B2D5B] dark:text-[#D4AF37] font-bold mb-1">
               <span>Total Delivery</span>
-              <Truck className="w-4 h-4 text-blue-700 dark:text-sky-400" />
+              <Truck className="w-4 h-4 text-[#D4AF37]" />
             </div>
-            <div className="text-xl sm:text-2xl font-black font-mono text-blue-900 dark:text-sky-400">
+            <div className="text-xl sm:text-2xl font-black font-mono text-[#0B2D5B] dark:text-[#D4AF37]">
               ₹ {summaryMetrics.totalDelivery.toFixed(2)}
             </div>
-            <div className="text-[10px] opacity-70 font-semibold mt-0.5 text-blue-800 dark:text-sky-400/80">
+            <div className="text-[10px] opacity-70 font-semibold mt-0.5 text-[#0B2D5B]/80 dark:text-[#D4AF37]/80">
               Delivery amount
             </div>
           </div>
+
+          {/* Card 5: Total Delivery Count */}
+          <div className={`p-4 rounded-2xl border transition-all shadow-xs ${isDarkMode ? 'bg-emerald-950/40 border-emerald-800/40' : 'bg-emerald-50/80 border-emerald-200'
+            }`}>
+            <div className="flex items-center justify-between text-emerald-800 dark:text-emerald-400 font-bold mb-1">
+              <span>Total Delivery Count</span>
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div className="text-xl sm:text-2xl font-black font-mono text-emerald-900 dark:text-emerald-300">
+              {summaryMetrics.totalDeliveryCount}
+            </div>
+            <div className="text-[10px] opacity-70 font-semibold mt-0.5 text-emerald-700 dark:text-emerald-400/80">
+              {hasDateSelected ? 'Delivered in period' : 'Orders delivered'}
+            </div>
+          </div>
+
+          {/* Card 6: Total Customer */}
+          <div className={`p-4 rounded-2xl border transition-all shadow-xs ${isDarkMode ? 'bg-[#061833]/90 border-[#0B2D5B]/60' : 'bg-white/90 border-[#0B2D5B]/15'
+            }`}>
+            <div className="flex items-center justify-between text-[#0B2D5B]/80 dark:text-slate-300 font-bold mb-1">
+              <span>Total Customer</span>
+              <Users className="w-4 h-4 text-[#D4AF37]" />
+            </div>
+            <div className="text-xl sm:text-2xl font-black font-mono text-[#0B2D5B] dark:text-[#D4AF37]">
+              {summaryMetrics.totalCustomer}
+            </div>
+            <div className="text-[10px] opacity-70 font-semibold mt-0.5">
+              {hasDateSelected ? 'Customers in period' : 'Unique customer profiles'}
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -449,7 +484,7 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-400/20 pb-3">
           <div>
             <h2 className="text-base font-bold flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-blue-700 dark:text-sky-500" /> Date Range Filter & Sales Entries
+              <Calendar className="w-4 h-4 text-[#D4AF37]" /> Date Range Filter & Sales Entries
             </h2>
             <p className="text-xs opacity-70 mt-0.5">
               Filter billing entries between dates and export directly to Excel with full Prescription (Lens Powers)
@@ -460,22 +495,20 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
           <button
             onClick={handleExportExcel}
             disabled={!hasDateSelected || filteredBills.length === 0}
-            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
-              hasDateSelected && filteredBills.length > 0
-                ? 'bg-blue-700 hover:bg-blue-800 dark:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 text-white shadow-md shadow-blue-600/30 cursor-pointer'
-                : 'bg-slate-400/20 text-slate-400 cursor-not-allowed border border-slate-400/20 opacity-60'
-            }`}
+            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${hasDateSelected && filteredBills.length > 0
+              ? 'bg-[#0B2D5B] hover:bg-[#143E77] border border-[#D4AF37]/40 text-[#D4AF37] active:scale-95 shadow-md shadow-[#0B2D5B]/30 cursor-pointer'
+              : 'bg-slate-400/20 text-slate-400 cursor-not-allowed border border-slate-400/20 opacity-60'
+              }`}
             title={hasDateSelected && filteredBills.length > 0 ? "Export filtered records including Prescription to Microsoft Excel (.xlsx)" : "Select a date to view and export records"}
           >
-            <FileSpreadsheet className="w-4 h-4" />
+            <FileSpreadsheet className="w-4 h-4 text-[#D4AF37]" />
             <span>Download Excel</span>
           </button>
         </div>
 
         {/* Date Filter Controls Bar */}
-        <div className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border ${
-          isDarkMode ? 'bg-slate-950/60 border-slate-800' : 'bg-slate-50 border-slate-200'
-        }`}>
+        <div className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border ${isDarkMode ? 'bg-slate-950/60 border-slate-800' : 'bg-slate-50 border-slate-200'
+          }`}>
           <div className="flex flex-wrap items-center gap-3">
             {/* Start Date */}
             <div className="flex items-center gap-2">
@@ -504,22 +537,20 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
               <button
                 type="button"
                 onClick={handleSetToday}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
-                  isDarkMode 
-                    ? 'bg-slate-900 border-slate-700 hover:bg-slate-800 text-slate-300' 
-                    : 'bg-white border-slate-300 hover:bg-slate-100 text-slate-700 shadow-2xs'
-                }`}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${isDarkMode
+                  ? 'bg-slate-900 border-slate-700 hover:bg-slate-800 text-slate-300'
+                  : 'bg-white border-slate-300 hover:bg-slate-100 text-slate-700 shadow-2xs'
+                  }`}
               >
                 Today
               </button>
               <button
                 type="button"
                 onClick={handleSetThisMonth}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
-                  isDarkMode 
-                    ? 'bg-slate-900 border-slate-700 hover:bg-slate-800 text-slate-300' 
-                    : 'bg-white border-slate-300 hover:bg-slate-100 text-slate-700 shadow-2xs'
-                }`}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${isDarkMode
+                  ? 'bg-slate-900 border-slate-700 hover:bg-slate-800 text-slate-300'
+                  : 'bg-white border-slate-300 hover:bg-slate-100 text-slate-700 shadow-2xs'
+                  }`}
               >
                 This Month
               </button>
@@ -570,13 +601,11 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
         </div>
 
         {/* Filtered Entries Table with Prescription (Lens Powers) */}
-        <div className={`overflow-x-auto rounded-xl border max-h-[440px] overflow-y-auto ${
-          isDarkMode ? 'bg-slate-950/60 border-slate-800' : 'bg-white border-slate-200'
-        }`}>
+        <div className={`overflow-x-auto rounded-xl border max-h-[440px] overflow-y-auto ${isDarkMode ? 'bg-slate-950/60 border-slate-800' : 'bg-white border-slate-200'
+          }`}>
           <table className="w-full text-left text-xs min-w-[1100px]">
-            <thead className={`border-b font-extrabold sticky top-0 backdrop-blur-xl z-10 ${
-              isDarkMode ? 'bg-slate-900/95 border-slate-800 text-slate-300' : 'bg-slate-100/95 border-slate-200 text-slate-700'
-            }`}>
+            <thead className={`border-b font-extrabold sticky top-0 backdrop-blur-xl z-10 ${isDarkMode ? 'bg-slate-900/95 border-slate-800 text-slate-300' : 'bg-slate-100/95 border-slate-200 text-slate-700'
+              }`}>
               <tr>
                 <th className="p-2.5 border-r border-slate-400/20 text-center">Bill No.</th>
                 <th className="p-2.5 border-r border-slate-400/20">Date</th>
@@ -614,17 +643,16 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
                 </tr>
               ) : (
                 filteredBills.map((b) => {
-                  const formattedDate = b.date 
+                  const formattedDate = b.date
                     ? new Date(b.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-')
                     : 'N/A';
                   const isDelivered = b.deliveryStatus === 'Delivered';
 
                   return (
-                    <tr 
+                    <tr
                       key={b._id || b.billNo}
-                      className={`transition-all ${
-                        isDarkMode ? 'hover:bg-slate-900/60 text-slate-300' : 'hover:bg-slate-50 text-slate-800'
-                      }`}
+                      className={`transition-all ${isDarkMode ? 'hover:bg-slate-900/60 text-slate-300' : 'hover:bg-slate-50 text-slate-800'
+                        }`}
                     >
                       <td className="p-2.5 border-r border-slate-400/20 text-center font-bold text-amber-500">
                         {b.billNo}
@@ -661,11 +689,10 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
                         {Number(b.balanceAmount || 0).toFixed(2)}
                       </td>
                       <td className="p-2.5 border-r border-slate-400/20 text-center font-sans">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          isDelivered 
-                            ? 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/30'
-                            : 'bg-amber-500/15 text-amber-500 border border-amber-500/30'
-                        }`}>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${isDelivered
+                          ? 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/30'
+                          : 'bg-amber-500/15 text-amber-500 border border-amber-500/30'
+                          }`}>
                           {isDelivered ? <CheckCircle2 className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
                           {b.deliveryStatus || 'Pending'}
                         </span>

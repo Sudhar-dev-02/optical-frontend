@@ -143,11 +143,11 @@ export default function WalletPage({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-400/20 pb-4">
           <div>
             <div className="flex items-center gap-2.5">
-              <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-blue-700 to-indigo-600 text-white shadow-lg shadow-blue-600/30 flex items-center justify-center">
-                <Wallet className="w-6 h-6" />
+              <div className="p-2.5 rounded-2xl bg-[#0B2D5B] text-[#D4AF37] border border-[#D4AF37]/40 shadow-lg shadow-[#0B2D5B]/30 flex items-center justify-center">
+                <Wallet className="w-6 h-6 text-[#D4AF37]" />
               </div>
               <div>
-                <h1 className="text-xl sm:text-2xl font-black bg-gradient-to-r from-blue-800 via-blue-600 to-indigo-700 dark:from-sky-400 dark:via-blue-500 dark:to-indigo-400 bg-clip-text text-transparent flex items-center gap-2">
+                <h1 className="text-xl sm:text-2xl font-black text-[#0B2D5B] dark:text-[#D4AF37] flex items-center gap-2">
                   Customer Wallet &amp; Loyalty Hub
                 </h1>
                 <p className={`text-xs font-semibold mt-0.5 ${labelClass}`}>
@@ -162,10 +162,10 @@ export default function WalletPage({
             <button
               type="button"
               onClick={handleExportExcel}
-              className="px-3.5 py-2 rounded-xl bg-blue-700 hover:bg-blue-800 dark:bg-sky-600 dark:hover:bg-sky-500 text-white font-bold text-xs flex items-center gap-2 shadow-md transition-all cursor-pointer active:scale-95"
+              className="px-3.5 py-2 rounded-xl bg-[#0B2D5B] hover:bg-[#143E77] border border-[#D4AF37]/40 text-[#D4AF37] font-bold text-xs flex items-center gap-2 shadow-md transition-all cursor-pointer active:scale-95"
               title="Download full wallet & transaction excel ledger"
             >
-              <FileSpreadsheet className="w-4 h-4" />
+              <FileSpreadsheet className="w-4 h-4 text-[#D4AF37]" />
               <span>Export Excel Ledger</span>
             </button>
           </div>
@@ -174,49 +174,49 @@ export default function WalletPage({
         {/* METRICS SUMMARY STRIP */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-4">
           {/* Card 1: Total Circulation */}
-          <div className={`p-3.5 rounded-2xl border transition-all ${isDarkMode ? 'bg-slate-900/60 border-slate-800' : 'bg-blue-50/70 border-blue-200'}`}>
-            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-[11px] font-bold">
+          <div className={`p-3.5 rounded-2xl border transition-all ${isDarkMode ? 'bg-[#061833]/90 border-[#0B2D5B]/60' : 'bg-[#0B2D5B]/5 border-[#0B2D5B]/15'}`}>
+            <div className="flex items-center justify-between text-[#0B2D5B]/70 dark:text-slate-400 text-[11px] font-bold">
               <span>In Circulation</span>
-              <Wallet className="w-4 h-4 text-blue-700 dark:text-sky-400" />
+              <Wallet className="w-4 h-4 text-[#D4AF37]" />
             </div>
-            <div className="mt-1 font-mono font-black text-lg sm:text-xl text-blue-900 dark:text-sky-300">
+            <div className="mt-1 font-mono font-black text-lg sm:text-xl text-[#0B2D5B] dark:text-[#D4AF37]">
               ₹ {metrics.totalPoolInCirculation.toLocaleString('en-IN')}
             </div>
-            <div className="text-[10px] text-blue-800/80 dark:text-sky-400/80 font-semibold mt-0.5">
+            <div className="text-[10px] text-[#0B2D5B]/70 dark:text-slate-400 font-semibold mt-0.5">
               Available across customers
             </div>
           </div>
 
           {/* Card 2: Total Cashback Distributed */}
-          <div className={`p-3.5 rounded-2xl border transition-all ${isDarkMode ? 'bg-slate-900/60 border-slate-800' : 'bg-indigo-50/70 border-indigo-200'}`}>
-            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-[11px] font-bold">
+          <div className={`p-3.5 rounded-2xl border transition-all ${isDarkMode ? 'bg-[#061833]/90 border-[#0B2D5B]/60' : 'bg-[#0B2D5B]/5 border-[#0B2D5B]/15'}`}>
+            <div className="flex items-center justify-between text-[#0B2D5B]/70 dark:text-slate-400 text-[11px] font-bold">
               <span>10% Purchase Cashback</span>
-              <Gift className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              <Gift className="w-4 h-4 text-[#D4AF37]" />
             </div>
-            <div className="mt-1 font-mono font-black text-lg sm:text-xl text-indigo-900 dark:text-indigo-300">
+            <div className="mt-1 font-mono font-black text-lg sm:text-xl text-[#0B2D5B] dark:text-[#D4AF37]">
               ₹ {metrics.totalCashbackGiven.toLocaleString('en-IN')}
             </div>
-            <div className="text-[10px] text-indigo-800/80 dark:text-indigo-400/80 font-semibold mt-0.5">
+            <div className="text-[10px] text-[#0B2D5B]/70 dark:text-slate-400 font-semibold mt-0.5">
               Earned on purchases
             </div>
           </div>
 
           {/* Card 3: Total Referral Bonuses */}
-          <div className={`p-3.5 rounded-2xl border transition-all ${isDarkMode ? 'bg-slate-900/60 border-slate-800' : 'bg-sky-50/70 border-sky-200'}`}>
-            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-[11px] font-bold">
+          <div className={`p-3.5 rounded-2xl border transition-all ${isDarkMode ? 'bg-[#061833]/90 border-[#0B2D5B]/60' : 'bg-[#0B2D5B]/5 border-[#0B2D5B]/15'}`}>
+            <div className="flex items-center justify-between text-[#0B2D5B]/70 dark:text-slate-400 text-[11px] font-bold">
               <span>10% Referral Bonuses</span>
-              <Users className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+              <Users className="w-4 h-4 text-[#D4AF37]" />
             </div>
-            <div className="mt-1 font-mono font-black text-lg sm:text-xl text-sky-900 dark:text-sky-300">
+            <div className="mt-1 font-mono font-black text-lg sm:text-xl text-[#0B2D5B] dark:text-[#D4AF37]">
               ₹ {metrics.totalReferralBonusesGiven.toLocaleString('en-IN')}
             </div>
-            <div className="text-[10px] text-sky-800/80 dark:text-sky-400/80 font-semibold mt-0.5">
+            <div className="text-[10px] text-[#0B2D5B]/70 dark:text-slate-400 font-semibold mt-0.5">
               {metrics.totalReferralCount} friends referred
             </div>
           </div>
 
           {/* Card 4: Total Redeemed */}
-          <div className={`p-3.5 rounded-2xl border transition-all ${isDarkMode ? 'bg-slate-900/60 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+          <div className={`p-3.5 rounded-2xl border transition-all ${isDarkMode ? 'bg-[#061833]/90 border-[#0B2D5B]/60' : 'bg-slate-50 border-slate-200'}`}>
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-[11px] font-bold">
               <span>Wallet Redeemed</span>
               <ArrowDownLeft className="w-4 h-4 text-slate-600 dark:text-slate-400" />
@@ -230,15 +230,15 @@ export default function WalletPage({
           </div>
 
           {/* Card 5: Active Holders */}
-          <div className={`col-span-2 sm:col-span-1 p-3.5 rounded-2xl border transition-all ${isDarkMode ? 'bg-slate-900/60 border-slate-800' : 'bg-blue-50/70 border-blue-200'}`}>
-            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-[11px] font-bold">
+          <div className={`col-span-2 sm:col-span-1 p-3.5 rounded-2xl border transition-all ${isDarkMode ? 'bg-[#061833]/90 border-[#0B2D5B]/60' : 'bg-[#0B2D5B]/5 border-[#0B2D5B]/15'}`}>
+            <div className="flex items-center justify-between text-[#0B2D5B]/70 dark:text-slate-400 text-[11px] font-bold">
               <span>Active Balance Users</span>
-              <Award className="w-4 h-4 text-blue-700 dark:text-sky-400" />
+              <Award className="w-4 h-4 text-[#D4AF37]" />
             </div>
-            <div className="mt-1 font-mono font-black text-lg sm:text-xl text-blue-900 dark:text-sky-300">
+            <div className="mt-1 font-mono font-black text-lg sm:text-xl text-[#0B2D5B] dark:text-[#D4AF37]">
               {metrics.activeWalletHolders} / {metrics.totalCustomers}
             </div>
-            <div className="text-[10px] text-blue-800/80 dark:text-sky-400/80 font-semibold mt-0.5">
+            <div className="text-[10px] text-[#0B2D5B]/70 dark:text-slate-400 font-semibold mt-0.5">
               Customers with ₹ &gt; 0
             </div>
           </div>
@@ -254,8 +254,8 @@ export default function WalletPage({
             onClick={() => setActiveTab('customers')}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer ${
               activeTab === 'customers'
-                ? 'bg-gradient-to-r from-blue-700 to-indigo-700 text-white shadow-md'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                ? 'bg-[#0B2D5B] text-[#D4AF37] border border-[#D4AF37]/40 shadow-md'
+                : 'text-slate-600 dark:text-slate-400 hover:text-[#0B2D5B] dark:hover:text-[#D4AF37]'
             }`}
           >
             <Users className="w-3.5 h-3.5" />
@@ -267,8 +267,8 @@ export default function WalletPage({
             onClick={() => setActiveTab('audit')}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer ${
               activeTab === 'audit'
-                ? 'bg-gradient-to-r from-blue-700 to-indigo-700 text-white shadow-md'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                ? 'bg-[#0B2D5B] text-[#D4AF37] border border-[#D4AF37]/40 shadow-md'
+                : 'text-slate-600 dark:text-slate-400 hover:text-[#0B2D5B] dark:hover:text-[#D4AF37]'
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
@@ -280,8 +280,8 @@ export default function WalletPage({
             onClick={() => setActiveTab('rules')}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer ${
               activeTab === 'rules'
-                ? 'bg-gradient-to-r from-blue-700 to-indigo-700 text-white shadow-md'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                ? 'bg-[#0B2D5B] text-[#D4AF37] border border-[#D4AF37]/40 shadow-md'
+                : 'text-slate-600 dark:text-slate-400 hover:text-[#0B2D5B] dark:hover:text-[#D4AF37]'
             }`}
           >
             <Sparkles className="w-3.5 h-3.5" />
@@ -635,13 +635,13 @@ export default function WalletPage({
             {/* Modal Body */}
             <div className="p-4 sm:p-6 overflow-y-auto space-y-5">
               {/* Top Mini Balance Card */}
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 text-white shadow-xl flex items-center justify-between">
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-[#0B2D5B] via-[#0e376e] to-[#061833] text-white border border-[#D4AF37]/30 shadow-xl flex items-center justify-between">
                 <div>
-                  <div className="text-xs font-bold text-blue-100">Current Available Wallet Balance</div>
-                  <div className="text-2xl font-black font-mono mt-0.5">₹ {selectedCustomerLedger.walletBalance.toLocaleString('en-IN')} Rupees</div>
+                  <div className="text-xs font-bold text-[#D4AF37]">Current Available Wallet Balance</div>
+                  <div className="text-2xl font-black font-mono mt-0.5 text-white">₹ {selectedCustomerLedger.walletBalance.toLocaleString('en-IN')} Rupees</div>
                 </div>
 
-                <div className="text-right text-xs font-mono text-blue-100">
+                <div className="text-right text-xs font-mono text-[#D4AF37]/80">
                   <div>Lifetime Spend: ₹{selectedCustomerLedger.totalSpend.toFixed(0)}</div>
                   <div>Bills: {selectedCustomerLedger.bills.length} Orders</div>
                 </div>
@@ -649,14 +649,14 @@ export default function WalletPage({
 
               {/* Ledger Breakdown Grid */}
               <div className="grid grid-cols-3 gap-3 text-center text-xs font-mono">
-                <div className={`p-3 rounded-2xl border ${isDarkMode ? 'bg-slate-950/50 border-slate-800' : 'bg-blue-50 border-blue-200'}`}>
+                <div className={`p-3 rounded-2xl border ${isDarkMode ? 'bg-[#0B2D5B]/20 border-[#0B2D5B]/40' : 'bg-[#0B2D5B]/5 border-[#0B2D5B]/20'}`}>
                   <div className="text-[10px] text-slate-500">Total Purchase Cashback</div>
-                  <div className="text-base font-black text-blue-700 dark:text-sky-400 mt-0.5">₹ {selectedCustomerLedger.directCashbackEarned}</div>
+                  <div className="text-base font-black text-[#0B2D5B] dark:text-[#D4AF37] mt-0.5">₹ {selectedCustomerLedger.directCashbackEarned}</div>
                 </div>
 
-                <div className={`p-3 rounded-2xl border ${isDarkMode ? 'bg-slate-950/50 border-slate-800' : 'bg-indigo-50 border-indigo-200'}`}>
+                <div className={`p-3 rounded-2xl border ${isDarkMode ? 'bg-[#0B2D5B]/20 border-[#0B2D5B]/40' : 'bg-[#0B2D5B]/5 border-[#0B2D5B]/20'}`}>
                   <div className="text-[10px] text-slate-500">Total Referral Bonuses</div>
-                  <div className="text-base font-black text-indigo-700 dark:text-indigo-400 mt-0.5">₹ {selectedCustomerLedger.referralBonusEarned}</div>
+                  <div className="text-base font-black text-[#0B2D5B] dark:text-[#D4AF37] mt-0.5">₹ {selectedCustomerLedger.referralBonusEarned}</div>
                 </div>
 
                 <div className={`p-3 rounded-2xl border ${isDarkMode ? 'bg-slate-950/50 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
