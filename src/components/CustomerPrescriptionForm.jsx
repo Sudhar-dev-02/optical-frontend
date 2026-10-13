@@ -3,6 +3,7 @@ import { User, Phone, MapPin, Stethoscope, Calendar, Glasses, DollarSign, Plus, 
 import axios from 'axios';
 import { CATALOG_API, CUSTOMERS_API } from '../config/api';
 import { calculateCustomerWallet } from '../utils/wallet';
+import { formatBillNo } from '../utils/billNumber';
 
 export default function CustomerPrescriptionForm({ formData, setFormData, isEditing, isDarkMode, onToggleSearch, isSearchPanelOpen, userRole = 'admin', bills = [] }) {
   const [customOrderTakenOptions, setCustomOrderTakenOptions] = useState([]);
@@ -311,7 +312,7 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
             </span>
             {isEditing && (
               <span className="text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/40 text-[#D4AF37] font-bold">
-                Editing #{formData.billNo}
+                Editing #{formatBillNo(formData.billNo)}
               </span>
             )}
           </div>
@@ -409,10 +410,10 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
             </div>
             <input 
               type="text" 
-              placeholder="Auto Generated"
-              value={formData.billNo || ''}
+              placeholder="001"
+              value={formatBillNo(formData.billNo)}
               readOnly={true}
-              title="Bill number is continuously auto-generated in sequence and cannot be typed manually"
+              title="Bill number is continuously auto-generated in sequence (001, 002, 003...) and cannot be typed manually"
               className={`w-full rounded-xl px-3 py-1.5 sm:py-2 font-mono font-bold text-[#0B2D5B] dark:text-[#D4AF37] cursor-not-allowed bg-slate-100/90 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 select-none shadow-inner`}
             />
           </div>

@@ -16,6 +16,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 import DeliveryModal from './DeliveryModal';
+import { formatBillNo } from '../utils/billNumber';
 
 const STORE_PHONE = '+91 90432 29107 / +91 99524 17748';
 
@@ -48,7 +49,7 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
       (bill.customer?.phone && bill.customer.phone.includes(q)) ||
       (bill.customer?.mrdNo && bill.customer.mrdNo.includes(q)) ||
       (bill.customer?.drName && bill.customer.drName.toLowerCase().includes(q)) ||
-      (bill.billNo && bill.billNo.toString().includes(q))
+      (bill.billNo && (bill.billNo.toString().includes(q) || formatBillNo(bill.billNo).toLowerCase().includes(q)))
     );
   });
 
@@ -56,9 +57,10 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
     const rawPhone = bill.customer?.phone ? bill.customer.phone.replace(/\D/g, '') : '';
     const phoneWithCountry = rawPhone.length === 10 ? `91${rawPhone}` : rawPhone;
     const isDelivered = bill.deliveryStatus === 'Delivered';
+    const bNo = formatBillNo(bill.billNo);
     const statusMsg = isDelivered 
-      ? `Your optical order (Bill #${bill.billNo}) is delivered! Thank you for choosing Optics India.` 
-      : `Your optical order (Bill #${bill.billNo}) is ready for pickup/delivery! Please visit us or contact ${STORE_PHONE}.`;
+      ? `Your optical order (Bill #${bNo}) is delivered! Thank you for choosing Optics India.` 
+      : `Your optical order (Bill #${bNo}) is ready for pickup/delivery! Please visit us or contact ${STORE_PHONE}.`;
     const msg = `Hello ${bill.customer?.name || 'Valued Customer'}, greetings from Optics India! ${statusMsg}`;
     return `https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(msg)}`;
   };
@@ -258,7 +260,7 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
                           {/* Bill # */}
                           <td className="p-3 border-r border-slate-400/20 text-center">
                             <span className="px-2.5 py-1 rounded-xl bg-[#0B2D5B]/15 dark:bg-[#0B2D5B]/50 border border-[#0B2D5B]/20 dark:border-[#D4AF37]/30 text-[#0B2D5B] dark:text-[#D4AF37] font-mono font-black text-xs">
-                              #{bill.billNo}
+                              #{formatBillNo(bill.billNo)}
                             </span>
                           </td>
 
@@ -430,7 +432,7 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
                       <div className="flex items-center justify-between gap-2 mb-3 pt-1">
                         <div className="flex items-center gap-1.5">
                           <span className="px-3 py-1 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-700 dark:text-sky-400 font-mono font-black text-xs">
-                            #{bill.billNo}
+                            #{formatBillNo(bill.billNo)}
                           </span>
                           {bill.smsSent && (
                             <span className="px-2 py-0.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-400 font-extrabold text-[10px] flex items-center gap-1">

@@ -12,6 +12,7 @@ import {
   getAllWalletAuditTransactions, 
   getWalletSummaryMetrics 
 } from '../utils/wallet';
+import { formatBillNo } from '../utils/billNumber';
 
 const STORE_PHONE = '+91 90432 29107 / +91 99524 17748';
 const STORE_NAME = 'Optics India';
@@ -72,7 +73,7 @@ export default function WalletPage({
       const nameMatch = (log.customerName || '').toLowerCase().includes(q);
       const phoneMatch = (log.customerPhone || '').includes(q);
       const mrdMatch = (log.customerMrd || '').toLowerCase().includes(q);
-      const billMatch = String(log.billNo || '').includes(q);
+      const billMatch = String(log.billNo || '').includes(q) || formatBillNo(log.billNo).toLowerCase().includes(q);
       const matchesSearch = !q || (nameMatch || phoneMatch || mrdMatch || billMatch);
 
       if (!matchesSearch) return false;
@@ -116,7 +117,7 @@ export default function WalletPage({
       'MRD No': log.customerMrd,
       'Phone': log.customerPhone,
       'Transaction Type': log.type,
-      'Bill No': log.billNo,
+      'Bill No': formatBillNo(log.billNo),
       'Order Amount (₹)': log.netAmount || 0,
       'Wallet Change (₹)': log.amount,
       'Description / Note': log.note
@@ -529,7 +530,7 @@ export default function WalletPage({
                         )}
                       </td>
                       <td className="py-2.5 px-3 font-bold text-blue-700 dark:text-sky-400">
-                        #{log.billNo}
+                        #{formatBillNo(log.billNo)}
                       </td>
                       <td className="py-2.5 px-3 text-right">
                         {log.netAmount ? `₹ ${log.netAmount.toFixed(2)}` : '-'}
@@ -701,7 +702,7 @@ export default function WalletPage({
                                 <div className="text-[11px] text-slate-500">{item.note}</div>
                               </td>
                               <td className="py-2.5 px-3 font-bold text-blue-700 dark:text-sky-400">
-                                #{item.billNo}
+                                #{formatBillNo(item.billNo)}
                               </td>
                               <td className={`py-2.5 px-3 text-right font-black ${isCredit ? 'text-blue-700 dark:text-sky-400' : 'text-slate-700 dark:text-slate-300'}`}>
                                 {isCredit ? `+₹ ${item.amount}` : `-₹ ${Math.abs(item.amount)}`}

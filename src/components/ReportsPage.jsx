@@ -17,6 +17,7 @@ import {
   Users
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { formatBillNo } from '../utils/billNumber';
 
 export default function ReportsPage({ bills = [], isDarkMode }) {
   const [startDate, setStartDate] = useState('');
@@ -50,11 +51,12 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
 
       if (searchQuery && searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
-        const bNo = String(bill.billNo || '').toLowerCase();
+        const bNo = formatBillNo(bill.billNo).toLowerCase();
+        const rawBNo = String(bill.billNo || '').toLowerCase();
         const name = String(bill.customer?.name || '').toLowerCase();
         const phone = String(bill.customer?.phone || '').toLowerCase();
         const mrd = String(bill.customer?.mrdNo || '').toLowerCase();
-        if (!bNo.includes(q) && !name.includes(q) && !phone.includes(q) && !mrd.includes(q)) {
+        if (!bNo.includes(q) && !rawBNo.includes(q) && !name.includes(q) && !phone.includes(q) && !mrd.includes(q)) {
           return false;
         }
       }
@@ -304,7 +306,7 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
     }
 
     const excelData = filteredBills.map(b => ({
-      'Bill No': b.billNo || '',
+      'Bill No': formatBillNo(b.billNo),
       'Date': b.date ? new Date(b.date).toLocaleDateString('en-GB') : '',
       'MRD No': b.customer?.mrdNo || '',
       'Customer Name': b.customer?.name || '',
@@ -655,7 +657,7 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
                         }`}
                     >
                       <td className="p-2.5 border-r border-slate-400/20 text-center font-bold text-amber-500">
-                        {b.billNo}
+                        {formatBillNo(b.billNo)}
                       </td>
                       <td className="p-2.5 border-r border-slate-400/20 text-[11px]">
                         {formattedDate}

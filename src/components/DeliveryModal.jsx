@@ -13,6 +13,7 @@ import {
   ArrowRight,
   Truck
 } from 'lucide-react';
+import { formatBillNo } from '../utils/billNumber';
 
 export default function DeliveryModal({ bill, isOpen, onClose, onConfirmDelivery, isDarkMode }) {
   if (!isOpen || !bill) return null;
@@ -135,7 +136,7 @@ export default function DeliveryModal({ bill, isOpen, onClose, onConfirmDelivery
         <div className={`p-4 rounded-2xl border ${cardBg} mb-4 space-y-2`}>
           <div className="flex items-center justify-between">
             <span className="px-3 py-1 rounded-xl bg-[#0B2D5B]/15 dark:bg-[#0B2D5B]/50 border border-[#0B2D5B]/20 dark:border-[#D4AF37]/30 text-[#0B2D5B] dark:text-[#D4AF37] font-mono font-black text-xs">
-              Bill #{bill.billNo}
+              Bill #{formatBillNo(bill.billNo)}
             </span>
             <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 font-mono font-semibold">
               <Calendar className="w-3.5 h-3.5 text-[#D4AF37]" />

@@ -17,6 +17,7 @@ import {
   BarChart3,
   Truck
 } from 'lucide-react';
+import { formatBillNo } from '../utils/billNumber';
 
 export default function DashboardPage({ bills, isDarkMode, userRole = 'admin', onNavigateToReminders, onNavigateToBilling, onSelectBill }) {
   const [dateFilter, setDateFilter] = useState('all'); // 'all', 'today', 'overdue', 'upcoming'
@@ -76,7 +77,7 @@ export default function DashboardPage({ bills, isDarkMode, userRole = 'admin', o
     const matchesSearch = !searchQuery || (
       (bill.customer?.name && bill.customer.name.toLowerCase().includes(q)) ||
       (bill.customer?.phone && bill.customer.phone.includes(q)) ||
-      (bill.billNo && bill.billNo.toString().includes(q))
+      (bill.billNo && (bill.billNo.toString().includes(q) || formatBillNo(bill.billNo).toLowerCase().includes(q)))
     );
 
     if (!matchesSearch) return false;
@@ -376,7 +377,7 @@ export default function DashboardPage({ bills, isDarkMode, userRole = 'admin', o
                       >
                         {/* Bill No */}
                         <td className="py-3 px-4 font-bold text-blue-800 dark:text-sky-400">
-                          #{bill.billNo}
+                          #{formatBillNo(bill.billNo)}
                         </td>
 
                         {/* Customer Info */}
@@ -492,7 +493,7 @@ export default function DashboardPage({ bills, isDarkMode, userRole = 'admin', o
                       {/* Top Header Row */}
                       <div className="flex items-center justify-between gap-2 mb-3 pt-1">
                         <span className="px-3 py-1 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-700 dark:text-sky-400 font-mono font-black text-xs">
-                          #{bill.billNo}
+                          #{formatBillNo(bill.billNo)}
                         </span>
 
                         <div className="flex items-center gap-1.5">

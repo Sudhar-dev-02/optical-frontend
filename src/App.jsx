@@ -18,6 +18,7 @@ import CustomerInfoPage from './components/CustomerInfoPage';
 import WalletPage from './components/WalletPage';
 import DeliveryModal from './components/DeliveryModal';
 import { BILLS_API as API_BASE } from './config/api';
+import { formatBillNo, parseBillNo, getNextSequentialBillNo } from './utils/billNumber';
 
 const defaultFormState = {
   billNo: '',
@@ -169,16 +170,7 @@ function AppContent() {
     handleSelectBill(billRecord);
     setIsSearchPanelOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    showNotification(`Bill #${billRecord.billNo} loaded into form.`, 'success');
-  };
-
-  const getNextSequentialBillNo = (billList = bills) => {
-    if (!billList || billList.length === 0) return 6854;
-    const maxNo = billList.reduce((max, b) => {
-      const num = Number(b.billNo);
-      return !isNaN(num) && num > max ? num : max;
-    }, 0);
-    return maxNo > 0 ? maxNo + 1 : 6854;
+    showNotification(`Bill #${formatBillNo(billRecord.billNo)} loaded into form.`, 'success');
   };
 
   const fetchBills = async (query = '') => {
@@ -215,7 +207,7 @@ function AppContent() {
       const nextNo = getNextSequentialBillNo(fetched);
       setFormData(prev => ({
         ...prev,
-        billNo: prev.billNo ? prev.billNo : nextNo
+        billNo: prev.billNo ? formatBillNo(prev.billNo) : nextNo
       }));
     };
     initBills();
@@ -232,9 +224,9 @@ function AppContent() {
       return;
     }
 
-    let savedBillNo = formData.billNo || getNextSequentialBillNo(bills);
+    let savedBillNo = formData.billNo ? formatBillNo(formData.billNo) : getNextSequentialBillNo(bills);
     const customerName = formData.customer.name;
-    const savePayload = { ...formData, billNo: Number(savedBillNo) || savedBillNo };
+    const savePayload = { ...formData, billNo: savedBillNo };
 
     try {
       if (isEditing && activeBillId) {
@@ -242,14 +234,14 @@ function AppContent() {
       } else {
         const res = await axios.post(API_BASE, savePayload);
         if (res.data?.billNo) {
-          savedBillNo = res.data.billNo;
+          savedBillNo = formatBillNo(res.data.billNo);
         }
       }
       const updatedList = await fetchBills();
       resetFormFields(updatedList);
       showNotification(`Customer "${customerName}" info & Bill #${savedBillNo} saved successfully!`, 'success');
     } catch (err) {
-      const existingIdx = bills.findIndex(b => b.billNo === formData.billNo);
+      const existingIdx = bills.findIndex(b => String(b.billNo) === String(formData.billNo));
       let updatedList;
       if (existingIdx >= 0) {
         updatedList = [...bills];
@@ -271,7 +263,7 @@ function AppContent() {
       return;
     }
     setIsEditing(true);
-    showNotification(`Editing enabled for Bill #${formData.billNo}`, 'info');
+    showNotification(`Editing enabled for Bill #${formatBillNo(formData.billNo)}`, 'info');
   };
 
   const handleDelete = async () => {
@@ -280,13 +272,13 @@ function AppContent() {
       return;
     }
 
-    if (window.confirm(`Are you sure you want to delete Bill #${formData.billNo}?`)) {
+    if (window.confirm(`Are you sure you want to delete Bill #${formatBillNo(formData.billNo)}?`)) {
       try {
         await axios.delete(`${API_BASE}/${activeBillId}`);
-        showNotification(`Bill #${formData.billNo} deleted.`, 'success');
+        showNotification(`Bill #${formatBillNo(formData.billNo)} deleted.`, 'success');
       } catch (err) {
-        setBills(bills.filter(b => b._id !== activeBillId && b.billNo !== formData.billNo));
-        showNotification(`Bill #${formData.billNo} removed locally.`, 'success');
+        setBills(bills.filter(b => b._id !== activeBillId && String(b.billNo) !== String(formData.billNo)));
+        showNotification(`Bill #${formatBillNo(formData.billNo)} removed locally.`, 'success');
       }
       fetchBills();
       handleNew();
@@ -318,7 +310,7 @@ function AppContent() {
   };
 
   const handleDeliveryToggleById = async (targetId, forcedStatus = null) => {
-    const targetBill = bills.find(b => b._id === targetId || b.billNo === targetId);
+    const targetBill = bills.find(b => b._id === targetId || String(b.billNo) === String(targetId));
     const currentStatus = targetBill?.deliveryStatus || 'Pending';
 
     let payload = {};
@@ -335,16 +327,16 @@ function AppContent() {
 
     try {
       await axios.patch(`${API_BASE}/${targetId}/delivery`, payload);
-      showNotification(`Order #${targetBill?.billNo || targetId} delivery status updated to "${payload.status}"`, 'success');
+      showNotification(`Order #${formatBillNo(targetBill?.billNo || targetId)} delivery status updated to "${payload.status}"`, 'success');
     } catch (err) {
       console.warn('Network issue updating delivery status, updating locally.');
     }
 
     setBills(prev => prev.map(b => 
-      (b._id === targetId || b.billNo === targetId) ? { ...b, ...payload, deliveryStatus: payload.status } : b
+      (b._id === targetId || String(b.billNo) === String(targetId)) ? { ...b, ...payload, deliveryStatus: payload.status } : b
     ));
 
-    if (activeBillId === targetId || formData._id === targetId || formData.billNo === targetId) {
+    if (activeBillId === targetId || formData._id === targetId || String(formData.billNo) === String(targetId)) {
       setFormData(prev => ({
         ...prev,
         ...payload,
@@ -365,7 +357,7 @@ function AppContent() {
     }
 
     setBills(prev => prev.map(b => 
-      (b._id === targetId || b.billNo === targetId) ? { ...b, smsSent: true } : b
+      (b._id === targetId || String(b.billNo) === String(targetId)) ? { ...b, smsSent: true } : b
     ));
   };
 
@@ -374,29 +366,29 @@ function AppContent() {
     const newStatus = forcedStatus !== null ? forcedStatus : !billRecord.smsSent;
     try {
       await axios.patch(`${API_BASE}/${targetId}/toggle-sms`, { sent: newStatus });
-      showNotification(newStatus ? `Reminder marked as Sent for Bill #${billRecord.billNo}` : `Reminder marked as Pending for Bill #${billRecord.billNo}`, 'success');
+      showNotification(newStatus ? `Reminder marked as Sent for Bill #${formatBillNo(billRecord.billNo)}` : `Reminder marked as Pending for Bill #${formatBillNo(billRecord.billNo)}`, 'success');
     } catch (err) {
       console.warn('Network issue toggling SMS status, updated locally.');
       showNotification(`Reminder marked as ${newStatus ? 'Sent' : 'Pending'} (local)`, 'info');
     }
 
     setBills(prev => prev.map(b => 
-      (b._id === targetId || b.billNo === targetId) ? { ...b, smsSent: newStatus } : b
+      (b._id === targetId || String(b.billNo) === String(targetId)) ? { ...b, smsSent: newStatus } : b
     ));
   };
 
   const handleUpdateFollowUpStatus = async (targetId, status = 'Sent', type = null) => {
-    const targetBill = bills.find(b => b._id === targetId || b.billNo === targetId);
+    const targetBill = bills.find(b => b._id === targetId || String(b.billNo) === String(targetId));
     try {
       await axios.patch(`${API_BASE}/${targetId}/followup`, { status, type });
-      showNotification(`Follow-up for Bill #${targetBill?.billNo || targetId} marked as "${status}"`, 'success');
+      showNotification(`Follow-up for Bill #${formatBillNo(targetBill?.billNo || targetId)} marked as "${status}"`, 'success');
     } catch (err) {
       console.warn('Network issue updating follow-up status, updated locally.');
-      showNotification(`Follow-up for Bill #${targetBill?.billNo || targetId} marked as "${status}" (local)`, 'info');
+      showNotification(`Follow-up for Bill #${formatBillNo(targetBill?.billNo || targetId)} marked as "${status}" (local)`, 'info');
     }
 
     setBills(prev => prev.map(b => {
-      if (b._id === targetId || b.billNo === targetId) {
+      if (b._id === targetId || String(b.billNo) === String(targetId)) {
         const now = new Date().toISOString();
         const details = { ...(b.followUpDetails || {}), lastContactedAt: now };
         if (type === 'service') details.serviceSentAt = now;
@@ -415,6 +407,7 @@ function AppContent() {
     setFormData({
       ...defaultFormState,
       ...billRecord,
+      billNo: formatBillNo(billRecord.billNo),
       customer: { ...defaultFormState.customer, ...(billRecord.customer || {}) },
       prescription: { ...defaultFormState.prescription, ...(billRecord.prescription || {}) },
       lens: { ...defaultFormState.lens, ...(billRecord.lens || {}) },
@@ -436,7 +429,9 @@ function AppContent() {
     const mrdNo = (b.customer?.mrdNo || '').toLowerCase().trim();
     const cleanMrd = mrdNo.replace(/^0+/, '');
     const mrdMatch = mrdNo.includes(q) || (cleanNum && cleanMrd === cleanNum);
-    const billNoMatch = b.billNo && (b.billNo.toString() === q || b.billNo.toString() === cleanNum || b.billNo.toString().includes(q));
+    const formattedBNo = formatBillNo(b.billNo).toLowerCase();
+    const rawBNo = String(b.billNo || '').toLowerCase();
+    const billNoMatch = rawBNo === q || rawBNo === cleanNum || rawBNo.includes(q) || formattedBNo.includes(q);
     const phoneMatch = b.customer?.phone && (q.length >= 7 ? b.customer.phone.includes(q) : b.customer.phone === q);
 
     return nameMatch || mrdMatch || billNoMatch || phoneMatch;

@@ -22,6 +22,7 @@ import {
   CalendarCheck2,
   CalendarDays
 } from 'lucide-react';
+import { formatBillNo } from '../utils/billNumber';
 
 const STORE_PHONE = '+91 733 933 4042';
 
@@ -148,7 +149,7 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
       const query = searchTerm.toLowerCase().trim();
       const nameMatch = (item.customer?.name || '').toLowerCase().includes(query);
       const phoneMatch = (item.customer?.phone || '').includes(query);
-      const billMatch = (item.billNo || '').toString().includes(query);
+      const billMatch = (item.billNo || '').toString().includes(query) || formatBillNo(item.billNo).toLowerCase().includes(query);
       const matchesSearch = !query || nameMatch || phoneMatch || billMatch;
 
       // 2. Status filter matching
@@ -231,7 +232,7 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
     const rawPhone = (item.customer?.phone || '').replace(/\D/g, '');
     const phoneWithCountry = rawPhone.length === 10 ? `91${rawPhone}` : rawPhone;
     const customerName = item.customer?.name || 'Valued Customer';
-    const billNo = item.billNo || '';
+    const billNo = formatBillNo(item.billNo);
 
     let message = '';
     if (type === 'service') {
@@ -543,7 +544,7 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
                       </span>
 
                       <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-[#0B2D5B]/10 dark:bg-[#0B2D5B]/30 border border-[#0B2D5B]/20 text-[#0B2D5B] dark:text-[#D4AF37]">
-                        Bill #{item.billNo}
+                        Bill #{formatBillNo(item.billNo)}
                       </span>
 
                       {/* Due Today Badge */}

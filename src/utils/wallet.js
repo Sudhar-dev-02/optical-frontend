@@ -1,6 +1,7 @@
 /**
  * Utility functions for customer wallet calculations, profile ledger aggregation, and audit logs
  */
+import { formatBillNo } from './billNumber';
 
 export const calculateCustomerWallet = (mrdOrPhone, bills = []) => {
   if (!mrdOrPhone || !bills || !Array.isArray(bills) || bills.length === 0) return 0;
@@ -91,29 +92,31 @@ export const getCustomerWalletProfiles = (bills = []) => {
 
     // Add Direct Cashback Earned to ledger
     if (earned > 0) {
+      const formattedBNo = formatBillNo(bill.billNo);
       map[phoneKey].ledger.push({
         id: `earn_${bill._id || bill.billNo}`,
         date: bill.date || bill.createdAt || new Date().toISOString(),
         type: 'CASHBACK',
         title: 'Purchase Cashback (10%)',
-        billNo: bill.billNo,
+        billNo: formattedBNo,
         amount: earned,
         netAmount: netAmt,
-        note: `10% Cashback earned on Bill #${bill.billNo}`
+        note: `10% Cashback earned on Bill #${formattedBNo}`
       });
     }
 
     // Add Redemption to ledger
     if (redeemed > 0) {
+      const formattedBNo = formatBillNo(bill.billNo);
       map[phoneKey].ledger.push({
         id: `redeem_${bill._id || bill.billNo}`,
         date: bill.date || bill.createdAt || new Date().toISOString(),
         type: 'REDEEMED',
         title: 'Wallet Redeemed',
-        billNo: bill.billNo,
+        billNo: formattedBNo,
         amount: -redeemed,
         netAmount: netAmt,
-        note: `Redeemed ₹${redeemed} on Bill #${bill.billNo}`
+        note: `Redeemed ₹${redeemed} on Bill #${formattedBNo}`
       });
     }
   });
@@ -133,13 +136,14 @@ export const getCustomerWalletProfiles = (bills = []) => {
       );
 
       if (referrer) {
+        const formattedBNo = formatBillNo(bill.billNo);
         referrer.referralBonusEarned += refBonus;
         referrer.referralCount = (referrer.referralCount || 0) + 1;
         referrer.referrals.push({
           purchaserName: bill.customer?.name || 'Referred Customer',
           purchaserPhone: bill.customer?.phone || '',
           purchaserMrd: bill.customer?.mrdNo || '',
-          billNo: bill.billNo,
+          billNo: formattedBNo,
           date: bill.date || bill.createdAt || new Date().toISOString(),
           orderAmount: net,
           bonusEarned: refBonus
@@ -150,11 +154,11 @@ export const getCustomerWalletProfiles = (bills = []) => {
           date: bill.date || bill.createdAt || new Date().toISOString(),
           type: 'REFERRAL_BONUS',
           title: 'Referral Bonus (10%)',
-          billNo: bill.billNo,
+          billNo: formattedBNo,
           amount: refBonus,
           netAmount: net,
           purchaserName: bill.customer?.name || 'Customer',
-          note: `10% Referral Bonus from ${bill.customer?.name || 'friend'}'s purchase (Bill #${bill.billNo})`
+          note: `10% Referral Bonus from ${bill.customer?.name || 'friend'}'s purchase (Bill #${formattedBNo})`
         });
       }
     }

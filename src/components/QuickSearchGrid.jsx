@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Search, X, ArrowLeft } from 'lucide-react';
+import { formatBillNo } from '../utils/billNumber';
 
 export default function QuickSearchGrid({ 
   bills, 
@@ -215,7 +216,7 @@ export default function QuickSearchGrid({
                     }`}
                   >
                     <td className="p-2 sm:p-2.5 border-r border-slate-400/20 text-[11px] font-semibold">{formattedDate}</td>
-                    <td className="p-2 sm:p-2.5 border-r border-slate-400/20 text-center font-black text-[#D4AF37]">{b.billNo}</td>
+                    <td className="p-2 sm:p-2.5 border-r border-slate-400/20 text-center font-black text-[#D4AF37]">{formatBillNo(b.billNo)}</td>
                     <td className="p-2 sm:p-2.5 border-r border-slate-400/20 opacity-70 text-[11px]">{b.customer?.mrdNo || '00003'}</td>
                     <td className="p-2 sm:p-2.5 border-r border-slate-400/20 font-sans font-bold">{b.customer?.name}</td>
                     <td className="p-2 sm:p-2.5 border-r border-slate-400/20 text-[#0B2D5B] dark:text-[#D4AF37] font-semibold">{b.customer?.phone}</td>

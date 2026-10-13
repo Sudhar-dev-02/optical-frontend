@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { Printer, X, Eye, Phone, MapPin, CheckCircle, ShieldCheck } from 'lucide-react';
 import logoImg from '../assets/logo.jpeg';
+import { formatBillNo } from '../utils/billNumber';
 
 export default function InvoicePrintModal({ bill, isDuplicate, onClose }) {
   const printRef = useRef(null);
@@ -27,7 +28,7 @@ export default function InvoicePrintModal({ bill, isDuplicate, onClose }) {
           <div className="flex items-center gap-2">
             <Printer className="w-5 h-5 text-[#D4AF37]" />
             <h2 className="font-bold text-sm uppercase tracking-wider text-[#D4AF37]">
-              {isDuplicate ? 'DUPLICATE BILL RECEIPT' : 'OPTICAL BILL INVOICE'} #{bill.billNo}
+              {isDuplicate ? 'DUPLICATE BILL RECEIPT' : 'OPTICAL BILL INVOICE'} #{formatBillNo(bill.billNo)}
             </h2>
           </div>
 
@@ -80,7 +81,7 @@ export default function InvoicePrintModal({ bill, isDuplicate, onClose }) {
             <div className="grid grid-cols-2 sm:grid-cols-3 text-xs border border-slate-300 rounded p-2.5 mb-4 bg-slate-50 gap-y-1.5">
               <div>
                 <span className="font-bold text-slate-700">Bill No: </span>
-                <span className="font-mono font-bold text-slate-900">{bill.billNo}</span>
+                <span className="font-mono font-bold text-slate-900">{formatBillNo(bill.billNo)}</span>
               </div>
               <div>
                 <span className="font-bold text-slate-700">Date: </span>
