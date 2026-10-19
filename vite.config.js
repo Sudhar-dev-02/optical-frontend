@@ -17,6 +17,7 @@ export default defineConfig({
           if (id.includes('node_modules')) {
             if (id.includes('xlsx')) return 'xlsx';
             if (id.includes('lucide-react')) return 'icons';
+            if (id.includes('react-dom') || id.includes('react-router') || id.includes('/react/')) return 'vendor-react';
           }
         }
       }

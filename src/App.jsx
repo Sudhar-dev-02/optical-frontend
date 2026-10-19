@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, Suspense, lazy } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Header from './components/Header';
@@ -6,19 +6,31 @@ import Sidebar from './components/Sidebar';
 import CustomerPrescriptionForm from './components/CustomerPrescriptionForm';
 import QuickSearchGrid from './components/QuickSearchGrid';
 import ActionBar from './components/ActionBar';
-import InvoicePrintModal from './components/InvoicePrintModal';
-import ItemSetupModal from './components/ItemSetupModal';
 import DashboardPage from './components/DashboardPage';
-import RemindersPage from './components/RemindersPage';
-import FollowUpPage from './components/FollowUpPage';
 import LoginPage from './components/LoginPage';
-import StaffSetupPage from './components/StaffSetupPage';
-import ReportsPage from './components/ReportsPage';
-import CustomerInfoPage from './components/CustomerInfoPage';
-import WalletPage from './components/WalletPage';
 import DeliveryModal from './components/DeliveryModal';
 import { BILLS_API as API_BASE } from './config/api';
-import { formatBillNo, parseBillNo, getNextSequentialBillNo } from './utils/billNumber';
+import { formatBillNo, getNextSequentialBillNo } from './utils/billNumber';
+
+// Lazy load secondary heavy pages and modals for optimal bundle splitting
+const RemindersPage = lazy(() => import('./components/RemindersPage'));
+const FollowUpPage = lazy(() => import('./components/FollowUpPage'));
+const WalletPage = lazy(() => import('./components/WalletPage'));
+const ReportsPage = lazy(() => import('./components/ReportsPage'));
+const CustomerInfoPage = lazy(() => import('./components/CustomerInfoPage'));
+const StaffSetupPage = lazy(() => import('./components/StaffSetupPage'));
+const InvoicePrintModal = lazy(() => import('./components/InvoicePrintModal'));
+const ItemSetupModal = lazy(() => import('./components/ItemSetupModal'));
+
+// Sleek loading fallback for lazy-loaded route chunks
+const PageLoadingFallback = () => (
+  <div className="flex-1 flex items-center justify-center p-16">
+    <div className="flex items-center gap-2.5 text-xs font-bold text-[#0B2D5B] dark:text-[#D4AF37] animate-pulse">
+      <div className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+      <span>Loading module...</span>
+    </div>
+  </div>
+);
 
 const defaultFormState = {
   billNo: '',
@@ -73,7 +85,7 @@ function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Current active view calculated from current route hash (e.g. 'billing', 'dashboard', 'reminders', 'followup', 'reports', 'customers', 'staff')
+  // Current active view calculated from current route hash
   const currentPath = location.pathname.replace(/^\//, '');
   const currentView = currentPath || 'dashboard';
 
@@ -173,21 +185,21 @@ function AppContent() {
     showNotification(`Bill #${formatBillNo(billRecord.billNo)} loaded into form.`, 'success');
   };
 
-  const fetchBills = async (query = '') => {
+  const fetchBills = useCallback(async (query = '') => {
     try {
-      const res = await axios.get(`${API_BASE}?query=${query}`);
+      const res = await axios.get(`${API_BASE}?query=${encodeURIComponent(query)}`);
       const fetchedBills = res.data || [];
       setBills(fetchedBills);
       setIsOnline(true);
       return fetchedBills;
-    } catch (err) {
+    } catch {
       console.warn('Backend server offline or unreachable, using local state persistence.');
       setIsOnline(false);
-      return bills;
+      return [];
     }
-  };
+  }, []);
 
-  const resetFormFields = (currentBills = bills) => {
+  const resetFormFields = useCallback((currentBills = bills) => {
     setActiveBillId(null);
     setIsEditing(false);
     const nextBillNo = getNextSequentialBillNo(currentBills);
@@ -199,11 +211,13 @@ function AppContent() {
         gender: ''
       }
     });
-  };
+  }, [bills]);
 
   useEffect(() => {
+    let isMounted = true;
     const initBills = async () => {
       const fetched = await fetchBills();
+      if (!isMounted) return;
       const nextNo = getNextSequentialBillNo(fetched);
       setFormData(prev => ({
         ...prev,
@@ -211,7 +225,8 @@ function AppContent() {
       }));
     };
     initBills();
-  }, []);
+    return () => { isMounted = false; };
+  }, [fetchBills]);
 
   const handleNew = () => {
     resetFormFields(bills);
@@ -240,7 +255,7 @@ function AppContent() {
       const updatedList = await fetchBills();
       resetFormFields(updatedList);
       showNotification(`Customer "${customerName}" info & Bill #${savedBillNo} saved successfully!`, 'success');
-    } catch (err) {
+    } catch {
       const existingIdx = bills.findIndex(b => String(b.billNo) === String(formData.billNo));
       let updatedList;
       if (existingIdx >= 0) {
@@ -276,7 +291,7 @@ function AppContent() {
       try {
         await axios.delete(`${API_BASE}/${activeBillId}`);
         showNotification(`Bill #${formatBillNo(formData.billNo)} deleted.`, 'success');
-      } catch (err) {
+      } catch {
         setBills(bills.filter(b => b._id !== activeBillId && String(b.billNo) !== String(formData.billNo)));
         showNotification(`Bill #${formatBillNo(formData.billNo)} removed locally.`, 'success');
       }
@@ -326,9 +341,9 @@ function AppContent() {
     }
 
     try {
-      await axios.patch(`${API_BASE}/${targetId}/delivery`, payload);
-      showNotification(`Order #${formatBillNo(targetBill?.billNo || targetId)} delivery status updated to "${payload.status}"`, 'success');
-    } catch (err) {
+      const balInfo = payload.deliveryAmount !== undefined && Number(payload.deliveryAmount) > 0 ? ` (Balance ₹${Number(payload.deliveryAmount).toFixed(2)} settled)` : '';
+      showNotification(`Order #${formatBillNo(targetBill?.billNo || targetId)} marked as "${payload.status}"${balInfo}`, 'success');
+    } catch {
       console.warn('Network issue updating delivery status, updating locally.');
     }
 
@@ -352,7 +367,7 @@ function AppContent() {
     try {
       await axios.post(`${API_BASE}/${targetId}/send-sms`);
       showNotification(`SMS/WhatsApp notification sent to ${billRecord.customer?.name} (${billRecord.customer?.phone})`, 'success');
-    } catch (err) {
+    } catch {
       showNotification(`SMS/WhatsApp notification triggered for ${billRecord.customer?.name}`, 'success');
     }
 
@@ -367,7 +382,7 @@ function AppContent() {
     try {
       await axios.patch(`${API_BASE}/${targetId}/toggle-sms`, { sent: newStatus });
       showNotification(newStatus ? `Reminder marked as Sent for Bill #${formatBillNo(billRecord.billNo)}` : `Reminder marked as Pending for Bill #${formatBillNo(billRecord.billNo)}`, 'success');
-    } catch (err) {
+    } catch {
       console.warn('Network issue toggling SMS status, updated locally.');
       showNotification(`Reminder marked as ${newStatus ? 'Sent' : 'Pending'} (local)`, 'info');
     }
@@ -382,19 +397,19 @@ function AppContent() {
     try {
       await axios.patch(`${API_BASE}/${targetId}/followup`, { status, type });
       showNotification(`Follow-up for Bill #${formatBillNo(targetBill?.billNo || targetId)} marked as "${status}"`, 'success');
-    } catch (err) {
+    } catch {
       console.warn('Network issue updating follow-up status, updated locally.');
       showNotification(`Follow-up for Bill #${formatBillNo(targetBill?.billNo || targetId)} marked as "${status}" (local)`, 'info');
     }
 
     setBills(prev => prev.map(b => {
       if (b._id === targetId || String(b.billNo) === String(targetId)) {
+        const details = b.followUpDetails || {};
         const now = new Date().toISOString();
-        const details = { ...(b.followUpDetails || {}), lastContactedAt: now };
         if (type === 'service') details.serviceSentAt = now;
         if (type === 'feedback') details.feedbackSentAt = now;
         if (type === 'eyecheck') details.eyeCheckSentAt = now;
-
+        details.lastContactedAt = now;
         return { ...b, followUpStatus: status, followUpDetails: details };
       }
       return b;
@@ -404,14 +419,30 @@ function AppContent() {
   const handleSelectBill = (billRecord) => {
     setActiveBillId(billRecord._id || billRecord.billNo);
     setIsEditing(false);
+
     setFormData({
       ...defaultFormState,
       ...billRecord,
       billNo: formatBillNo(billRecord.billNo),
-      customer: { ...defaultFormState.customer, ...(billRecord.customer || {}) },
-      prescription: { ...defaultFormState.prescription, ...(billRecord.prescription || {}) },
-      lens: { ...defaultFormState.lens, ...(billRecord.lens || {}) },
-      frame: { ...defaultFormState.frame, ...(billRecord.frame || {}) },
+      date: billRecord.date ? billRecord.date.substring(0, 10) : new Date().toISOString().substring(0, 10),
+      deliveryDate: billRecord.deliveryDate ? billRecord.deliveryDate.substring(0, 10) : new Date().toISOString().substring(0, 10),
+      reminderDate: billRecord.reminderDate ? billRecord.reminderDate.substring(0, 10) : new Date().toISOString().substring(0, 10),
+      customer: {
+        ...defaultFormState.customer,
+        ...(billRecord.customer || {})
+      },
+      prescription: {
+        ...defaultFormState.prescription,
+        ...(billRecord.prescription || {})
+      },
+      lens: {
+        ...defaultFormState.lens,
+        ...(billRecord.lens || {})
+      },
+      frame: {
+        ...defaultFormState.frame,
+        ...(billRecord.frame || {})
+      },
       totalAmount: billRecord.totalAmount || 1500,
       discountAmount: billRecord.discountAmount || 0,
       netAmount: billRecord.netAmount || 1500,
@@ -420,22 +451,24 @@ function AppContent() {
     });
   };
 
-  const filteredBills = bills.filter(b => {
-    if (!searchQuery || !searchQuery.trim()) return false;
+  const filteredBills = useMemo(() => {
+    if (!searchQuery || !searchQuery.trim()) return [];
     const q = searchQuery.trim().toLowerCase();
     const cleanNum = q.replace(/^0+/, '');
 
-    const nameMatch = b.customer?.name && b.customer.name.toLowerCase().includes(q);
-    const mrdNo = (b.customer?.mrdNo || '').toLowerCase().trim();
-    const cleanMrd = mrdNo.replace(/^0+/, '');
-    const mrdMatch = mrdNo.includes(q) || (cleanNum && cleanMrd === cleanNum);
-    const formattedBNo = formatBillNo(b.billNo).toLowerCase();
-    const rawBNo = String(b.billNo || '').toLowerCase();
-    const billNoMatch = rawBNo === q || rawBNo === cleanNum || rawBNo.includes(q) || formattedBNo.includes(q);
-    const phoneMatch = b.customer?.phone && (q.length >= 7 ? b.customer.phone.includes(q) : b.customer.phone === q);
+    return bills.filter(b => {
+      const nameMatch = b.customer?.name && b.customer.name.toLowerCase().includes(q);
+      const mrdNo = (b.customer?.mrdNo || '').toLowerCase().trim();
+      const cleanMrd = mrdNo.replace(/^0+/, '');
+      const mrdMatch = mrdNo.includes(q) || (cleanNum && cleanMrd === cleanNum);
+      const formattedBNo = formatBillNo(b.billNo).toLowerCase();
+      const rawBNo = String(b.billNo || '').toLowerCase();
+      const billNoMatch = rawBNo === q || rawBNo === cleanNum || rawBNo.includes(q) || formattedBNo.includes(q);
+      const phoneMatch = b.customer?.phone && (q.length >= 7 ? b.customer.phone.includes(q) : b.customer.phone === q);
 
-    return nameMatch || mrdMatch || billNoMatch || phoneMatch;
-  });
+      return nameMatch || mrdMatch || billNoMatch || phoneMatch;
+    });
+  }, [bills, searchQuery]);
 
   // Dedicated /login Route & Authentication Guard
   if (currentView === 'login' || !currentUser) {
@@ -495,178 +528,163 @@ function AppContent() {
           onLogout={handleLogout}
         />
 
-        {/* View Switch Router */}
+        {/* View Switch Router with Suspense */}
         <div className="flex-1 flex flex-col justify-between">
-          <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route 
-              path="/billing" 
-              element={
-                <main className="p-4.5 flex-1 grid grid-cols-1 xl:grid-cols-12 gap-4.5 items-start max-w-[1920px] mx-auto w-full transition-all duration-300">
-                  {/* Left Column: Optical Form (Full 12 cols when search is closed, 7 cols when search is open) */}
-                  <div className={`${isSearchPanelOpen ? 'xl:col-span-7' : 'xl:col-span-12'} w-full transition-all duration-300`}>
-                    <CustomerPrescriptionForm 
-                      formData={formData}
-                      setFormData={setFormData}
-                      isEditing={isEditing}
-                      isDarkMode={isDarkMode}
-                      onToggleSearch={handleToggleSearch}
-                      isSearchPanelOpen={isSearchPanelOpen}
-                      userRole={currentUser?.role || 'admin'}
-                      bills={bills}
-                    />
-                  </div>
-
-                  {/* Right Column: Quick Search Grid (Slides in / Opens when isSearchPanelOpen is true) */}
-                  {isSearchPanelOpen && (
-                    <div id="search-panel-container" className="xl:col-span-5 w-full h-full transition-all duration-300">
-                      <QuickSearchGrid 
-                        bills={filteredBills}
-                        activeBillId={activeBillId}
-                        onSelectBill={handleSelectBillAndClose}
-                        searchQuery={searchQuery}
-                        setSearchQuery={setSearchQuery}
-                        onClosePanel={() => setIsSearchPanelOpen(false)}
+          <Suspense fallback={<PageLoadingFallback />}>
+            <Routes>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route 
+                path="/billing" 
+                element={
+                  <main className="p-4.5 flex-1 grid grid-cols-1 xl:grid-cols-12 gap-4.5 items-start max-w-[1920px] mx-auto w-full transition-all duration-300">
+                    {/* Left Column: Optical Form */}
+                    <div className={`${isSearchPanelOpen ? 'xl:col-span-7' : 'xl:col-span-12'} w-full transition-all duration-300`}>
+                      <CustomerPrescriptionForm 
+                        formData={formData}
+                        setFormData={setFormData}
+                        isEditing={isEditing}
                         isDarkMode={isDarkMode}
+                        onToggleSearch={handleToggleSearch}
+                        isSearchPanelOpen={isSearchPanelOpen}
+                        userRole={currentUser?.role || 'admin'}
+                        bills={bills}
                       />
                     </div>
-                  )}
-                </main>
-              } 
-            />
 
-            <Route 
-              path="/dashboard" 
-              element={
-                <main className="flex-1 w-full">
-                  <DashboardPage 
-                    bills={bills}
-                    isDarkMode={isDarkMode}
-                    userRole={currentUser?.role}
-                    onNavigateToReminders={() => navigate('/reminders')}
-                    onNavigateToBilling={() => navigate('/billing')}
-                    onSelectBill={(b) => {
-                      handleSelectBill(b);
-                      navigate('/billing');
-                    }}
-                  />
-                </main>
-              } 
-            />
+                    {/* Right Column: Quick Search Grid */}
+                    {isSearchPanelOpen && (
+                      <div id="search-panel-container" className="xl:col-span-5 w-full h-full transition-all duration-300">
+                        <QuickSearchGrid 
+                          bills={filteredBills}
+                          activeBillId={activeBillId}
+                          onSelectBill={handleSelectBillAndClose}
+                          searchQuery={searchQuery}
+                          setSearchQuery={setSearchQuery}
+                          onClosePanel={() => setIsSearchPanelOpen(false)}
+                          isDarkMode={isDarkMode}
+                        />
+                      </div>
+                    )}
+                  </main>
+                } 
+              />
 
-            <Route 
-              path="/reminders" 
-              element={
-                <main className="flex-1 w-full">
-                  <RemindersPage 
-                    bills={bills}
-                    isDarkMode={isDarkMode}
-                    onToggleStatus={handleDeliveryToggleById}
-                    onSendSMS={handleSendSMS}
-                    onToggleSMS={handleToggleSMS}
-                  />
-                </main>
-              } 
-            />
+              <Route 
+                path="/dashboard" 
+                element={
+                  <main className="flex-1 w-full">
+                    <DashboardPage 
+                      bills={bills}
+                      isDarkMode={isDarkMode}
+                      userRole={currentUser?.role}
+                      onNavigateToReminders={() => navigate('/reminders')}
+                      onNavigateToBilling={() => navigate('/billing')}
+                      onSelectBill={(b) => {
+                        handleSelectBill(b);
+                        navigate('/billing');
+                      }}
+                    />
+                  </main>
+                } 
+              />
 
-            <Route 
-              path="/followup" 
-              element={
-                <main className="flex-1 w-full p-4.5 max-w-[1920px] mx-auto">
-                  <FollowUpPage 
-                    bills={bills}
-                    isDarkMode={isDarkMode}
-                    onUpdateBillStatus={handleUpdateFollowUpStatus}
-                  />
-                </main>
-              } 
-            />
+              <Route 
+                path="/reminders" 
+                element={
+                  <main className="flex-1 w-full">
+                    <RemindersPage 
+                      bills={bills}
+                      isDarkMode={isDarkMode}
+                      onToggleStatus={handleDeliveryToggleById}
+                      onSendSMS={handleSendSMS}
+                      onToggleSMS={handleToggleSMS}
+                    />
+                  </main>
+                } 
+              />
 
-            {/* Wallet & Loyalty Hub */}
-            <Route 
-              path="/wallet" 
-              element={
-                <main className="flex-1 w-full p-4.5 max-w-[1920px] mx-auto">
-                  <WalletPage 
-                    bills={bills}
-                    isDarkMode={isDarkMode}
-                    userRole={currentUser?.role}
-                    onSelectCustomerForBilling={(cust) => {
-                      // Pre-fill billing form with customer
-                      setFormData(prev => ({
-                        ...prev,
-                        customer: {
-                          ...prev.customer,
-                          name: cust.name || '',
-                          phone: cust.phone || '',
-                          mrdNo: cust.mrdNo || '',
-                          address: cust.address || '',
-                          gender: cust.gender || '',
-                          age: cust.age || ''
-                        }
-                      }));
-                      navigate('/billing');
-                    }}
-                  />
-                </main>
-              } 
-            />
-
-            {/* Admin Exclusive Views */}
-            <Route 
-              path="/reports" 
-              element={
-                currentUser.role === 'admin' ? (
+              <Route 
+                path="/followup" 
+                element={
                   <main className="flex-1 w-full p-4.5 max-w-[1920px] mx-auto">
-                    <ReportsPage 
+                    <FollowUpPage 
+                      bills={bills}
+                      isDarkMode={isDarkMode}
+                      onUpdateBillStatus={handleUpdateFollowUpStatus}
+                    />
+                  </main>
+                } 
+              />
+
+              {/* Wallet & Loyalty Hub */}
+              <Route 
+                path="/wallet" 
+                element={
+                  <main className="flex-1 w-full p-4.5 max-w-[1920px] mx-auto">
+                    <WalletPage 
                       bills={bills}
                       isDarkMode={isDarkMode}
                     />
                   </main>
-                ) : (
-                  <Navigate to="/billing" replace />
-                )
-              } 
-            />
+                } 
+              />
 
-            <Route 
-              path="/customers" 
-              element={
-                currentUser.role === 'admin' ? (
-                  <main className="flex-1 w-full p-4.5 max-w-[1920px] mx-auto">
-                    <CustomerInfoPage 
-                      bills={bills}
-                      isDarkMode={isDarkMode}
-                    />
-                  </main>
-                ) : (
-                  <Navigate to="/billing" replace />
-                )
-              } 
-            />
+              {/* Admin Exclusive Views */}
+              <Route 
+                path="/reports" 
+                element={
+                  currentUser.role === 'admin' ? (
+                    <main className="flex-1 w-full p-4.5 max-w-[1920px] mx-auto">
+                      <ReportsPage 
+                        bills={bills}
+                        isDarkMode={isDarkMode}
+                      />
+                    </main>
+                  ) : (
+                    <Navigate to="/billing" replace />
+                  )
+                } 
+              />
 
-            <Route 
-              path="/staff" 
-              element={
-                currentUser.role === 'admin' ? (
-                  <main className="flex-1 w-full p-4.5 max-w-[1920px] mx-auto">
-                    <StaffSetupPage 
-                      registeredStaff={registeredStaff}
-                      onAddStaff={handleAddStaff}
-                      onDeleteStaff={handleDeleteStaff}
-                      onUpdateStaff={handleUpdateStaff}
-                      isDarkMode={isDarkMode}
-                    />
-                  </main>
-                ) : (
-                  <Navigate to="/billing" replace />
-                )
-              } 
-            />
+              <Route 
+                path="/customers" 
+                element={
+                  currentUser.role === 'admin' ? (
+                    <main className="flex-1 w-full p-4.5 max-w-[1920px] mx-auto">
+                      <CustomerInfoPage 
+                        bills={bills}
+                        isDarkMode={isDarkMode}
+                      />
+                    </main>
+                  ) : (
+                    <Navigate to="/billing" replace />
+                  )
+                } 
+              />
 
-            {/* Fallback route */}
-            <Route path="*" element={<Navigate to="/billing" replace />} />
-          </Routes>
+              <Route 
+                path="/staff" 
+                element={
+                  currentUser.role === 'admin' ? (
+                    <main className="flex-1 w-full p-4.5 max-w-[1920px] mx-auto">
+                      <StaffSetupPage 
+                        registeredStaff={registeredStaff}
+                        onAddStaff={handleAddStaff}
+                        onDeleteStaff={handleDeleteStaff}
+                        onUpdateStaff={handleUpdateStaff}
+                        isDarkMode={isDarkMode}
+                      />
+                    </main>
+                  ) : (
+                    <Navigate to="/billing" replace />
+                  )
+                } 
+              />
+
+              {/* Fallback route */}
+              <Route path="*" element={<Navigate to="/billing" replace />} />
+            </Routes>
+          </Suspense>
 
           {/* Bottom Floating Action Dock (Only visible in Billing POS view) */}
           {currentView === 'billing' && (
@@ -692,21 +710,23 @@ function AppContent() {
         </div>
       </div>
 
-      {/* Modals */}
-      {showPrintModal && (
-        <InvoicePrintModal 
-          bill={formData}
-          isDuplicate={isDuplicateBill}
-          onClose={() => setShowPrintModal(false)}
-        />
-      )}
+      {/* Modals wrapped in Suspense for lazy chunks */}
+      <Suspense fallback={null}>
+        {showPrintModal && (
+          <InvoicePrintModal 
+            bill={formData}
+            isDuplicate={isDuplicateBill}
+            onClose={() => setShowPrintModal(false)}
+          />
+        )}
 
-      {showItemSetupModal && (
-        <ItemSetupModal 
-          onClose={() => setShowItemSetupModal(false)}
-          userRole={currentUser?.role || 'admin'}
-        />
-      )}
+        {showItemSetupModal && (
+          <ItemSetupModal 
+            onClose={() => setShowItemSetupModal(false)}
+            userRole={currentUser?.role || 'admin'}
+          />
+        )}
+      </Suspense>
 
       {showDeliveryModal && (
         <DeliveryModal
@@ -730,4 +750,3 @@ export default function App() {
     </HashRouter>
   );
 }
-

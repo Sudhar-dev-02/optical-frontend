@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldCheck, UserCheck, Phone, Lock, Eye, EyeOff, Sparkles, ArrowRight } from 'lucide-react';
+import { ShieldCheck, UserCheck, Phone, Lock, Eye, EyeOff, ArrowRight, Sparkles } from 'lucide-react';
 import logoImg from '../assets/logo.jpeg';
 
 export default function LoginPage({ onLoginSuccess, registeredStaff = [], isDarkMode }) {

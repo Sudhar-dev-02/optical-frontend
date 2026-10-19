@@ -6,13 +6,8 @@ import {
   Stethoscope, 
   Calendar, 
   Search, 
-  CheckCircle2, 
-  Clock, 
   User, 
   Filter, 
-  ExternalLink,
-  ShieldAlert,
-  Sparkles,
   RefreshCw,
   PhoneCall,
   Send,
@@ -20,11 +15,63 @@ import {
   CheckCheck,
   AlertTriangle,
   CalendarCheck2,
-  CalendarDays
+  CalendarDays,
+  Sparkles
 } from 'lucide-react';
 import { formatBillNo } from '../utils/billNumber';
 
 const STORE_PHONE = '+91 733 933 4042';
+
+// Pure date calculation helpers
+const addDays = (dateStr, days) => {
+  if (!dateStr) return new Date();
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + days);
+  return d;
+};
+
+const toDateOnly = (d) => {
+  const dt = new Date(d);
+  dt.setHours(0, 0, 0, 0);
+  return dt;
+};
+
+const isSameDay = (d1, d2) => {
+  try {
+    const t1 = toDateOnly(d1).getTime();
+    const t2 = toDateOnly(d2).getTime();
+    return t1 === t2;
+  } catch {
+    return false;
+  }
+};
+
+const isPast = (d, today) => {
+  try {
+    return toDateOnly(d).getTime() < toDateOnly(today).getTime();
+  } catch {
+    return false;
+  }
+};
+
+const isWithinNextDays = (d, today, days = 7) => {
+  try {
+    const diffTime = toDateOnly(d).getTime() - toDateOnly(today).getTime();
+    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+    return diffDays > 0 && diffDays <= days;
+  } catch {
+    return false;
+  }
+};
+
+const formatDate = (d) => {
+  try {
+    const dateObj = new Date(d);
+    return dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  } catch {
+    return String(d);
+  }
+};
 
 export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatus }) {
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'service' | 'feedback' | 'eyecheck'
@@ -32,57 +79,6 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'Pending' | 'Sent' | 'Contacted' | 'Completed'
   const [searchTerm, setSearchTerm] = useState('');
   const [localStatuses, setLocalStatuses] = useState({});
-
-  // Helper date calculations
-  const addDays = (dateStr, days) => {
-    if (!dateStr) return new Date();
-    const d = new Date(dateStr);
-    d.setDate(d.getDate() + days);
-    return d;
-  };
-
-  const toDateOnly = (d) => {
-    const dt = new Date(d);
-    dt.setHours(0, 0, 0, 0);
-    return dt;
-  };
-
-  const isSameDay = (d1, d2) => {
-    try {
-      const t1 = toDateOnly(d1).getTime();
-      const t2 = toDateOnly(d2).getTime();
-      return t1 === t2;
-    } catch {
-      return false;
-    }
-  };
-
-  const isPast = (d, today) => {
-    try {
-      return toDateOnly(d).getTime() < toDateOnly(today).getTime();
-    } catch {
-      return false;
-    }
-  };
-
-  const isWithinNextDays = (d, today, days = 7) => {
-    try {
-      const diffTime = toDateOnly(d).getTime() - toDateOnly(today).getTime();
-      const diffDays = diffTime / (1000 * 60 * 60 * 24);
-      return diffDays > 0 && diffDays <= days;
-    } catch {
-      return false;
-    }
-  };
-
-  const formatDate = (d) => {
-    try {
-      const dateObj = new Date(d);
-      return dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-    } catch {
-      return String(d);
-    }
-  };
 
   // Enrich bills with calculated follow-up dates, due classification, and status
   const followUpItems = useMemo(() => {
@@ -264,7 +260,6 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
   const dueTodayCount = followUpItems.filter(i => i.hasAnyDueToday).length;
   const overdueCount = followUpItems.filter(i => i.hasAnyOverdue && i.currentStatus !== 'Completed').length;
   const sentCount = followUpItems.filter(i => i.currentStatus === 'Sent' || i.currentStatus === 'Contacted').length;
-  const completedCount = followUpItems.filter(i => i.currentStatus === 'Completed').length;
 
   const panelClass = isDarkMode ? 'glass-panel-dark' : 'glass-panel-light';
   const inputClass = isDarkMode ? 'glass-input-dark text-slate-100' : 'glass-input-light text-slate-900';

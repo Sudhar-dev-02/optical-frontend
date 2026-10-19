@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { 
-  Users, Search, Phone, MapPin, Stethoscope, Calendar, DollarSign, 
-  MessageSquare, PhoneCall, ExternalLink, User, Wallet, Eye, X, 
-  ShoppingBag, ShieldCheck, CheckCircle2, Award, Clock 
+  Users, Search, Phone, MapPin, 
+  MessageSquare, PhoneCall, User, Wallet, Eye, X, 
+  ShoppingBag
 } from 'lucide-react';
 
 const STORE_PHONE = '+91 90432 29107 / +91 99524 17748';
@@ -11,17 +11,20 @@ export default function CustomerInfoPage({ bills = [], isDarkMode }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
 
-  // Group bills by customer phone number or customer name
+  // Group bills by customer phone number or customer name with fast O(1) Map lookups
   const customerProfiles = useMemo(() => {
     const map = {};
+    const mrdIndex = new Map();
+    const phoneIndex = new Map();
 
     // Pass 1: Aggregate each customer's own orders and direct cashback/redemptions
     bills.forEach(bill => {
       const phoneKey = bill.customer?.phone ? bill.customer.phone.replace(/\D/g, '') : `NO_PHONE_${bill.billNo}`;
-      const mrdKey = (bill.customer?.mrdNo || '').toLowerCase().trim().replace(/^0+/, '');
+      const mrdRaw = (bill.customer?.mrdNo || '').toLowerCase().trim();
+      const mrdKey = mrdRaw.replace(/^0+/, '');
 
       if (!map[phoneKey]) {
-        map[phoneKey] = {
+        const profile = {
           phoneKey,
           name: bill.customer?.name || 'Unnamed Customer',
           phone: bill.customer?.phone || '',
@@ -37,6 +40,17 @@ export default function CustomerInfoPage({ bills = [], isDarkMode }) {
           referralCount: 0,
           latestDate: bill.date || bill.createdAt
         };
+        map[phoneKey] = profile;
+
+        if (phoneKey && !phoneKey.startsWith('NO_PHONE_')) {
+          phoneIndex.set(phoneKey, profile);
+        }
+        if (mrdKey) {
+          mrdIndex.set(mrdKey, profile);
+        }
+        if (mrdRaw) {
+          mrdIndex.set(mrdRaw, profile);
+        }
       }
 
       map[phoneKey].bills.push(bill);
@@ -47,17 +61,16 @@ export default function CustomerInfoPage({ bills = [], isDarkMode }) {
 
     // Pass 2: Credit 10% Net Amount Referral Cashback to Referrer's Wallet
     bills.forEach(bill => {
-      const refMrd = (bill.referrerMrd || '').toLowerCase().trim().replace(/^0+/, '');
+      const rawRefMrd = (bill.referrerMrd || '').toLowerCase().trim();
+      const cleanRefMrd = rawRefMrd.replace(/^0+/, '');
       const refPhone = (bill.referrerPhone || '').replace(/\D/g, '');
       const net = Number(bill.netAmount) || 0;
-      const refBonus = Math.round(net * 0.10); // 10% of purchaser's net amount credited to referrer
+      const refBonus = Math.round(net * 0.10);
 
-      if (refBonus > 0 && (refMrd || refPhone)) {
-        const referrer = Object.values(map).find(c => 
-          (refMrd && c.cleanMrd === refMrd) || 
-          (refMrd && c.mrdNo && c.mrdNo.toLowerCase().trim() === refMrd) ||
-          (refPhone && c.phone.replace(/\D/g, '') === refPhone)
-        );
+      if (refBonus > 0 && (cleanRefMrd || rawRefMrd || refPhone)) {
+        const referrer = (cleanRefMrd && mrdIndex.get(cleanRefMrd)) ||
+                         (rawRefMrd && mrdIndex.get(rawRefMrd)) ||
+                         (refPhone && phoneIndex.get(refPhone)) || null;
 
         if (referrer) {
           referrer.walletBalance += refBonus;

@@ -16,26 +16,27 @@ import {
 import { formatBillNo } from '../utils/billNumber';
 
 export default function DeliveryModal({ bill, isOpen, onClose, onConfirmDelivery, isDarkMode }) {
-  if (!isOpen || !bill) return null;
+  const netAmount = Number(bill?.netAmount || 0);
+  const prevAdvance = Number(bill?.advanceAmount || 0);
+  const currentBalance = Number(bill?.balanceAmount || Math.max(0, netAmount - prevAdvance));
 
-  const netAmount = Number(bill.netAmount || 0);
-  const prevAdvance = Number(bill.advanceAmount || 0);
-  const currentBalance = Number(bill.balanceAmount || Math.max(0, netAmount - prevAdvance));
-
-  const isAlreadyDelivered = (bill.deliveryStatus || '').toLowerCase() === 'delivered';
+  const isAlreadyDelivered = (bill?.deliveryStatus || '').toLowerCase() === 'delivered';
 
   // 'YES' = Mark as Delivered, 'NO' = Keep / Revert to Pending
   const [deliveryDecision, setDeliveryDecision] = useState('YES');
   const [payingNow, setPayingNow] = useState(currentBalance.toString());
-  const [payMode, setPayMode] = useState(bill.payMode || 'CASH');
+  const [payMode, setPayMode] = useState(bill?.payMode || 'CASH');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    if (!bill) return;
     setDeliveryDecision('YES');
     setPayingNow(currentBalance.toString());
     setPayMode(bill.payMode || 'CASH');
     setIsSubmitting(false);
   }, [bill, currentBalance]);
+
+  if (!isOpen || !bill) return null;
 
   const numPayingNow = Math.max(0, Number(payingNow) || 0);
   const newAdvance = prevAdvance + numPayingNow;
@@ -53,10 +54,13 @@ export default function DeliveryModal({ bill, isOpen, onClose, onConfirmDelivery
     setIsSubmitting(true);
     try {
       if (deliveryDecision === 'YES') {
+        const deliveryAmount = numPayingNow;
         await onConfirmDelivery(bill._id || bill.billNo, {
           status: 'Delivered',
           advanceAmount: newAdvance,
           balanceAmount: newBalance,
+          deliveryAmount: deliveryAmount,
+          deliveryDate: new Date().toISOString(),
           payMode: currentBalance > 0 ? payMode : (bill.payMode || 'CASH')
         });
       } else {
@@ -64,6 +68,7 @@ export default function DeliveryModal({ bill, isOpen, onClose, onConfirmDelivery
           status: 'Pending',
           advanceAmount: prevAdvance,
           balanceAmount: currentBalance,
+          deliveryAmount: 0,
           payMode: bill.payMode || 'CASH'
         });
       }
@@ -85,81 +90,86 @@ export default function DeliveryModal({ bill, isOpen, onClose, onConfirmDelivery
   const inputClass = isDarkMode ? 'glass-input-dark text-slate-100' : 'glass-input-light text-[#0B2D5B]';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-md animate-in fade-in duration-200">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/70 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200"
+      onClick={onClose}
+    >
       <div 
-        className={`w-full max-w-lg rounded-3xl border p-6 sm:p-7 relative overflow-hidden transition-all duration-300 transform scale-100 ${panelBg}`}
+        className={`w-full max-w-lg max-h-[92vh] my-auto flex flex-col rounded-3xl border relative shadow-2xl transition-all duration-300 transform scale-100 overflow-hidden ${panelBg}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Decorative Header Accent */}
-        <div className={`absolute top-0 left-0 right-0 h-2 transition-all duration-300 ${
+        <div className={`absolute top-0 left-0 right-0 h-1.5 transition-all duration-300 z-10 ${
           deliveryDecision === 'YES'
             ? 'bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600'
             : 'bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600'
         }`} />
 
-        {/* Close Button */}
-        <button
-          type="button"
-          onClick={onClose}
-          className={`absolute top-5 right-5 p-2 rounded-xl border transition-all cursor-pointer ${
-            isDarkMode ? 'bg-[#0B2D5B]/50 border-[#D4AF37]/30 text-[#D4AF37] hover:bg-[#0B2D5B]' : 'bg-slate-100 border-[#0B2D5B]/15 text-[#0B2D5B] hover:bg-[#0B2D5B]/10'
-          }`}
-          title="Close dialog"
-        >
-          <X className="w-4 h-4" />
-        </button>
-
-        {/* Header Title */}
-        <div className="flex items-center gap-3 mb-5 pr-8">
-          <div className={`p-3 rounded-2xl text-white shadow-lg transition-all duration-300 ${
-            deliveryDecision === 'YES'
-              ? 'bg-gradient-to-tr from-emerald-600 to-teal-700 shadow-emerald-500/20'
-              : 'bg-gradient-to-tr from-amber-600 to-orange-700 shadow-amber-500/20'
-          }`}>
-            {deliveryDecision === 'YES' ? (
-              <Truck className="w-6 h-6" />
-            ) : (
-              <Clock className="w-6 h-6" />
-            )}
-          </div>
-          <div>
-            <h2 className="text-xl sm:text-2xl font-black tracking-tight flex items-center gap-2 text-[#0B2D5B] dark:text-slate-100">
-              Delivery Confirmation
-            </h2>
-            <p className="text-xs text-slate-600 dark:text-slate-400 font-medium mt-0.5">
-              Confirm order delivery status & finalize balance settlement
-            </p>
-          </div>
-        </div>
-
-        {/* Order & Customer Summary Card */}
-        <div className={`p-4 rounded-2xl border ${cardBg} mb-4 space-y-2`}>
-          <div className="flex items-center justify-between">
-            <span className="px-3 py-1 rounded-xl bg-[#0B2D5B]/15 dark:bg-[#0B2D5B]/50 border border-[#0B2D5B]/20 dark:border-[#D4AF37]/30 text-[#0B2D5B] dark:text-[#D4AF37] font-mono font-black text-xs">
-              Bill #{formatBillNo(bill.billNo)}
-            </span>
-            <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 font-mono font-semibold">
-              <Calendar className="w-3.5 h-3.5 text-[#D4AF37]" />
-              <span>Deliv Date: {formattedDate}</span>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between pt-1">
-            <div className="flex items-center gap-2">
-              <User className="w-4 h-4 text-[#D4AF37]" />
-              <span className="font-extrabold text-sm text-[#0B2D5B] dark:text-slate-100">{bill.customer?.name || 'Customer'}</span>
-            </div>
-            {bill.customer?.phone && (
-              <div className="flex items-center gap-1.5 text-xs text-[#0B2D5B] dark:text-[#D4AF37] font-mono font-bold">
-                <Phone className="w-3.5 h-3.5 text-[#D4AF37]" />
-                <span>{bill.customer.phone}</span>
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          {/* Header Title & Close Button */}
+          <div className="p-4 sm:p-5 pb-3 border-b border-slate-200/50 dark:border-slate-800/80 shrink-0 flex items-center justify-between gap-3 relative">
+            <div className="flex items-center gap-3">
+              <div className={`p-2.5 rounded-2xl text-white shadow-md transition-all duration-300 shrink-0 ${
+                deliveryDecision === 'YES'
+                  ? 'bg-gradient-to-tr from-emerald-600 to-teal-700 shadow-emerald-500/20'
+                  : 'bg-gradient-to-tr from-amber-600 to-orange-700 shadow-amber-500/20'
+              }`}>
+                {deliveryDecision === 'YES' ? (
+                  <Truck className="w-5 h-5" />
+                ) : (
+                  <Clock className="w-5 h-5" />
+                )}
               </div>
-            )}
-          </div>
-        </div>
+              <div>
+                <h2 className="text-lg sm:text-xl font-black tracking-tight text-[#0B2D5B] dark:text-slate-100">
+                  Delivery Confirmation
+                </h2>
+                <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                  Confirm delivery & finalize balance settlement
+                </p>
+              </div>
+            </div>
 
-        {/* Form Start */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={onClose}
+              className={`p-2 rounded-xl border transition-all cursor-pointer shrink-0 ${
+                isDarkMode ? 'bg-[#0B2D5B]/50 border-[#D4AF37]/30 text-[#D4AF37] hover:bg-[#0B2D5B]' : 'bg-slate-100 border-[#0B2D5B]/15 text-[#0B2D5B] hover:bg-[#0B2D5B]/10'
+              }`}
+              title="Close dialog"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Scrollable Modal Content Body */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 overscroll-contain">
+            {/* Order & Customer Summary Card */}
+            <div className={`p-3.5 sm:p-4 rounded-2xl border ${cardBg} space-y-2`}>
+              <div className="flex items-center justify-between">
+                <span className="px-3 py-1 rounded-xl bg-[#0B2D5B]/15 dark:bg-[#0B2D5B]/50 border border-[#0B2D5B]/20 dark:border-[#D4AF37]/30 text-[#0B2D5B] dark:text-[#D4AF37] font-mono font-black text-xs">
+                  Bill #{formatBillNo(bill.billNo)}
+                </span>
+                <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 font-mono font-semibold">
+                  <Calendar className="w-3.5 h-3.5 text-[#D4AF37]" />
+                  <span>Deliv Date: {formattedDate}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-1">
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4 text-[#D4AF37]" />
+                  <span className="font-extrabold text-sm text-[#0B2D5B] dark:text-slate-100">{bill.customer?.name || 'Customer'}</span>
+                </div>
+                {bill.customer?.phone && (
+                  <div className="flex items-center gap-1.5 text-xs text-[#0B2D5B] dark:text-[#D4AF37] font-mono font-bold">
+                    <Phone className="w-3.5 h-3.5 text-[#D4AF37]" />
+                    <span>{bill.customer.phone}</span>
+                  </div>
+                )}
+              </div>
+            </div>
           {/* 1) YES or NO Decision Selector */}
           <div>
             <label className="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2">
@@ -269,21 +279,48 @@ export default function DeliveryModal({ bill, isOpen, onClose, onConfirmDelivery
               <div className={`p-4 rounded-2xl border space-y-4 ${
                 isDarkMode ? 'bg-slate-950/50 border-slate-800' : 'bg-white border-slate-200'
               }`}>
+                {/* Highlight Banner: Balance Due to Settle */}
+                <div className={`p-3 rounded-xl border flex items-center justify-between ${
+                  isDarkMode ? 'bg-amber-950/30 border-amber-800/40 text-amber-200' : 'bg-amber-50 border-amber-200 text-amber-900'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <div>
+                      <div className="text-[11px] font-black uppercase tracking-wider">Pending Balance to Settle</div>
+                      <div className="text-xs opacity-80">Collect customer balance due upon handing over eyewear</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-mono font-black text-base text-amber-600 dark:text-amber-400">
+                      ₹{currentBalance.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Amount Paying Now */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
-                      <DollarSign className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                      <span>Amount Paying Now (₹)</span>
-                    </label>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                        <DollarSign className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                        <span>Balance Paying Now (₹)</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setPayingNow(currentBalance.toString())}
+                        className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+                      >
+                        Full Balance
+                      </button>
+                    </div>
                     <input
                       type="number"
                       min="0"
-                      max={netAmount}
+                      max={currentBalance}
                       step="0.01"
                       value={payingNow}
                       onChange={(e) => setPayingNow(e.target.value)}
-                      placeholder="0.00"
+                      placeholder={currentBalance.toFixed(2)}
                       className={`w-full px-3.5 py-2.5 text-sm font-mono font-bold rounded-xl border focus:outline-none focus:ring-2 focus:ring-emerald-500 ${inputClass}`}
                     />
                   </div>
@@ -359,12 +396,16 @@ export default function DeliveryModal({ bill, isOpen, onClose, onConfirmDelivery
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-3 pt-2">
+          </div>
+
+          {/* Fixed Footer Action Buttons */}
+          <div className={`p-3 sm:p-4 border-t border-slate-200/60 dark:border-slate-800/80 shrink-0 flex items-center justify-end gap-2.5 ${
+            isDarkMode ? 'bg-[#061833]' : 'bg-slate-50'
+          }`}>
             <button
               type="button"
               onClick={onClose}
-              className={`px-5 py-2.5 rounded-xl border font-bold text-xs cursor-pointer transition-all active:scale-95 ${
+              className={`px-4 sm:px-5 py-2.5 rounded-xl border font-bold text-xs cursor-pointer transition-all active:scale-95 ${
                 isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200'
               }`}
             >
@@ -374,14 +415,14 @@ export default function DeliveryModal({ bill, isOpen, onClose, onConfirmDelivery
             <button
               type="submit"
               disabled={isSubmitting || (isAlreadyDelivered && deliveryDecision === 'YES')}
-              className={`px-6 py-2.5 rounded-xl text-white font-black text-xs shadow-lg flex items-center gap-2 transition-all ${
+              className={`px-5 sm:px-6 py-2.5 rounded-xl text-white font-black text-xs shadow-lg flex items-center gap-2 transition-all cursor-pointer active:scale-95 ${
                 isAlreadyDelivered && deliveryDecision === 'YES'
                   ? 'bg-slate-400 dark:bg-slate-700 cursor-not-allowed opacity-60'
                   : isSubmitting
                   ? 'bg-slate-500 cursor-wait opacity-70'
                   : deliveryDecision === 'YES'
-                  ? 'bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 shadow-emerald-500/25 cursor-pointer active:scale-95'
-                  : 'bg-gradient-to-r from-amber-600 to-orange-700 hover:from-amber-700 hover:to-orange-800 shadow-amber-500/25 cursor-pointer active:scale-95'
+                  ? 'bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 shadow-emerald-500/25'
+                  : 'bg-gradient-to-r from-amber-600 to-orange-700 hover:from-amber-700 hover:to-orange-800 shadow-amber-500/25'
               }`}
             >
               <CheckCircle2 className="w-4 h-4" />
@@ -389,9 +430,9 @@ export default function DeliveryModal({ bill, isOpen, onClose, onConfirmDelivery
                 {isSubmitting
                   ? 'Submitting...'
                   : isAlreadyDelivered && deliveryDecision === 'YES'
-                  ? 'Already Delivered (Completed)'
+                  ? 'Already Delivered'
                   : deliveryDecision === 'YES'
-                  ? 'Submit (Mark Delivered)'
+                  ? (numPayingNow > 0 ? `Collect ₹${numPayingNow.toFixed(2)} & Mark Delivered` : 'Confirm Delivery (Fully Paid)')
                   : 'Submit (Keep Pending)'}
               </span>
               {!isSubmitting && !(isAlreadyDelivered && deliveryDecision === 'YES') && (

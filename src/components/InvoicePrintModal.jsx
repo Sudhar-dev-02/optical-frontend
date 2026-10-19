@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Printer, X, Eye, Phone, MapPin, CheckCircle, ShieldCheck } from 'lucide-react';
+import { Printer, X } from 'lucide-react';
 import logoImg from '../assets/logo.jpeg';
 import { formatBillNo } from '../utils/billNumber';
 

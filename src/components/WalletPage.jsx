@@ -1,12 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { 
-  Wallet, Gift, Users, Search, ArrowUpRight, ArrowDownLeft, 
-  FileSpreadsheet, MessageSquare, PhoneCall, ExternalLink, 
-  Eye, CheckCircle2, DollarSign, Calendar, TrendingUp, 
-  Award, ShieldCheck, Clock, X, ArrowRight, RefreshCw,
-  Sparkles, Filter, ChevronRight, Share2, HelpCircle
+  Wallet, Gift, Users, Search, ArrowDownLeft, 
+  FileSpreadsheet, MessageSquare, PhoneCall, 
+  Eye, Clock, 
+  Award, X, Sparkles
 } from 'lucide-react';
-import * as XLSX from 'xlsx';
 import { 
   getCustomerWalletProfiles, 
   getAllWalletAuditTransactions, 
@@ -19,9 +17,7 @@ const STORE_NAME = 'Optics India';
 
 export default function WalletPage({ 
   bills = [], 
-  isDarkMode, 
-  userRole = 'admin',
-  onSelectCustomerForBilling 
+  isDarkMode
 }) {
   const [activeTab, setActiveTab] = useState('customers'); // 'customers' | 'audit' | 'rules'
   const [searchTerm, setSearchTerm] = useState('');
@@ -35,12 +31,12 @@ export default function WalletPage({
   }, [bills]);
 
   const metrics = useMemo(() => {
-    return getWalletSummaryMetrics(bills);
-  }, [bills]);
+    return getWalletSummaryMetrics(bills, walletProfiles);
+  }, [bills, walletProfiles]);
 
   const allAuditLogs = useMemo(() => {
-    return getAllWalletAuditTransactions(bills);
-  }, [bills]);
+    return getAllWalletAuditTransactions(bills, walletProfiles);
+  }, [bills, walletProfiles]);
 
   // Filtered customer profiles
   const filteredProfiles = useMemo(() => {
@@ -92,8 +88,10 @@ export default function WalletPage({
     return `https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(msg)}`;
   };
 
-  // Export to Excel Spreadsheet
-  const handleExportExcel = () => {
+  // Export to Excel Spreadsheet (dynamically imports XLSX only when user requests export)
+  const handleExportExcel = async () => {
+    const XLSX = await import('xlsx');
+
     // Sheet 1: Customer Wallet Summary
     const summaryData = walletProfiles.map((p, idx) => ({
       'S.No': idx + 1,

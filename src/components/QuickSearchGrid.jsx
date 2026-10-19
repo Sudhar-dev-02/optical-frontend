@@ -1,6 +1,104 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, memo } from 'react';
 import { Search, X, ArrowLeft } from 'lucide-react';
 import { formatBillNo } from '../utils/billNumber';
+
+const PrescriptionBox = memo(function PrescriptionBox({ rx, isDarkMode }) {
+  if (!rx) {
+    return (
+      <span className="opacity-40 italic text-[10px] font-sans">
+        No Rx
+      </span>
+    );
+  }
+
+  const rSph = rx.rightEye?.sph || rx.rightEye?.dv?.sphere || '';
+  const rCyl = rx.rightEye?.cyl || rx.rightEye?.dv?.cylinder || '';
+  const rAxi = rx.rightEye?.axis || rx.rightEye?.dv?.axis || '';
+  const rAdd = rx.rightEye?.add || '';
+
+  const lSph = rx.leftEye?.sph || rx.leftEye?.dv?.sphere || '';
+  const lCyl = rx.leftEye?.cyl || rx.leftEye?.dv?.cylinder || '';
+  const lAxi = rx.leftEye?.axis || rx.leftEye?.dv?.axis || '';
+  const lAdd = rx.leftEye?.add || '';
+
+  const hasAnyPower = [rSph, rCyl, rAxi, rAdd, lSph, lCyl, lAxi, lAdd].some(
+    v => v && v !== '-' && String(v).trim() !== ''
+  );
+
+  if (!hasAnyPower) {
+    return (
+      <span className="opacity-40 italic text-[10px] font-sans">
+        No Rx
+      </span>
+    );
+  }
+
+  return (
+    <div 
+      onClick={(e) => e.stopPropagation()} 
+      className={`rounded-lg border overflow-hidden text-[10px] font-mono shadow-xs min-w-[240px] max-w-[300px] my-0.5 ${
+        isDarkMode 
+          ? 'bg-slate-950/85 border-slate-700/70' 
+          : 'bg-white/95 border-slate-200 shadow-2xs'
+      }`}
+    >
+      {/* Prescription Header */}
+      <div className={`grid grid-cols-5 gap-1 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-center border-b ${
+        isDarkMode 
+          ? 'bg-slate-900/90 border-slate-800 text-slate-400' 
+          : 'bg-slate-100/90 border-slate-200 text-slate-600'
+      }`}>
+        <span className="text-left font-sans font-bold">EYE</span>
+        <span>SPH</span>
+        <span>CYL</span>
+        <span>AXIS</span>
+        <span>ADD</span>
+      </div>
+
+      {/* Right Eye RE Box / Row */}
+      <div className={`grid grid-cols-5 gap-1 px-2 py-1 items-center text-center border-b ${
+        isDarkMode 
+          ? 'border-slate-800/70 bg-rose-950/25 text-slate-200' 
+          : 'border-slate-100 bg-rose-50/70 text-slate-800'
+      }`}>
+        <span className="text-left font-black text-rose-500 font-sans text-[10px] flex items-center gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0"></span>
+          RE
+        </span>
+        <span className="font-bold text-sky-500">{rSph || '-'}</span>
+        <span className="font-semibold">{rCyl || '-'}</span>
+        <span className="font-semibold">{rAxi || '-'}</span>
+        <span className="font-bold text-amber-500">{rAdd || '-'}</span>
+      </div>
+
+      {/* Left Eye LE Box / Row */}
+      <div className={`grid grid-cols-5 gap-1 px-2 py-1 items-center text-center ${
+        isDarkMode 
+          ? 'bg-sky-950/25 text-slate-200' 
+          : 'bg-sky-50/70 text-slate-800'
+      }`}>
+        <span className="text-left font-black text-sky-500 font-sans text-[10px] flex items-center gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-sky-500 shrink-0"></span>
+          LE
+        </span>
+        <span className="font-bold text-sky-500">{lSph || '-'}</span>
+        <span className="font-semibold">{lCyl || '-'}</span>
+        <span className="font-semibold">{lAxi || '-'}</span>
+        <span className="font-bold text-amber-500">{lAdd || '-'}</span>
+      </div>
+
+      {/* Optional PD / RI details */}
+      {(rx.pd || rx.ri) && (
+        <div className={`flex items-center justify-between px-2 py-0.5 text-[9px] border-t font-sans ${
+          isDarkMode ? 'border-slate-800 bg-slate-900/60 text-slate-400' : 'border-slate-100 bg-slate-50 text-slate-500'
+        }`}>
+          {rx.pd && <span><strong>PD:</strong> {rx.pd} mm</span>}
+          {rx.ri && <span><strong>R.I:</strong> {rx.ri}</span>}
+        </div>
+      )}
+    </div>
+  );
+});
 
 export default function QuickSearchGrid({ 
   bills, 
@@ -18,109 +116,6 @@ export default function QuickSearchGrid({
       inputRef.current.focus();
     }
   }, []);
-
-  const renderPrescriptionBox = (rx) => {
-    if (!rx) {
-      return (
-        <span className="opacity-40 italic text-[10px] font-sans">
-          No Rx
-        </span>
-      );
-    }
-
-    const rSph = rx.rightEye?.sph || rx.rightEye?.dv?.sphere || '';
-    const rCyl = rx.rightEye?.cyl || rx.rightEye?.dv?.cylinder || '';
-    const rAxi = rx.rightEye?.axis || rx.rightEye?.dv?.axis || '';
-    const rAdd = rx.rightEye?.add || '';
-    const rVa  = rx.rightEye?.va || '';
-
-    const lSph = rx.leftEye?.sph || rx.leftEye?.dv?.sphere || '';
-    const lCyl = rx.leftEye?.cyl || rx.leftEye?.dv?.cylinder || '';
-    const lAxi = rx.leftEye?.axis || rx.leftEye?.dv?.axis || '';
-    const lAdd = rx.leftEye?.add || '';
-    const lVa  = rx.leftEye?.va || '';
-
-    const hasAnyPower = [rSph, rCyl, rAxi, rAdd, rVa, lSph, lCyl, lAxi, lAdd, lVa].some(
-      v => v && v !== '-' && v.trim() !== ''
-    );
-
-    if (!hasAnyPower) {
-      return (
-        <span className="opacity-40 italic text-[10px] font-sans">
-          No Rx
-        </span>
-      );
-    }
-
-    return (
-      <div 
-        onClick={(e) => e.stopPropagation()} 
-        className={`rounded-lg border overflow-hidden text-[10px] font-mono shadow-xs min-w-[240px] max-w-[300px] my-0.5 ${
-          isDarkMode 
-            ? 'bg-slate-950/85 border-slate-700/70' 
-            : 'bg-white/95 border-slate-200 shadow-2xs'
-        }`}
-      >
-        {/* Prescription Header */}
-        <div className={`grid grid-cols-5 gap-1 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-center border-b ${
-          isDarkMode 
-            ? 'bg-slate-900/90 border-slate-800 text-slate-400' 
-            : 'bg-slate-100/90 border-slate-200 text-slate-600'
-        }`}>
-          <span className="text-left font-sans font-bold">EYE</span>
-          <span>SPH</span>
-          <span>CYL</span>
-          <span>AXIS</span>
-          <span>ADD</span>
-          {/* <span>V/A</span> */}
-        </div>
-
-        {/* Right Eye RE Box / Row */}
-        <div className={`grid grid-cols-5 gap-1 px-2 py-1 items-center text-center border-b ${
-          isDarkMode 
-            ? 'border-slate-800/70 bg-rose-950/25 text-slate-200' 
-            : 'border-slate-100 bg-rose-50/70 text-slate-800'
-        }`}>
-          <span className="text-left font-black text-rose-500 font-sans text-[10px] flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0"></span>
-            RE
-          </span>
-          <span className="font-bold text-sky-500">{rSph || '-'}</span>
-          <span className="font-semibold">{rCyl || '-'}</span>
-          <span className="font-semibold">{rAxi || '-'}</span>
-          <span className="font-bold text-amber-500">{rAdd || '-'}</span>
-          {/* <span className="opacity-70 text-[9px] truncate" title={rVa || ''}>{rVa || '-'}</span> */}
-        </div>
-
-        {/* Left Eye LE Box / Row */}
-        <div className={`grid grid-cols-5 gap-1 px-2 py-1 items-center text-center ${
-          isDarkMode 
-            ? 'bg-sky-950/25 text-slate-200' 
-            : 'bg-sky-50/70 text-slate-800'
-        }`}>
-          <span className="text-left font-black text-sky-500 font-sans text-[10px] flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-sky-500 shrink-0"></span>
-            LE
-          </span>
-          <span className="font-bold text-sky-500">{lSph || '-'}</span>
-          <span className="font-semibold">{lCyl || '-'}</span>
-          <span className="font-semibold">{lAxi || '-'}</span>
-          <span className="font-bold text-amber-500">{lAdd || '-'}</span>
-          {/* <span className="opacity-70 text-[9px] truncate" title={lVa || ''}>{lVa || '-'}</span> */}
-        </div>
-
-        {/* Optional PD / RI details */}
-        {(rx.pd || rx.ri) && (
-          <div className={`flex items-center justify-between px-2 py-0.5 text-[9px] border-t font-sans ${
-            isDarkMode ? 'border-slate-800 bg-slate-900/60 text-slate-400' : 'border-slate-100 bg-slate-50 text-slate-500'
-          }`}>
-            {rx.pd && <span><strong>PD:</strong> {rx.pd} mm</span>}
-            {rx.ri && <span><strong>R.I:</strong> {rx.ri}</span>}
-          </div>
-        )}
-      </div>
-    );
-  };
 
   const panelClass = isDarkMode ? 'glass-panel-dark' : 'glass-panel-light';
   const inputClass = isDarkMode ? 'glass-input-dark text-slate-100' : 'glass-input-light text-[#0B2D5B]';
@@ -220,7 +215,7 @@ export default function QuickSearchGrid({
                     <td className="p-2 sm:p-2.5 border-r border-slate-400/20 opacity-70 text-[11px]">{b.customer?.mrdNo || '00003'}</td>
                     <td className="p-2 sm:p-2.5 border-r border-slate-400/20 font-sans font-bold">{b.customer?.name}</td>
                     <td className="p-2 sm:p-2.5 border-r border-slate-400/20 text-[#0B2D5B] dark:text-[#D4AF37] font-semibold">{b.customer?.phone}</td>
-                    <td className="p-2 sm:p-2.5 border-r border-slate-400/20">{renderPrescriptionBox(b.prescription)}</td>
+                    <td className="p-2 sm:p-2.5 border-r border-slate-400/20"><PrescriptionBox rx={b.prescription} isDarkMode={isDarkMode} /></td>
                     <td className="p-2 sm:p-2.5 text-right font-black text-emerald-600 dark:text-emerald-400">₹ {b.netAmount !== undefined && b.netAmount !== null ? b.netAmount : (b.totalAmount || 0)}</td>
                   </tr>
                 );

@@ -1,98 +1,126 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   DollarSign, 
   ShoppingBag, 
   Wallet, 
-  Users, 
   Bell, 
   Calendar, 
   Search, 
   CheckCircle2, 
   Clock, 
-  AlertTriangle,
+  AlertTriangle, 
+  ChevronRight, 
+  BarChart3, 
+  Truck,
   Phone,
-  Eye,
-  ChevronRight,
-  Filter,
-  BarChart3,
-  Truck
+  Eye
 } from 'lucide-react';
 import { formatBillNo } from '../utils/billNumber';
 
-export default function DashboardPage({ bills, isDarkMode, userRole = 'admin', onNavigateToReminders, onNavigateToBilling, onSelectBill }) {
+export default function DashboardPage({ bills = [], isDarkMode, userRole = 'admin', onNavigateToReminders, onNavigateToBilling, onSelectBill }) {
   const [dateFilter, setDateFilter] = useState('all'); // 'all', 'today', 'overdue', 'upcoming'
   const [searchQuery, setSearchQuery] = useState('');
 
-  const isAdmin = userRole === 'admin';
+  const _isAdmin = userRole === 'admin';
+  const todayStr = useMemo(() => new Date().toISOString().substring(0, 10), []);
 
-  // 1. Today & Overall KPI Calculations
-  const todayStr = new Date().toISOString().substring(0, 10);
+  // 1. Memoized Single-Pass Today & Overall KPI Calculations
+  const {
+    todayOrdersCount,
+    todaySales,
+    todayDeliveredAmount,
+    todayDeliveredCount,
+    todayPendingCount,
+    todayAdvance,
+    todayBalance,
+    dueRemindersCount
+  } = useMemo(() => {
+    let tOrders = 0;
+    let tSales = 0;
+    let tDeliveredAmt = 0;
+    let tDeliveredCount = 0;
+    let tDeliveredOnToday = 0;
+    let tAdvance = 0;
+    let tBalance = 0;
+    let dueReminders = 0;
+    let delivered = 0;
+    const customerSet = new Set();
 
-  const isToday = (bill) => {
-    if (!bill) return false;
-    const bDate = bill.date ? String(bill.date).substring(0, 10) : '';
-    const cDate = bill.createdAt ? String(bill.createdAt).substring(0, 10) : '';
-    return bDate === todayStr || cDate === todayStr;
-  };
+    bills.forEach(bill => {
+      if (!bill) return;
+      const bDate = bill.date ? String(bill.date).substring(0, 10) : '';
+      const cDate = bill.createdAt ? String(bill.createdAt).substring(0, 10) : '';
+      const dDate = bill.deliveryDate ? String(bill.deliveryDate).substring(0, 10) : '';
+      const uDate = bill.updatedAt ? String(bill.updatedAt).substring(0, 10) : '';
+      const isBillToday = bDate === todayStr || cDate === todayStr;
+      const net = Number(bill.netAmount || bill.totalAmount || 0);
+      const isDelivered = bill.deliveryStatus === 'Delivered';
 
-  const todayBills = bills.filter(isToday);
+      if (isDelivered) {
+        delivered++;
+      } else {
+        dueReminders++;
+      }
 
-  // 1) Today Orders count
-  const todayOrdersCount = todayBills.length;
+      if (isBillToday) {
+        tOrders++;
+        tSales += net;
+        tAdvance += Number(bill.advanceAmount || 0);
+        tBalance += Number(bill.balanceAmount || 0);
+        if (isDelivered) tDeliveredOnToday++;
+      }
 
-  // 2) Today Sales (Net Amount)
-  const todaySales = todayBills.reduce((acc, b) => acc + Number(b.netAmount || b.totalAmount || 0), 0);
+      if (isDelivered && (isBillToday || dDate === todayStr || uDate === todayStr)) {
+        tDeliveredCount++;
+        const delAmt = bill.deliveryAmount !== undefined && bill.deliveryAmount !== null && bill.deliveryAmount !== '' && Number(bill.deliveryAmount) > 0
+          ? Number(bill.deliveryAmount)
+          : (Number(bill.balanceAmount) > 0 ? Number(bill.balanceAmount) : Math.max(0, net - Number(bill.advanceAmount || 0)));
+        tDeliveredAmt += delAmt;
+      }
 
-  // 3) Today Delivered (Amount & Count)
-  const isDeliveredToday = (bill) => {
-    if (!bill || bill.deliveryStatus !== 'Delivered') return false;
-    const dDate = bill.deliveryDate ? String(bill.deliveryDate).substring(0, 10) : '';
-    const uDate = bill.updatedAt ? String(bill.updatedAt).substring(0, 10) : '';
-    return isToday(bill) || dDate === todayStr || uDate === todayStr;
-  };
-  const todayDeliveredBills = bills.filter(isDeliveredToday);
-  const todayDeliveredAmount = todayDeliveredBills.reduce((acc, b) => acc + Number(b.netAmount || b.totalAmount || 0), 0);
-  const todayDeliveredCount = todayDeliveredBills.length;
-  const todayPendingCount = Math.max(0, todayOrdersCount - todayBills.filter(b => b.deliveryStatus === 'Delivered').length);
+      const custKey = (bill.customer?.phone || bill.customer?.name || '').trim().toLowerCase();
+      if (custKey) customerSet.add(custKey);
+    });
 
-  // 4) Today Advance
-  const todayAdvance = todayBills.reduce((acc, b) => acc + Number(b.advanceAmount || 0), 0);
+    return {
+      todayOrdersCount: tOrders,
+      todaySales: tSales,
+      todayDeliveredAmount: tDeliveredAmt,
+      todayDeliveredCount: tDeliveredCount,
+      todayPendingCount: Math.max(0, tOrders - tDeliveredOnToday),
+      todayAdvance: tAdvance,
+      todayBalance: tBalance,
+      uniqueCustomers: customerSet.size,
+      dueRemindersCount: dueReminders,
+      deliveredCount: delivered
+    };
+  }, [bills, todayStr]);
 
-  // 5) Today Balance
-  const todayBalance = todayBills.reduce((acc, b) => acc + Number(b.balanceAmount || 0), 0);
+  // 2. Memoized Date & Search Filtering for Customer Reminders Table
+  const filteredBills = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
 
-  // Unique Customers count by phone or name
-  const uniqueCustomers = new Set(
-    bills.map(b => (b.customer?.phone || b.customer?.name || '').trim().toLowerCase())
-      .filter(Boolean)
-  ).size;
+    return bills.filter(bill => {
+      if (!bill) return false;
+      const matchesSearch = !q || (
+        (bill.customer?.name && bill.customer.name.toLowerCase().includes(q)) ||
+        (bill.customer?.phone && bill.customer.phone.includes(q)) ||
+        (bill.billNo && (String(bill.billNo).includes(q) || formatBillNo(bill.billNo).toLowerCase().includes(q)))
+      );
 
-  const dueRemindersCount = bills.filter(b => (b.deliveryStatus || 'Pending') === 'Pending').length;
-  const deliveredCount = bills.filter(b => b.deliveryStatus === 'Delivered').length;
+      if (!matchesSearch) return false;
 
-  // 2. Date Filtering for Customer Reminders Table
-  const filteredBills = bills.filter(bill => {
-    // Search query filter
-    const q = searchQuery.toLowerCase();
-    const matchesSearch = !searchQuery || (
-      (bill.customer?.name && bill.customer.name.toLowerCase().includes(q)) ||
-      (bill.customer?.phone && bill.customer.phone.includes(q)) ||
-      (bill.billNo && (bill.billNo.toString().includes(q) || formatBillNo(bill.billNo).toLowerCase().includes(q)))
-    );
-
-    if (!matchesSearch) return false;
-
-    // Date filter
-    const delDate = bill.deliveryDate || bill.date || '';
-    if (dateFilter === 'today') {
-      return delDate === todayStr;
-    } else if (dateFilter === 'overdue') {
-      return delDate && delDate < todayStr && (bill.deliveryStatus || 'Pending') !== 'Delivered';
-    } else if (dateFilter === 'upcoming') {
-      return delDate && delDate > todayStr && (bill.deliveryStatus || 'Pending') !== 'Delivered';
-    }
-    return true; // 'all'
-  });
+      const delDate = bill.deliveryDate ? String(bill.deliveryDate).substring(0, 10) : (bill.date ? String(bill.date).substring(0, 10) : '');
+      if (dateFilter === 'today') {
+        return delDate === todayStr;
+      } else if (dateFilter === 'overdue') {
+        return delDate && delDate < todayStr && (bill.deliveryStatus || 'Pending') !== 'Delivered';
+      } else if (dateFilter === 'upcoming') {
+        return delDate && delDate > todayStr && (bill.deliveryStatus || 'Pending') !== 'Delivered';
+      }
+      return true; // 'all'
+    });
+  }, [bills, searchQuery, dateFilter, todayStr]);
 
   return (
     <div className="w-full max-w-[1920px] mx-auto p-4 sm:p-6 space-y-6">

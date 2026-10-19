@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   FileText, 
   LayoutDashboard, 
   Bell, 
   ChevronLeft, 
   ChevronRight,
-  Sparkles,
   Sun,
   Moon,
   X,
@@ -29,7 +28,9 @@ export default function Sidebar({
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const pendingCount = bills.filter(b => (b.deliveryStatus || 'Pending') !== 'Delivered').length;
+  const pendingCount = useMemo(() => {
+    return bills.filter(b => (b.deliveryStatus || 'Pending') !== 'Delivered').length;
+  }, [bills]);
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, color: 'from-blue-600 to-indigo-700', badge: null },
@@ -67,7 +68,6 @@ export default function Sidebar({
   const logoWrapperClass = `flex items-center gap-3 overflow-hidden transition-all ${isCollapsedView ? 'justify-center w-full' : ''}`;
 
   const brandTitleClass = isDarkMode ? 'text-slate-100' : 'text-[#0B2D5B]';
-  const subtitleClass = `text-[10px] font-semibold tracking-wide flex items-center gap-1 ${isDarkMode ? 'text-[#D4AF37]' : 'text-[#0B2D5B]'}`;
 
   const collapseBtnTheme = isDarkMode 
     ? 'bg-[#0B2D5B]/60 border-[#D4AF37]/30 text-amber-200 hover:text-white hover:bg-[#0B2D5B]' 
@@ -142,7 +142,7 @@ export default function Sidebar({
           <button
             type="button"
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="rounded-xl border transition-all cursor-pointer hidden md:flex items-center justify-center p-1.5 bg-slate-800 border-slate-700 text-slate-400 hover:text-white"
+            className={desktopCollapseBtnClass}
             title="Toggle Sidebar"
           >
             {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
@@ -152,7 +152,7 @@ export default function Sidebar({
           <button
             type="button"
             onClick={() => setIsMobileOpen && setIsMobileOpen(false)}
-            className="p-1.5 rounded-xl border transition-all cursor-pointer flex md:hidden items-center justify-center bg-slate-800 border-slate-700 text-slate-300"
+            className={mobileCloseBtnClass}
           >
             <X className="w-5 h-5" />
           </button>

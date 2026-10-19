@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, Clock, Phone, Database, Sparkles, Sun, Moon, Menu, LogOut, ShieldCheck, UserCheck } from 'lucide-react';
+import { Clock, Phone, Sun, Moon, Menu, LogOut, ShieldCheck, UserCheck } from 'lucide-react';
 import logoImg from '../assets/logo.jpeg';
 
 export default function Header({ isOnline, isDarkMode, setIsDarkMode, onToggleMobileMenu, currentUser, onLogout }) {
@@ -74,6 +74,18 @@ export default function Header({ isOnline, isDarkMode, setIsDarkMode, onToggleMo
 
         {/* Right Section: Logged-in User, Theme Switcher, Clock & Logout */}
         <div className="flex items-center gap-2 sm:gap-3 text-[11px] sm:text-xs font-semibold">
+          {/* Online/Offline Status Indicator */}
+          {isOnline !== undefined && (
+            <span className={`hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${
+              isOnline
+                ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+                : 'bg-amber-500/15 border-amber-500/30 text-amber-600 dark:text-amber-400'
+            }`} title={isOnline ? 'Connected to backend server' : 'Operating in offline/local persistence mode'}>
+              <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+              <span>{isOnline ? 'Online' : 'Local'}</span>
+            </span>
+          )}
+
           {/* Active Logged In User Badge */}
           {currentUser && (
             <div className={`hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] font-bold ${
@@ -108,22 +120,26 @@ export default function Header({ isOnline, isDarkMode, setIsDarkMode, onToggleMo
             )}
           </button>
 
-          {/* Live Date & Time Counter */}
-          <div className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border font-mono font-bold text-[10px] sm:text-xs shadow-2xs ${
+          {/* Live Date & Time Clock Badge */}
+          <div className={`hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full border font-mono font-bold tracking-tight text-[11px] shadow-sm ${
             isDarkMode 
-              ? 'bg-[#061833]/90 border-[#0B2D5B]/60 text-slate-300' 
-              : 'bg-white/80 border-[#0B2D5B]/15 text-[#0B2D5B]'
+              ? 'bg-[#0B2D5B]/40 border-[#0B2D5B] text-slate-300' 
+              : 'bg-white/80 border-[#0B2D5B]/20 text-[#0B2D5B]'
           }`}>
-            <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#D4AF37]" />
-            <span>{timeStr}</span>
+            <Clock className="w-3.5 h-3.5 text-[#D4AF37]" />
+            <span>{timeStr || 'Loading...'}</span>
           </div>
 
-          {/* Logout Button */}
-          {onLogout && (
+          {/* Logout Action Button */}
+          {currentUser && onLogout && (
             <button
               onClick={onLogout}
-              className="px-2.5 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 hover:bg-rose-600 text-rose-500 hover:text-white font-bold text-[11px] flex items-center gap-1 transition-all cursor-pointer shadow-sm"
-              title="Logout from session"
+              className={`p-1.5 sm:px-3 sm:py-1.5 rounded-full border flex items-center gap-1.5 text-rose-500 hover:text-white transition-all cursor-pointer active:scale-95 shadow-sm font-bold text-[11px] ${
+                isDarkMode
+                  ? 'bg-rose-950/40 border-rose-800/60 hover:bg-rose-900'
+                  : 'bg-rose-50 border-rose-200 hover:bg-rose-600'
+              }`}
+              title="Logout session"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Logout</span>

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { PackagePlus, X, Plus, Check, Save, UserCheck, Stethoscope } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { PackagePlus, X, Plus, Check, UserCheck, Stethoscope } from 'lucide-react';
 import axios from 'axios';
 import { CATALOG_API } from '../config/api';
 
@@ -25,16 +25,11 @@ export default function ItemSetupModal({ onClose, userRole = 'admin' }) {
   
   const [newFrameType, setNewFrameType] = useState('');
   const [newFrameBrand, setNewFrameBrand] = useState('');
-  const [newFrameWarranty, setNewFrameWarranty] = useState('');
 
-  const [isSaving, setIsSaving] = useState(false);
+  const [_isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState('');
 
-  useEffect(() => {
-    fetchCatalog();
-  }, []);
-
-  const fetchCatalog = async () => {
+  const fetchCatalog = useCallback(async () => {
     try {
       const res = await axios.get(CATALOG_API);
       if (res.data) {
@@ -48,10 +43,14 @@ export default function ItemSetupModal({ onClose, userRole = 'admin' }) {
         if (res.data.frameBrands) setFrameBrands(res.data.frameBrands);
         if (res.data.frameWarranties) setFrameWarranties(res.data.frameWarranties);
       }
-    } catch (err) {
-      console.error('Failed to load catalog:', err);
+    } catch (_err) {
+      console.error('Failed to load catalog:', _err);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchCatalog();
+  }, [fetchCatalog]);
 
   const saveCatalogToDatabase = async (payload) => {
     setIsSaving(true);
@@ -60,7 +59,7 @@ export default function ItemSetupModal({ onClose, userRole = 'admin' }) {
       await axios.post(CATALOG_API, payload);
       setSaveStatus('Saved to DB!');
       setTimeout(() => setSaveStatus(''), 2500);
-    } catch (err) {
+    } catch (_err) {
       setSaveStatus('Saved Locally');
       setTimeout(() => setSaveStatus(''), 2500);
     } finally {

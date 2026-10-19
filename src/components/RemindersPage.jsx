@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Bell, 
   CheckCircle2, 
@@ -6,9 +6,7 @@ import {
   Phone, 
   Search, 
   Calendar, 
-  User, 
   AlertTriangle,
-  RotateCcw,
   Check,
   Truck,
   LayoutGrid,
@@ -27,31 +25,43 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
   const [selectedBillForDelivery, setSelectedBillForDelivery] = useState(null);
   const [isDeliveryModalOpen, setIsDeliveryModalOpen] = useState(false);
 
+  const todayStr = useMemo(() => new Date().toISOString().substring(0, 10), []);
+
   const handleOpenDeliveryModal = (bill) => {
     setSelectedBillForDelivery(bill);
     setIsDeliveryModalOpen(true);
   };
 
-  const todayStr = new Date().toISOString().substring(0, 10);
-
-  // Filter bills by tab status
-  const pendingBills = bills.filter(b => (b.deliveryStatus || 'Pending') !== 'Delivered');
-  const deliveredBills = bills.filter(b => b.deliveryStatus === 'Delivered');
+  const { pendingBills, deliveredBills } = useMemo(() => {
+    const pending = [];
+    const delivered = [];
+    bills.forEach(b => {
+      if (!b) return;
+      if (b.deliveryStatus === 'Delivered') {
+        delivered.push(b);
+      } else {
+        pending.push(b);
+      }
+    });
+    return { pendingBills: pending, deliveredBills: delivered };
+  }, [bills]);
 
   const currentTabBills = activeTab === 'pending' ? pendingBills : deliveredBills;
 
-  // Filter by search query
-  const filteredBills = currentTabBills.filter(bill => {
-    if (!searchQuery) return true;
+  // Filter by search query with memoization
+  const filteredBills = useMemo(() => {
+    if (!searchQuery) return currentTabBills;
     const q = searchQuery.toLowerCase().trim();
-    return (
-      (bill.customer?.name && bill.customer.name.toLowerCase().includes(q)) ||
-      (bill.customer?.phone && bill.customer.phone.includes(q)) ||
-      (bill.customer?.mrdNo && bill.customer.mrdNo.includes(q)) ||
-      (bill.customer?.drName && bill.customer.drName.toLowerCase().includes(q)) ||
-      (bill.billNo && (bill.billNo.toString().includes(q) || formatBillNo(bill.billNo).toLowerCase().includes(q)))
-    );
-  });
+    return currentTabBills.filter(bill => {
+      return (
+        (bill.customer?.name && bill.customer.name.toLowerCase().includes(q)) ||
+        (bill.customer?.phone && bill.customer.phone.includes(q)) ||
+        (bill.customer?.mrdNo && bill.customer.mrdNo.includes(q)) ||
+        (bill.customer?.drName && bill.customer.drName.toLowerCase().includes(q)) ||
+        (bill.billNo && (bill.billNo.toString().includes(q) || formatBillNo(bill.billNo).toLowerCase().includes(q)))
+      );
+    });
+  }, [currentTabBills, searchQuery]);
 
   const getWhatsAppLink = (bill) => {
     const rawPhone = bill.customer?.phone ? bill.customer.phone.replace(/\D/g, '') : '';
@@ -77,16 +87,6 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
     }
   };
 
-  // Trigger SMS and Mark as Sent
-  const handleSendSMS = (bill) => {
-    if (onSendSMS) {
-      onSendSMS(bill);
-    } else if (onToggleSMS) {
-      onToggleSMS(bill, true);
-    }
-  };
-
-  const panelClass = isDarkMode ? 'glass-panel-dark' : 'glass-panel-light';
   const inputClass = isDarkMode ? 'glass-input-dark text-slate-100' : 'glass-input-light text-slate-900';
 
   return (
@@ -343,10 +343,10 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
                                 <button
                                   onClick={() => handleOpenDeliveryModal(bill)}
                                   className="px-3 py-1.5 rounded-xl bg-blue-700 hover:bg-blue-600 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
-                                  title="Deliver Order (Click to confirm delivery)"
+                                  title="Deliver Order & Settle Balance"
                                 >
                                   <Truck className="w-3.5 h-3.5" />
-                                  <span>Deliver</span>
+                                  <span>Deliver {Number(bill.balanceAmount || 0) > 0 ? `(₹${Number(bill.balanceAmount).toLocaleString('en-IN')})` : ''}</span>
                                 </button>
                               ) : (
                                 <span
@@ -552,10 +552,10 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
                         <button
                           onClick={() => handleOpenDeliveryModal(bill)}
                           className="flex-1 py-2 px-3 rounded-xl bg-blue-700 hover:bg-blue-600 text-white font-bold text-xs shadow-md flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
-                          title="Deliver Order (Click to confirm delivery)"
+                          title="Deliver Order & Settle Balance"
                         >
                           <Truck className="w-4 h-4" />
-                          <span>Deliver</span>
+                          <span>Deliver {Number(bill.balanceAmount || 0) > 0 ? `(Bal: ₹${Number(bill.balanceAmount).toLocaleString('en-IN')})` : ''}</span>
                         </button>
                       ) : (
                         <div

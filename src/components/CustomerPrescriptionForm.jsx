@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import { User, Phone, MapPin, Stethoscope, Calendar, Glasses, DollarSign, Plus, Search, Gift, Wallet, CheckCircle2, X } from 'lucide-react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import { User, Phone, MapPin, Stethoscope, Calendar, Glasses, DollarSign, Search, Gift, Wallet, CheckCircle2, X } from 'lucide-react';
 import axios from 'axios';
 import { CATALOG_API, CUSTOMERS_API } from '../config/api';
 import { calculateCustomerWallet } from '../utils/wallet';
@@ -23,20 +23,20 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
     return calculateCustomerWallet(formData.customer?.mrdNo || formData.customer?.phone, bills);
   }, [formData.customer?.mrdNo, formData.customer?.phone, bills]);
 
-  useEffect(() => {
-    fetchCatalog();
-  }, []);
-
-  const fetchCatalog = async () => {
+  const fetchCatalog = useCallback(async () => {
     try {
       const res = await axios.get(CATALOG_API);
       if (res.data) {
         setDbCatalog(res.data);
       }
-    } catch (err) {
+    } catch {
       console.warn('Catalog API offline, using default options.');
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchCatalog();
+  }, [fetchCatalog]);
 
   const handleClearReferrer = () => {
     setFormData(prev => ({
@@ -124,7 +124,7 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
           setIsReferralApplied(false);
         }
       }
-    } catch (err) {
+    } catch (_err) {
       // Fallback referrer profile for valid input
       if (cleanNum.length >= 1) {
         const calculatedWallet = calculateCustomerWallet(mrdOrPhone, bills);
@@ -145,14 +145,18 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
   };
 
   useEffect(() => {
-    if (formData.referrerMrd && formData.referrerMrd.trim().length >= 1) {
-      handleLookupReferrer(formData.referrerMrd, 'mrd');
-    } else if (formData.referrerPhone && formData.referrerPhone.trim().length >= 7) {
-      handleLookupReferrer(formData.referrerPhone, 'phone');
-    } else {
-      setReferrerInfo(null);
-      setIsReferralApplied(false);
-    }
+    const timer = setTimeout(() => {
+      if (formData.referrerMrd && formData.referrerMrd.trim().length >= 1) {
+        handleLookupReferrer(formData.referrerMrd, 'mrd');
+      } else if (formData.referrerPhone && formData.referrerPhone.trim().length >= 7) {
+        handleLookupReferrer(formData.referrerPhone, 'phone');
+      } else {
+        setReferrerInfo(null);
+        setIsReferralApplied(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
   }, [formData.referrerMrd, formData.referrerPhone]);
 
   useEffect(() => {
@@ -287,7 +291,7 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
             const updatedArr = Array.from(new Set([...(dbCatalog[catalogKey] || []), trimmed]));
             await axios.post(CATALOG_API, { [catalogKey]: updatedArr });
             setDbCatalog(prev => ({ ...prev, [catalogKey]: updatedArr }));
-          } catch (err) {
+          } catch (_err) {
             console.warn('Could not sync custom option to backend catalog API.');
           }
         }
@@ -689,7 +693,7 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
                     list="axisOptionsList"
                     placeholder="AXIS"
                     value={formData.prescription?.rightEye?.axis || ''}
-                    onChange={(e) => handleRxChange('rightEye', 'axis', e.target.value.replace(/[^0-9\-]/g, ''))}
+                    onChange={(e) => handleRxChange('rightEye', 'axis', e.target.value.replace(/[^0-9-]/g, ''))}
                     className={`w-full rounded-lg px-1.5 py-1 font-mono text-[11px] ${inputClass}`}
                   />
                   <input 
@@ -728,7 +732,7 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
                     list="axisOptionsList"
                     placeholder="AXIS"
                     value={formData.prescription?.leftEye?.axis || ''}
-                    onChange={(e) => handleRxChange('leftEye', 'axis', e.target.value.replace(/[^0-9\-]/g, ''))}
+                    onChange={(e) => handleRxChange('leftEye', 'axis', e.target.value.replace(/[^0-9-]/g, ''))}
                     className={`w-full rounded-lg px-1.5 py-1 font-mono text-[11px] ${inputClass}`}
                   />
                   <input 

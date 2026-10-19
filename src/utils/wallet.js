@@ -1,5 +1,5 @@
 /**
- * Utility functions for customer wallet calculations, profile ledger aggregation, and audit logs
+ * Optimized utility functions for customer wallet calculations, profile ledger aggregation, and audit logs
  */
 import { formatBillNo } from './billNumber';
 
@@ -12,24 +12,21 @@ export const calculateCustomerWallet = (mrdOrPhone, bills = []) => {
 
   let balance = 0;
 
-  // 1. Direct bills: sum (cashbackEarned - walletRedeemed)
+  // Single pass calculation
   bills.forEach(bill => {
     const bMrd = (bill.customer?.mrdNo || '').toString().trim().toLowerCase();
     const bCleanMrd = bMrd.replace(/^0+/, '');
     const bPhone = (bill.customer?.phone || '').toString().replace(/\D/g, '');
 
-    const isMatch = (bMrd && (bMrd === q || (cleanQ && bCleanMrd === cleanQ))) ||
-                    (rawDigits && rawDigits.length >= 7 && bPhone === rawDigits);
+    const isDirectMatch = (bMrd && (bMrd === q || (cleanQ && bCleanMrd === cleanQ))) ||
+                          (rawDigits && rawDigits.length >= 7 && bPhone === rawDigits);
 
-    if (isMatch) {
+    if (isDirectMatch) {
       const earned = Number(bill.cashbackEarned) || 0;
       const redeemed = Number(bill.walletRedeemed) || 0;
       balance += (earned - redeemed);
     }
-  });
 
-  // 2. Referral bonuses: sum 10% of netAmount for each referred customer purchase
-  bills.forEach(bill => {
     const refMrd = (bill.referrerMrd || '').toString().trim().toLowerCase();
     const refCleanMrd = refMrd.replace(/^0+/, '');
     const refPhone = (bill.referrerPhone || '').toString().replace(/\D/g, '');
@@ -50,14 +47,17 @@ export const calculateCustomerWallet = (mrdOrPhone, bills = []) => {
 
 export const getCustomerWalletProfiles = (bills = []) => {
   const map = {};
+  const mrdIndex = new Map();
+  const phoneIndex = new Map();
 
-  // Pass 1: Aggregate own bills & direct cashbacks / redemptions
+  // Pass 1: Aggregate own bills & direct cashbacks / redemptions and index profiles
   bills.forEach(bill => {
     const phoneKey = bill.customer?.phone ? bill.customer.phone.replace(/\D/g, '') : `NO_PHONE_${bill.billNo}`;
-    const mrdKey = (bill.customer?.mrdNo || '').toLowerCase().trim().replace(/^0+/, '');
+    const mrdRaw = (bill.customer?.mrdNo || '').toLowerCase().trim();
+    const mrdKey = mrdRaw.replace(/^0+/, '');
 
     if (!map[phoneKey]) {
-      map[phoneKey] = {
+      const profile = {
         phoneKey,
         name: bill.customer?.name || 'Unnamed Customer',
         phone: bill.customer?.phone || '',
@@ -78,6 +78,17 @@ export const getCustomerWalletProfiles = (bills = []) => {
         ledger: [],
         latestDate: bill.date || bill.createdAt || new Date().toISOString()
       };
+      map[phoneKey] = profile;
+
+      if (phoneKey && !phoneKey.startsWith('NO_PHONE_')) {
+        phoneIndex.set(phoneKey, profile);
+      }
+      if (mrdKey) {
+        mrdIndex.set(mrdKey, profile);
+      }
+      if (mrdRaw) {
+        mrdIndex.set(mrdRaw, profile);
+      }
     }
 
     const netAmt = Number(bill.netAmount) || 0;
@@ -121,19 +132,18 @@ export const getCustomerWalletProfiles = (bills = []) => {
     }
   });
 
-  // Pass 2: Credit 10% Referral Bonus to Referrer
+  // Pass 2: Credit 10% Referral Bonus to Referrer using fast O(1) Map lookups
   bills.forEach(bill => {
-    const refMrd = (bill.referrerMrd || '').toLowerCase().trim().replace(/^0+/, '');
+    const rawRefMrd = (bill.referrerMrd || '').toLowerCase().trim();
+    const cleanRefMrd = rawRefMrd.replace(/^0+/, '');
     const refPhone = (bill.referrerPhone || '').replace(/\D/g, '');
     const net = Number(bill.netAmount) || 0;
     const refBonus = Math.round(net * 0.10);
 
-    if (refBonus > 0 && (refMrd || refPhone)) {
-      const referrer = Object.values(map).find(c =>
-        (refMrd && c.cleanMrd === refMrd) ||
-        (refMrd && c.mrdNo && c.mrdNo.toLowerCase().trim() === refMrd) ||
-        (refPhone && c.phone.replace(/\D/g, '') === refPhone)
-      );
+    if (refBonus > 0 && (cleanRefMrd || rawRefMrd || refPhone)) {
+      const referrer = (cleanRefMrd && mrdIndex.get(cleanRefMrd)) ||
+                       (rawRefMrd && mrdIndex.get(rawRefMrd)) ||
+                       (refPhone && phoneIndex.get(refPhone)) || null;
 
       if (referrer) {
         const formattedBNo = formatBillNo(bill.billNo);
@@ -165,16 +175,17 @@ export const getCustomerWalletProfiles = (bills = []) => {
   });
 
   // Final calculate wallet balance and sort ledgers chronologically
-  Object.values(map).forEach(c => {
+  const profiles = Object.values(map);
+  profiles.forEach(c => {
     c.walletBalance = Math.max(0, c.directCashbackEarned + c.referralBonusEarned - c.walletRedeemed);
     c.ledger.sort((a, b) => new Date(b.date) - new Date(a.date));
   });
 
-  return Object.values(map);
+  return profiles;
 };
 
-export const getAllWalletAuditTransactions = (bills = []) => {
-  const profiles = getCustomerWalletProfiles(bills);
+export const getAllWalletAuditTransactions = (bills = [], precomputedProfiles = null) => {
+  const profiles = precomputedProfiles || getCustomerWalletProfiles(bills);
   const allEvents = [];
 
   profiles.forEach(profile => {
@@ -192,8 +203,8 @@ export const getAllWalletAuditTransactions = (bills = []) => {
   return allEvents;
 };
 
-export const getWalletSummaryMetrics = (bills = []) => {
-  const profiles = getCustomerWalletProfiles(bills);
+export const getWalletSummaryMetrics = (bills = [], precomputedProfiles = null) => {
+  const profiles = precomputedProfiles || getCustomerWalletProfiles(bills);
 
   let totalPoolInCirculation = 0;
   let totalCashbackGiven = 0;

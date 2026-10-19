@@ -13,10 +13,8 @@ import {
   RotateCcw,
   CheckCircle2,
   Clock,
-  Glasses,
   Users
 } from 'lucide-react';
-import * as XLSX from 'xlsx';
 import { formatBillNo } from '../utils/billNumber';
 
 export default function ReportsPage({ bills = [], isDarkMode }) {
@@ -91,17 +89,22 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
       const bal = Number(bill.balanceAmount ?? 0);
       totalBalance += bal;
 
-      if (hasExplicitDeliveryAmount) {
-        const delAmt = Number(bill.deliveryAmount) || 0;
+      const isDelivered = (bill.deliveryStatus || '').toLowerCase() === 'delivered';
+
+      // Calculate delivery amount:
+      // When an order is delivered, the amount collected at delivery is the balance amount (or explicit deliveryAmount)
+      let delAmt = 0;
+      if (bill.deliveryAmount !== undefined && bill.deliveryAmount !== null && bill.deliveryAmount !== '' && Number(bill.deliveryAmount) > 0) {
+        delAmt = Number(bill.deliveryAmount);
+      } else if (isDelivered) {
+        delAmt = bal > 0 ? bal : Math.max(0, net - Number(bill.advanceAmount || 0));
+      }
+
+      if (isDelivered) {
         totalDelivery += delAmt;
         totalSale += Math.max(0, net - delAmt);
       } else {
-        // If order is Delivered vs Pending/Ready
-        if (bill.deliveryStatus === 'Delivered') {
-          totalDelivery += net;
-        } else {
-          totalSale += net;
-        }
+        totalSale += net;
       }
 
       // Payment mode totals
@@ -295,7 +298,7 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
   };
 
   // Export filtered bills directly to Excel (.xlsx) including full Prescription Details
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     if (!hasDateSelected) {
       alert('Please select a date or date range first to export reports.');
       return;
@@ -304,6 +307,8 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
       alert('No entries available to export for the selected date range.');
       return;
     }
+
+    const XLSX = await import('xlsx');
 
     const excelData = filteredBills.map(b => ({
       'Bill No': formatBillNo(b.billNo),

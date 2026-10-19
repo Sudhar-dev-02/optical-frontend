@@ -6,15 +6,11 @@ import {
   Lock, 
   Trash2, 
   User, 
-  MapPin, 
   GraduationCap, 
   AlertCircle, 
-  Calendar,
-  Sparkles,
-  Edit,
-  X,
-  CheckCircle2,
-  Save
+  Edit, 
+  X, 
+  Save 
 } from 'lucide-react';
 
 export default function StaffSetupPage({ 
