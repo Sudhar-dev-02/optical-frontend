@@ -7,6 +7,7 @@ import {
   Calendar, 
   Search, 
   User, 
+  Users,
   Filter, 
   RefreshCw,
   PhoneCall,
@@ -16,7 +17,10 @@ import {
   AlertTriangle,
   CalendarCheck2,
   CalendarDays,
-  Sparkles
+  Sparkles,
+  Eye,
+  Clock,
+  CheckCircle2
 } from 'lucide-react';
 import { formatBillNo } from '../utils/billNumber';
 
@@ -79,6 +83,7 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'Pending' | 'Sent' | 'Contacted' | 'Completed'
   const [searchTerm, setSearchTerm] = useState('');
   const [localStatuses, setLocalStatuses] = useState({});
+  const [localFollowUpDetails, setLocalFollowUpDetails] = useState({});
 
   // Enrich bills with calculated follow-up dates, due classification, and status
   const followUpItems = useMemo(() => {
@@ -114,10 +119,16 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
       const hasAnyOverdue = serviceOverdue || feedbackOverdue || eyeCheckOverdue;
       const hasAnyUpcoming = serviceUpcoming || feedbackUpcoming || eyeCheckUpcoming;
 
-      const savedStatus = localStatuses[bill._id || bill.billNo] || bill.followUpStatus || 'Pending';
+      const itemId = bill._id || bill.billNo;
+      const savedStatus = localStatuses[itemId] || bill.followUpStatus || 'Pending';
+      const mergedDetails = {
+        ...(bill.followUpDetails || {}),
+        ...(localFollowUpDetails[itemId] || {})
+      };
 
       return {
         ...bill,
+        followUpDetails: mergedDetails,
         serviceDate,
         feedbackDate,
         eyeCheckDate,
@@ -136,7 +147,7 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
         currentStatus: savedStatus
       };
     });
-  }, [bills, localStatuses]);
+  }, [bills, localStatuses, localFollowUpDetails]);
 
   // Filter items based on selected category tab, date scope, status, and search query
   const filteredItems = useMemo(() => {
@@ -218,6 +229,25 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
   // Direct status update handler
   const handleSetStatus = (id, nextStatus, type = null) => {
     setLocalStatuses(prev => ({ ...prev, [id]: nextStatus }));
+    if (type) {
+      const now = new Date().toISOString();
+      const keyMap = {
+        service: 'serviceSentAt',
+        feedback: 'feedbackSentAt',
+        eyecheck: 'eyeCheckSentAt'
+      };
+      const key = keyMap[type];
+      if (key) {
+        setLocalFollowUpDetails(prev => ({
+          ...prev,
+          [id]: {
+            ...(prev[id] || {}),
+            [key]: nextStatus === 'Pending' ? null : now,
+            lastContactedAt: now
+          }
+        }));
+      }
+    }
     if (onUpdateBillStatus) {
       onUpdateBillStatus(id, nextStatus, type);
     }
@@ -292,7 +322,10 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
             }`}
           >
             <div className={`flex items-center justify-between font-bold mb-1 ${isDarkMode ? 'text-[#D4AF37]' : 'text-[#0B2D5B]'}`}>
-              <span>🎯 Due Today</span>
+              <div className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-[#D4AF37]" />
+                <span>Due Today</span>
+              </div>
               <CalendarCheck2 className="w-4 h-4 text-[#D4AF37]" />
             </div>
             <div className="text-xl sm:text-2xl font-black font-mono text-[#0B2D5B] dark:text-[#D4AF37]">{dueTodayCount}</div>
@@ -309,8 +342,10 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
             }`}
           >
             <div className="flex items-center justify-between font-bold mb-1">
-              <span>⚠️ Overdue Pending</span>
-              <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              <div className="flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                <span>Overdue Pending</span>
+              </div>
             </div>
             <div className="text-xl sm:text-2xl font-black font-mono">{overdueCount}</div>
             <div className="text-[10px] opacity-80 font-semibold mt-0.5">Past due date action required</div>
@@ -321,8 +356,11 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
             isDarkMode ? 'bg-emerald-950/30 border-emerald-800/40 text-emerald-300' : 'bg-emerald-50/80 border-emerald-200 text-emerald-900'
           }`}>
             <div className="flex items-center justify-between font-bold mb-1">
-              <span>🚀 Sent & Contacted</span>
-              <Send className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>Sent & Contacted</span>
+              </div>
+              <Send className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div className="text-xl sm:text-2xl font-black font-mono">{sentCount}</div>
             <div className="text-[10px] opacity-80 font-semibold mt-0.5">WhatsApp / Call dispatched</div>
@@ -338,7 +376,10 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
             }`}
           >
             <div className="flex items-center justify-between font-bold mb-1 text-slate-700 dark:text-slate-300">
-              <span>📋 All Customers</span>
+              <div className="flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
+                <span>All Customers</span>
+              </div>
               <User className="w-4 h-4 text-slate-600 dark:text-slate-400" />
             </div>
             <div className="text-xl sm:text-2xl font-black font-mono text-slate-900 dark:text-slate-100">{totalCount}</div>
@@ -373,7 +414,7 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
               }`}
             >
               <Wrench className="w-3.5 h-3.5 text-[#D4AF37]" />
-              <span>🛠️ Free Service (3M)</span>
+              <span>Free Service (3M)</span>
             </button>
 
             <button
@@ -385,7 +426,7 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
               }`}
             >
               <MessageSquare className="w-3.5 h-3.5 text-[#D4AF37]" />
-              <span>💬 Product Feedback (1W)</span>
+              <span>Product Feedback (1W)</span>
             </button>
 
             <button
@@ -396,8 +437,8 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
                   : 'text-slate-600 dark:text-slate-300 hover:text-[#0B2D5B] dark:hover:text-[#D4AF37] hover:bg-[#0B2D5B]/10'
               }`}
             >
-              <Stethoscope className="w-3.5 h-3.5 text-[#D4AF37]" />
-              <span>👁️ Eye Check (8M)</span>
+              <Eye className="w-3.5 h-3.5 text-[#D4AF37]" />
+              <span>Eye Check (8M)</span>
             </button>
           </div>
 
@@ -413,7 +454,7 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
               title="Show only customer follow-ups due today"
             >
               <CalendarCheck2 className="w-3.5 h-3.5 text-[#D4AF37]" />
-              <span>🎯 Due Today ({dueTodayCount})</span>
+              <span>Due Today ({dueTodayCount})</span>
             </button>
 
             <button
@@ -426,7 +467,7 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
               title="Show customer follow-ups past their due date"
             >
               <AlertTriangle className="w-3.5 h-3.5" />
-              <span>⚠️ Overdue ({overdueCount})</span>
+              <span>Overdue ({overdueCount})</span>
             </button>
 
             <button
@@ -517,6 +558,20 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
             const status = item.currentStatus;
             const itemId = item._id || item.billNo;
             const isSentOrContacted = status === 'Sent' || status === 'Contacted';
+
+            // Independent workflow sent flags
+            const isServiceSent = Boolean(item.followUpDetails?.serviceSentAt);
+            const isFeedbackSent = Boolean(item.followUpDetails?.feedbackSentAt);
+            const isEyeCheckSent = Boolean(item.followUpDetails?.eyeCheckSentAt);
+
+            // Active workflow type for the general "Mark Sent" toggle
+            const activeWorkflowType = activeTab !== 'all' 
+              ? activeTab 
+              : (item.feedbackDueToday ? 'feedback' : (item.serviceDueToday ? 'service' : (item.eyeCheckDueToday ? 'eyecheck' : 'feedback')));
+
+            const isCurrentWorkflowSent = activeWorkflowType === 'service' 
+              ? isServiceSent 
+              : (activeWorkflowType === 'eyecheck' ? isEyeCheckSent : isFeedbackSent);
 
             // Determine which workflow is active / due for this card
             const showServiceAction = activeTab === 'service' || (activeTab === 'all' && (item.serviceDueToday || item.serviceOverdue || dateScope === 'all'));
@@ -620,41 +675,62 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
                   <div className="grid grid-cols-3 gap-2 text-center p-2 rounded-xl bg-slate-500/10 border border-slate-400/20 text-[11px] shrink-0">
                     {/* 3M Free Service Date */}
                     <div className={`p-1.5 rounded-lg ${
-                      item.serviceDueToday 
-                        ? 'bg-[#0B2D5B]/15 border border-[#D4AF37]/40 text-[#0B2D5B] dark:text-[#D4AF37] font-bold' 
-                        : item.serviceOverdue ? 'opacity-80' : ''
+                      isServiceSent
+                        ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 font-bold'
+                        : item.serviceDueToday 
+                          ? 'bg-[#0B2D5B]/15 border border-[#D4AF37]/40 text-[#0B2D5B] dark:text-[#D4AF37] font-bold' 
+                          : item.serviceOverdue ? 'opacity-80' : ''
                     }`}>
-                      <div className="text-[10px] font-bold text-[#0B2D5B] dark:text-[#D4AF37] uppercase flex items-center justify-center gap-0.5">
-                        <span>🛠️ 3M Service</span>
+                      <div className="text-[10px] font-bold uppercase flex items-center justify-center gap-1">
+                        <Wrench className="w-2.5 h-2.5 text-[#D4AF37]" />
+                        <span>3M Service</span>
                       </div>
                       <div className="font-mono font-bold mt-0.5">{formatDate(item.serviceDate)}</div>
-                      {item.serviceDueToday && <span className="text-[9px] text-[#0B2D5B] dark:text-[#D4AF37] font-black">● DUE TODAY</span>}
+                      {isServiceSent ? (
+                        <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-black">✓ SENT</span>
+                      ) : item.serviceDueToday ? (
+                        <span className="text-[9px] text-[#0B2D5B] dark:text-[#D4AF37] font-black">● DUE TODAY</span>
+                      ) : null}
                     </div>
 
                     {/* 1W Product Feedback Date */}
                     <div className={`p-1.5 rounded-lg border-x border-slate-400/20 ${
-                      item.feedbackDueToday 
-                        ? 'bg-[#0B2D5B]/15 border border-[#D4AF37]/40 text-[#0B2D5B] dark:text-[#D4AF37] font-bold' 
-                        : item.feedbackOverdue ? 'opacity-80' : ''
+                      isFeedbackSent
+                        ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 font-bold'
+                        : item.feedbackDueToday 
+                          ? 'bg-[#0B2D5B]/15 border border-[#D4AF37]/40 text-[#0B2D5B] dark:text-[#D4AF37] font-bold' 
+                          : item.feedbackOverdue ? 'opacity-80' : ''
                     }`}>
-                      <div className="text-[10px] font-bold text-[#0B2D5B] dark:text-[#D4AF37] uppercase flex items-center justify-center gap-0.5">
-                        <span>💬 1W Feedback</span>
+                      <div className="text-[10px] font-bold uppercase flex items-center justify-center gap-1">
+                        <MessageSquare className="w-2.5 h-2.5 text-[#D4AF37]" />
+                        <span>1W Feedback</span>
                       </div>
                       <div className="font-mono font-bold mt-0.5">{formatDate(item.feedbackDate)}</div>
-                      {item.feedbackDueToday && <span className="text-[9px] text-[#0B2D5B] dark:text-[#D4AF37] font-black">● DUE TODAY</span>}
+                      {isFeedbackSent ? (
+                        <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-black">✓ SENT</span>
+                      ) : item.feedbackDueToday ? (
+                        <span className="text-[9px] text-[#0B2D5B] dark:text-[#D4AF37] font-black">● DUE TODAY</span>
+                      ) : null}
                     </div>
 
                     {/* 8M Eye Checkup Date */}
                     <div className={`p-1.5 rounded-lg ${
-                      item.eyeCheckDueToday 
-                        ? 'bg-[#0B2D5B]/15 border border-[#D4AF37]/40 text-[#0B2D5B] dark:text-[#D4AF37] font-bold' 
-                        : item.eyeCheckOverdue ? 'opacity-80' : ''
+                      isEyeCheckSent
+                        ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 font-bold'
+                        : item.eyeCheckDueToday 
+                          ? 'bg-[#0B2D5B]/15 border border-[#D4AF37]/40 text-[#0B2D5B] dark:text-[#D4AF37] font-bold' 
+                          : item.eyeCheckOverdue ? 'opacity-80' : ''
                     }`}>
-                      <div className="text-[10px] font-bold text-[#0B2D5B] dark:text-[#D4AF37] uppercase flex items-center justify-center gap-0.5">
-                        <span>👁️ 8M Check</span>
+                      <div className="text-[10px] font-bold uppercase flex items-center justify-center gap-1">
+                        <Eye className="w-2.5 h-2.5 text-[#D4AF37]" />
+                        <span>8M Check</span>
                       </div>
                       <div className="font-mono font-bold mt-0.5">{formatDate(item.eyeCheckDate)}</div>
-                      {item.eyeCheckDueToday && <span className="text-[9px] text-[#0B2D5B] dark:text-[#D4AF37] font-black">● DUE TODAY</span>}
+                      {isEyeCheckSent ? (
+                        <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-black">✓ SENT</span>
+                      ) : item.eyeCheckDueToday ? (
+                        <span className="text-[9px] text-[#0B2D5B] dark:text-[#D4AF37] font-black">● DUE TODAY</span>
+                      ) : null}
                     </div>
                   </div>
 
@@ -666,14 +742,14 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
                         type="button"
                         onClick={(e) => handleSendWhatsApp(e, item, 'service')}
                         className={`px-3 py-1.5 rounded-xl font-bold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                          status === 'Sent' || status === 'Completed'
+                          isServiceSent
                             ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white'
                             : 'bg-[#0B2D5B] hover:bg-[#143E77] text-[#D4AF37] border border-[#D4AF37]/40 shadow-sm'
                         }`}
                         title="Send 3-Month Free Service WhatsApp Message & Mark as Sent"
                       >
                         <MessageSquare className="w-3.5 h-3.5 fill-current" />
-                        <span>{status === 'Sent' || status === 'Completed' ? 'WhatsApp Sent ✓ (3M)' : 'WhatsApp Service (3M)'}</span>
+                        <span>{isServiceSent ? 'WhatsApp Sent ✓ (3M)' : 'WhatsApp Service (3M)'}</span>
                       </button>
                     )}
 
@@ -683,14 +759,14 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
                         type="button"
                         onClick={(e) => handleSendWhatsApp(e, item, 'feedback')}
                         className={`px-3 py-1.5 rounded-xl font-bold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                          status === 'Sent' || status === 'Completed'
+                          isFeedbackSent
                             ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white'
                             : 'bg-gradient-to-r from-[#D4AF37] via-[#E5C358] to-[#B89025] hover:brightness-110 text-[#061833] font-black shadow-sm'
                         }`}
                         title="Send Product Feedback WhatsApp Message & Mark as Sent"
                       >
                         <MessageSquare className="w-3.5 h-3.5 fill-current" />
-                        <span>{status === 'Sent' || status === 'Completed' ? 'WhatsApp Sent ✓ (Feedback)' : 'WhatsApp Feedback (1W)'}</span>
+                        <span>{isFeedbackSent ? 'WhatsApp Sent ✓ (Feedback)' : 'WhatsApp Feedback (1W)'}</span>
                       </button>
                     )}
 
@@ -700,14 +776,14 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
                         type="button"
                         onClick={(e) => handleSendWhatsApp(e, item, 'eyecheck')}
                         className={`px-3 py-1.5 rounded-xl font-bold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                          status === 'Sent' || status === 'Completed'
+                          isEyeCheckSent
                             ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white'
                             : 'bg-[#0B2D5B] hover:bg-[#143E77] text-[#D4AF37] border border-[#D4AF37]/40 shadow-sm'
                         }`}
                         title="Send 8-Month Eye Checkup WhatsApp Message & Mark as Sent"
                       >
                         <MessageSquare className="w-3.5 h-3.5 fill-current" />
-                        <span>{status === 'Sent' || status === 'Completed' ? 'WhatsApp Sent ✓ (8M)' : 'WhatsApp Eye Check (8M)'}</span>
+                        <span>{isEyeCheckSent ? 'WhatsApp Sent ✓ (8M)' : 'WhatsApp Eye Check (8M)'}</span>
                       </button>
                     )}
 
@@ -716,16 +792,16 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
                       {/* Explicit Mark as Sent / Toggle Button */}
                       <button
                         type="button"
-                        onClick={() => handleSetStatus(itemId, status === 'Sent' ? 'Pending' : 'Sent')}
+                        onClick={() => handleSetStatus(itemId, isCurrentWorkflowSent ? 'Pending' : 'Sent', activeWorkflowType)}
                         className={`flex-1 px-2.5 py-1 rounded-xl border text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
-                          status === 'Sent'
+                          isCurrentWorkflowSent
                             ? 'bg-emerald-100 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-200'
                             : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                         }`}
-                        title={status === 'Sent' ? 'Click to revert to Pending' : 'Manually mark as Sent'}
+                        title={isCurrentWorkflowSent ? 'Click to revert this workflow to Pending' : 'Manually mark this workflow as Sent'}
                       >
                         <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                        <span>{status === 'Sent' ? 'Marked Sent' : 'Mark Sent'}</span>
+                        <span>{isCurrentWorkflowSent ? 'Marked Sent' : 'Mark Sent'}</span>
                       </button>
 
                       {/* Direct Call Button */}

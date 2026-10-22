@@ -340,15 +340,22 @@ function AppContent() {
       payload = { status: currentStatus === 'Delivered' ? 'Pending' : 'Delivered' };
     }
 
+    const effectiveId = targetBill?._id || targetId;
+
     try {
+      await axios.patch(`${API_BASE}/${effectiveId}/delivery`, payload);
       const balInfo = payload.deliveryAmount !== undefined && Number(payload.deliveryAmount) > 0 ? ` (Balance ₹${Number(payload.deliveryAmount).toFixed(2)} settled)` : '';
       showNotification(`Order #${formatBillNo(targetBill?.billNo || targetId)} marked as "${payload.status}"${balInfo}`, 'success');
-    } catch {
-      console.warn('Network issue updating delivery status, updating locally.');
+    } catch (err) {
+      console.warn('Network issue updating delivery status, updating locally.', err);
+      const balInfo = payload.deliveryAmount !== undefined && Number(payload.deliveryAmount) > 0 ? ` (Balance ₹${Number(payload.deliveryAmount).toFixed(2)} settled)` : '';
+      showNotification(`Order #${formatBillNo(targetBill?.billNo || targetId)} marked as "${payload.status}"${balInfo} (local)`, 'info');
     }
 
     setBills(prev => prev.map(b => 
-      (b._id === targetId || String(b.billNo) === String(targetId)) ? { ...b, ...payload, deliveryStatus: payload.status } : b
+      (b._id === targetId || String(b.billNo) === String(targetId) || (targetBill?._id && b._id === targetBill._id)) 
+        ? { ...b, ...payload, deliveryStatus: payload.status } 
+        : b
     ));
 
     if (activeBillId === targetId || formData._id === targetId || String(formData.billNo) === String(targetId)) {
@@ -359,7 +366,7 @@ function AppContent() {
       }));
     }
 
-    fetchBills();
+    await fetchBills();
   };
 
   const handleSendSMS = async (billRecord) => {

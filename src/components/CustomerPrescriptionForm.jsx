@@ -15,8 +15,17 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
   const [dbCatalog, setDbCatalog] = useState(null);
   const [referrerInfo, setReferrerInfo] = useState(null);
   const [isReferralApplied, setIsReferralApplied] = useState(false);
-  const [isCashbackApplied, setIsCashbackApplied] = useState(true);
+  const [isCashbackApplied, setIsCashbackApplied] = useState(false);
   const [isSearchingReferrer, setIsSearchingReferrer] = useState(false);
+
+  // Sync cashback toggle when loading an existing bill or starting a new bill
+  useEffect(() => {
+    if (formData._id || isEditing) {
+      setIsCashbackApplied(Number(formData.cashbackEarned || 0) > 0);
+    } else {
+      setIsCashbackApplied(false);
+    }
+  }, [formData._id, isEditing, formData.billNo]);
 
   // Dynamic available wallet balance for current customer
   const currentCustomerWalletBalance = useMemo(() => {
@@ -1030,44 +1039,54 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
               </div>
 
               {/* 10% Cashback to Wallet Preview Badge with Enable/Disable Toggle */}
-              <div className={`p-2.5 rounded-xl border flex items-center justify-between text-xs font-bold transition-all shadow-xs ${
-                isCashbackApplied
-                  ? 'bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-900/20 border-emerald-300 dark:border-emerald-700/50 text-emerald-900 dark:text-emerald-300'
-                  : 'bg-slate-100 dark:bg-slate-800/60 border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400'
-              }`}>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <Wallet className={`w-4 h-4 ${isCashbackApplied ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`} />
-                  <span>10% Wallet Cashback:</span>
-                  <span className="font-mono font-extrabold text-sm ml-0.5 text-emerald-700 dark:text-emerald-400">
-                    {isCashbackApplied ? `+ ₹ ${formData.cashbackEarned || 0}.00` : '₹ 0.00 (Disabled)'}
-                  </span>
-                  {isCashbackApplied && (
-                    <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/50 px-1.5 py-0.5 rounded-md">
-                      Adds to Wallet
-                    </span>
-                  )}
-                </div>
+              {(() => {
+                const hasNet = Number(formData.netAmount || 0) > 0;
+                const isEnabled = isCashbackApplied && hasNet;
 
-                <button
-                  type="button"
-                  onClick={() => setIsCashbackApplied(!isCashbackApplied)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-extrabold flex items-center gap-1 cursor-pointer transition-all shadow-xs active:scale-95 shrink-0 ${
-                    isCashbackApplied
-                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20'
-                      : 'bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
-                  title={isCashbackApplied ? 'Click to disable 10% cashback for this order' : 'Click to enable 10% cashback for this order'}
-                >
-                  {isCashbackApplied ? (
-                    <>
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-100" />
-                      <span>Enabled</span>
-                    </>
-                  ) : (
-                    <span>Enable</span>
-                  )}
-                </button>
-              </div>
+                return (
+                  <div className={`p-2.5 rounded-xl border flex items-center justify-between text-xs font-bold transition-all shadow-xs ${
+                    isEnabled
+                      ? 'bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-900/20 border-emerald-300 dark:border-emerald-700/50 text-emerald-900 dark:text-emerald-300'
+                      : 'bg-slate-100 dark:bg-slate-800/60 border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400'
+                  }`}>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <Wallet className={`w-4 h-4 ${isEnabled ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`} />
+                      <span>10% Wallet Cashback:</span>
+                      <span className="font-mono font-extrabold text-sm ml-0.5 text-emerald-700 dark:text-emerald-400">
+                        {isEnabled ? `+ ₹ ${formData.cashbackEarned || 0}.00` : '₹ 0.00'}
+                      </span>
+                      {isEnabled && (
+                        <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/50 px-1.5 py-0.5 rounded-md">
+                          Adds to Wallet
+                        </span>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={!hasNet}
+                      onClick={() => setIsCashbackApplied(!isCashbackApplied)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-extrabold flex items-center gap-1 transition-all shadow-xs shrink-0 ${
+                        !hasNet
+                          ? 'opacity-50 cursor-not-allowed bg-slate-200 dark:bg-slate-800 text-slate-500 border border-slate-300 dark:border-slate-700'
+                          : isEnabled
+                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20 cursor-pointer active:scale-95'
+                            : 'bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer active:scale-95'
+                      }`}
+                      title={!hasNet ? 'Enter item amount to enable cashback' : (isEnabled ? 'Click to disable 10% cashback for this order' : 'Click to enable 10% cashback for this order')}
+                    >
+                      {isEnabled ? (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-100" />
+                          <span>Enabled</span>
+                        </>
+                      ) : (
+                        <span>Enable</span>
+                      )}
+                    </button>
+                  </div>
+                );
+              })()}
 
               <div className="flex items-center justify-between">
                 <span className="font-bold opacity-80">Pay Mode:</span>

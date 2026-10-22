@@ -22,7 +22,14 @@ export default function DashboardPage({ bills = [], isDarkMode, userRole = 'admi
   const [searchQuery, setSearchQuery] = useState('');
 
   const _isAdmin = userRole === 'admin';
-  const todayStr = useMemo(() => new Date().toISOString().substring(0, 10), []);
+  // Use local calendar date (YYYY-MM-DD) to align with date picker and avoid timezone drift
+  const todayStr = useMemo(() => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
 
   // 1. Memoized Single-Pass Today & Overall KPI Calculations
   const {
@@ -48,11 +55,13 @@ export default function DashboardPage({ bills = [], isDarkMode, userRole = 'admi
 
     bills.forEach(bill => {
       if (!bill) return;
+      // Prioritize the user-selected invoice date; only fallback to createdAt if bill.date is missing
       const bDate = bill.date ? String(bill.date).substring(0, 10) : '';
       const cDate = bill.createdAt ? String(bill.createdAt).substring(0, 10) : '';
+      const effectiveDate = bDate || cDate;
       const dDate = bill.deliveryDate ? String(bill.deliveryDate).substring(0, 10) : '';
-      const uDate = bill.updatedAt ? String(bill.updatedAt).substring(0, 10) : '';
-      const isBillToday = bDate === todayStr || cDate === todayStr;
+
+      const isBillToday = effectiveDate === todayStr;
       const net = Number(bill.netAmount || bill.totalAmount || 0);
       const isDelivered = bill.deliveryStatus === 'Delivered';
 
@@ -70,7 +79,8 @@ export default function DashboardPage({ bills = [], isDarkMode, userRole = 'admi
         if (isDelivered) tDeliveredOnToday++;
       }
 
-      if (isDelivered && (isBillToday || dDate === todayStr || uDate === todayStr)) {
+      const isDeliveredToday = isDelivered && (dDate === todayStr || (!dDate && isBillToday));
+      if (isDeliveredToday) {
         tDeliveredCount++;
         const delAmt = bill.deliveryAmount !== undefined && bill.deliveryAmount !== null && bill.deliveryAmount !== '' && Number(bill.deliveryAmount) > 0
           ? Number(bill.deliveryAmount)

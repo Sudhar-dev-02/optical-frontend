@@ -11,7 +11,9 @@ import {
   Truck,
   LayoutGrid,
   Table as TableIcon,
-  MessageSquare
+  MessageSquare,
+  CalendarCheck2,
+  CalendarDays
 } from 'lucide-react';
 import DeliveryModal from './DeliveryModal';
 import { formatBillNo } from '../utils/billNumber';
@@ -20,12 +22,20 @@ const STORE_PHONE = '+91 90432 29107 / +91 99524 17748';
 
 export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, onSendSMS, onToggleSMS }) {
   const [activeTab, setActiveTab] = useState('pending'); // 'pending' | 'delivered'
+  const [dateScope, setDateScope] = useState('today'); // Default to 'today' as requested
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState('table'); // 'table' | 'cards'
   const [selectedBillForDelivery, setSelectedBillForDelivery] = useState(null);
   const [isDeliveryModalOpen, setIsDeliveryModalOpen] = useState(false);
 
-  const todayStr = useMemo(() => new Date().toISOString().substring(0, 10), []);
+  // Use local calendar date (YYYY-MM-DD) to align with date pickers and current time
+  const todayStr = useMemo(() => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
 
   const handleOpenDeliveryModal = (bill) => {
     setSelectedBillForDelivery(bill);
@@ -48,11 +58,64 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
 
   const currentTabBills = activeTab === 'pending' ? pendingBills : deliveredBills;
 
-  // Filter by search query with memoization
+  // Calculate dynamic counts for Date Scope Filter Pills (Due Today, Overdue, Next 7 Days, All)
+  const { dueTodayCount, overdueCount, upcomingCount, allCount } = useMemo(() => {
+    let todayCount = 0;
+    let odCount = 0;
+    let upCount = 0;
+    currentTabBills.forEach(b => {
+      const bDate = b.deliveryDate ? String(b.deliveryDate).substring(0, 10) : (b.date ? String(b.date).substring(0, 10) : '');
+      if (bDate === todayStr) todayCount++;
+      if (activeTab === 'pending' && bDate && bDate < todayStr) odCount++;
+      if (bDate && bDate > todayStr) {
+        try {
+          const d = new Date(bDate);
+          const t = new Date(todayStr);
+          const diff = (d.getTime() - t.getTime()) / (1000 * 60 * 60 * 24);
+          if (diff > 0 && diff <= 7) upCount++;
+        } catch {}
+      }
+    });
+    return {
+      dueTodayCount: todayCount,
+      overdueCount: odCount,
+      upcomingCount: upCount,
+      allCount: currentTabBills.length
+    };
+  }, [currentTabBills, todayStr, activeTab]);
+
+  // Filter by date scope AND search query with memoization
   const filteredBills = useMemo(() => {
-    if (!searchQuery) return currentTabBills;
+    let list = currentTabBills;
+
+    if (dateScope === 'today') {
+      list = list.filter(bill => {
+        const bDate = bill.deliveryDate ? String(bill.deliveryDate).substring(0, 10) : (bill.date ? String(bill.date).substring(0, 10) : '');
+        return bDate === todayStr;
+      });
+    } else if (dateScope === 'overdue') {
+      list = list.filter(bill => {
+        const bDate = bill.deliveryDate ? String(bill.deliveryDate).substring(0, 10) : (bill.date ? String(bill.date).substring(0, 10) : '');
+        return activeTab === 'pending' && bDate && bDate < todayStr;
+      });
+    } else if (dateScope === 'upcoming') {
+      list = list.filter(bill => {
+        const bDate = bill.deliveryDate ? String(bill.deliveryDate).substring(0, 10) : (bill.date ? String(bill.date).substring(0, 10) : '');
+        if (!bDate || bDate <= todayStr) return false;
+        try {
+          const d = new Date(bDate);
+          const t = new Date(todayStr);
+          const diff = (d.getTime() - t.getTime()) / (1000 * 60 * 60 * 24);
+          return diff > 0 && diff <= 7;
+        } catch {
+          return false;
+        }
+      });
+    }
+
+    if (!searchQuery) return list;
     const q = searchQuery.toLowerCase().trim();
-    return currentTabBills.filter(bill => {
+    return list.filter(bill => {
       return (
         (bill.customer?.name && bill.customer.name.toLowerCase().includes(q)) ||
         (bill.customer?.phone && bill.customer.phone.includes(q)) ||
@@ -61,7 +124,7 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
         (bill.billNo && (bill.billNo.toString().includes(q) || formatBillNo(bill.billNo).toLowerCase().includes(q)))
       );
     });
-  }, [currentTabBills, searchQuery]);
+  }, [currentTabBills, dateScope, todayStr, activeTab, searchQuery]);
 
   const getWhatsAppLink = (bill) => {
     const rawPhone = bill.customer?.phone ? bill.customer.phone.replace(/\D/g, '') : '';
@@ -154,51 +217,110 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
         </div>
       </div>
 
-      {/* Status Tabs (2-Column Grid on Mobile) */}
-      <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-3">
-        {/* Pending Tab */}
-        <button
-          onClick={() => setActiveTab('pending')}
-          className={`flex items-center justify-center gap-1.5 sm:gap-2.5 px-3 sm:px-6 py-2.5 sm:py-3 rounded-2xl font-bold text-xs sm:text-sm transition-all cursor-pointer shadow-lg active:scale-95 ${
-            activeTab === 'pending'
-              ? 'bg-gradient-to-r from-[#0B2D5B] to-[#143E77] text-[#D4AF37] shadow-[#0B2D5B]/30 ring-2 ring-[#D4AF37]/40 border border-[#D4AF37]/40'
-              : isDarkMode 
-                ? 'bg-[#061833]/80 border border-[#0B2D5B]/60 text-slate-400 hover:text-[#D4AF37]' 
-                : 'bg-white border border-[#0B2D5B]/15 text-[#0B2D5B] hover:bg-[#0B2D5B]/5'
-          }`}
-        >
-          <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 text-[#D4AF37]" />
-          <span className="truncate">Pending Deliveries</span>
-          <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-black shrink-0 ${
-            activeTab === 'pending'
-              ? 'bg-[#D4AF37] text-[#061833]'
-              : isDarkMode ? 'bg-[#0B2D5B] text-[#D4AF37]' : 'bg-[#0B2D5B]/10 text-[#0B2D5B]'
-          }`}>
-            {pendingBills.length}
-          </span>
-        </button>
+      {/* Status & Date Filter Controls */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        {/* Status Tabs (2-Column Grid on Mobile) */}
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-2.5">
+          {/* Pending Tab */}
+          <button
+            onClick={() => setActiveTab('pending')}
+            className={`flex items-center justify-center gap-1.5 sm:gap-2.5 px-3 sm:px-6 py-2.5 sm:py-3 rounded-2xl font-bold text-xs sm:text-sm transition-all cursor-pointer shadow-lg active:scale-95 ${
+              activeTab === 'pending'
+                ? 'bg-gradient-to-r from-[#0B2D5B] to-[#143E77] text-[#D4AF37] shadow-[#0B2D5B]/30 ring-2 ring-[#D4AF37]/40 border border-[#D4AF37]/40'
+                : isDarkMode 
+                  ? 'bg-[#061833]/80 border border-[#0B2D5B]/60 text-slate-400 hover:text-[#D4AF37]' 
+                  : 'bg-white border border-[#0B2D5B]/15 text-[#0B2D5B] hover:bg-[#0B2D5B]/5'
+            }`}
+          >
+            <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 text-[#D4AF37]" />
+            <span className="truncate">Pending Deliveries</span>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-black shrink-0 ${
+              activeTab === 'pending'
+                ? 'bg-[#D4AF37] text-[#061833]'
+                : isDarkMode ? 'bg-[#0B2D5B] text-[#D4AF37]' : 'bg-[#0B2D5B]/10 text-[#0B2D5B]'
+            }`}>
+              {pendingBills.length}
+            </span>
+          </button>
 
-        {/* Delivered Tab */}
-        <button
-          onClick={() => setActiveTab('delivered')}
-          className={`flex items-center justify-center gap-1.5 sm:gap-2.5 px-3 sm:px-6 py-2.5 sm:py-3 rounded-2xl font-bold text-xs sm:text-sm transition-all cursor-pointer shadow-lg active:scale-95 ${
-            activeTab === 'delivered'
-              ? 'bg-gradient-to-r from-[#0B2D5B] to-[#143E77] text-[#D4AF37] shadow-[#0B2D5B]/30 ring-2 ring-[#D4AF37]/40 border border-[#D4AF37]/40'
-              : isDarkMode 
-                ? 'bg-[#061833]/80 border border-[#0B2D5B]/60 text-slate-400 hover:text-[#D4AF37]' 
-                : 'bg-white border border-[#0B2D5B]/15 text-[#0B2D5B] hover:bg-[#0B2D5B]/5'
-          }`}
-        >
-          <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 text-[#D4AF37]" />
-          <span className="truncate">Delivered Orders</span>
-          <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-black shrink-0 ${
-            activeTab === 'delivered'
-              ? 'bg-[#D4AF37] text-[#061833]'
-              : isDarkMode ? 'bg-[#0B2D5B] text-[#D4AF37]' : 'bg-[#0B2D5B]/10 text-[#0B2D5B]'
-          }`}>
-            {deliveredBills.length}
-          </span>
-        </button>
+          {/* Delivered Tab */}
+          <button
+            onClick={() => setActiveTab('delivered')}
+            className={`flex items-center justify-center gap-1.5 sm:gap-2.5 px-3 sm:px-6 py-2.5 sm:py-3 rounded-2xl font-bold text-xs sm:text-sm transition-all cursor-pointer shadow-lg active:scale-95 ${
+              activeTab === 'delivered'
+                ? 'bg-gradient-to-r from-[#0B2D5B] to-[#143E77] text-[#D4AF37] shadow-[#0B2D5B]/30 ring-2 ring-[#D4AF37]/40 border border-[#D4AF37]/40'
+                : isDarkMode 
+                  ? 'bg-[#061833]/80 border border-[#0B2D5B]/60 text-slate-400 hover:text-[#D4AF37]' 
+                  : 'bg-white border border-[#0B2D5B]/15 text-[#0B2D5B] hover:bg-[#0B2D5B]/5'
+            }`}
+          >
+            <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 text-[#D4AF37]" />
+            <span className="truncate">Delivered Orders</span>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-black shrink-0 ${
+              activeTab === 'delivered'
+                ? 'bg-[#D4AF37] text-[#061833]'
+                : isDarkMode ? 'bg-[#0B2D5B] text-[#D4AF37]' : 'bg-[#0B2D5B]/10 text-[#0B2D5B]'
+            }`}>
+              {deliveredBills.length}
+            </span>
+          </button>
+        </div>
+
+        {/* Date Scope Filter Pills (Due Today, Overdue, Next 7 Days, All Queue) */}
+        <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-2xl bg-[#0B2D5B]/5 dark:bg-[#061833]/60 border border-[#0B2D5B]/20 text-xs font-bold">
+          <button
+            onClick={() => setDateScope('today')}
+            className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+              dateScope === 'today'
+                ? 'bg-[#0B2D5B] text-[#D4AF37] border border-[#D4AF37]/50 shadow-md font-black'
+                : 'text-[#0B2D5B] dark:text-[#D4AF37] hover:bg-[#0B2D5B]/10'
+            }`}
+            title="Show only orders with delivery scheduled for today"
+          >
+            <CalendarCheck2 className="w-3.5 h-3.5 text-[#D4AF37]" />
+            <span>Due Today ({dueTodayCount})</span>
+          </button>
+
+          {activeTab === 'pending' && (
+            <button
+              onClick={() => setDateScope('overdue')}
+              className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+                dateScope === 'overdue'
+                  ? 'bg-amber-600 text-white shadow-md'
+                  : 'text-amber-800 dark:text-amber-400 hover:bg-amber-500/20'
+              }`}
+              title="Show orders whose delivery date has passed"
+            >
+              <AlertTriangle className="w-3.5 h-3.5" />
+              <span>Overdue ({overdueCount})</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => setDateScope('upcoming')}
+            className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+              dateScope === 'upcoming'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-500/20'
+            }`}
+            title="Show orders due in the next 7 days"
+          >
+            <CalendarDays className="w-3.5 h-3.5" />
+            <span>Next 7 Days ({upcomingCount})</span>
+          </button>
+
+          <button
+            onClick={() => setDateScope('all')}
+            className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+              dateScope === 'all'
+                ? 'bg-slate-800 text-white shadow-md dark:bg-slate-700'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-500/20'
+            }`}
+            title="Show all orders in this list"
+          >
+            <span>All Queue ({allCount})</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Content Area */}
@@ -209,10 +331,23 @@ export default function RemindersPage({ bills = [], isDarkMode, onToggleStatus, 
           <Bell className="w-12 h-12 mx-auto mb-3 opacity-30 text-amber-500" />
           <h3 className="text-lg font-bold">No customer orders in this category</h3>
           <p className="text-xs mt-1">
-            {activeTab === 'pending' 
-              ? 'All customer orders have been marked as delivered!' 
-              : 'No orders are currently marked as delivered.'}
+            {dateScope === 'today'
+              ? 'There are no optical deliveries scheduled for today.'
+              : dateScope === 'overdue'
+              ? 'Great! There are no overdue optical orders.'
+              : activeTab === 'pending'
+              ? 'All customer orders have been marked as delivered!'
+              : 'No orders match your filter criteria.'}
           </p>
+          {dateScope !== 'all' && (
+            <button
+              type="button"
+              onClick={() => setDateScope('all')}
+              className="mt-3 px-3.5 py-1.5 rounded-xl bg-[#0B2D5B] hover:bg-[#143E77] text-[#D4AF37] border border-[#D4AF37]/40 text-xs font-bold shadow-md cursor-pointer transition-all"
+            >
+              View All Queue ({allCount})
+            </button>
+          )}
         </div>
       ) : (
         <>
