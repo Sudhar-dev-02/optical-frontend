@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { User, Phone, MapPin, Stethoscope, Calendar, Glasses, DollarSign, Search, Gift, Wallet, CheckCircle2, X } from 'lucide-react';
+import { User, Phone, MapPin, Stethoscope, Calendar, Glasses, DollarSign, Search, Gift, Wallet, CheckCircle2, X, Building2 } from 'lucide-react';
 import axios from 'axios';
 import { CATALOG_API, CUSTOMERS_API } from '../config/api';
 import { calculateCustomerWallet } from '../utils/wallet';
 import { formatBillNo } from '../utils/billNumber';
 
-export default function CustomerPrescriptionForm({ formData, setFormData, isEditing, isDarkMode, onToggleSearch, isSearchPanelOpen, userRole = 'admin', bills = [] }) {
+export default function CustomerPrescriptionForm({ formData, setFormData, isEditing, isDarkMode, onToggleSearch, isSearchPanelOpen, userRole = 'admin', bills = [], branches = ['Optics India', 'Ayncare'] }) {
   const [customOrderTakenOptions, setCustomOrderTakenOptions] = useState([]);
   const [customPrescribedByOptions, setCustomPrescribedByOptions] = useState([]);
   const [customRiOptions, setCustomRiOptions] = useState([]);
@@ -355,6 +355,28 @@ export default function CustomerPrescriptionForm({ formData, setFormData, isEdit
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                 className="bg-transparent font-bold focus:outline-none text-[10px] sm:text-xs font-mono text-slate-800 dark:text-slate-200"
               />
+            </div>
+
+            {/* Branch Selector */}
+            <div className={`flex items-center gap-1 px-2.5 py-1 rounded-xl border ${isDarkMode ? 'bg-slate-950/60 border-slate-800 text-slate-300' : 'bg-white/80 border-slate-200 text-slate-700'}`}>
+              <Building2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#D4AF37]" />
+              <span className="font-bold text-[10px] sm:text-xs">Branch:</span>
+              <select 
+                value={formData.branch || 'Optics India'}
+                onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
+                className="bg-transparent font-bold focus:outline-none text-[10px] sm:text-xs cursor-pointer text-[#0B2D5B] dark:text-[#D4AF37]"
+              >
+                {branches.map(b => (
+                  <option 
+                    key={b} 
+                    value={b} 
+                    className={isDarkMode ? 'bg-slate-900 text-slate-100' : 'bg-white text-slate-900'}
+                    style={{ backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#0f172a' }}
+                  >
+                    {b}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>

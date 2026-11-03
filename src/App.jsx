@@ -35,6 +35,7 @@ const PageLoadingFallback = () => (
 const defaultFormState = {
   billNo: '',
   entryType: 'New',
+  branch: 'Optics India',
   date: new Date().toISOString().substring(0, 10),
   customer: {
     mrdNo: '',
@@ -107,6 +108,167 @@ function AppContent() {
       return [];
     }
   });
+
+  // Branch Locations State (Defaults: Optics India, Ayncare + custom branches added by admin)
+  const [branches, setBranches] = useState(() => {
+    try {
+      const saved = localStorage.getItem('optics_branches');
+      const base = ['Optics India', 'Ayncare'];
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const uniqueList = [...base];
+          parsed.forEach(item => {
+            if (typeof item === 'string' && item.trim()) {
+              const clean = item.trim();
+              if (!uniqueList.some(b => b.toLowerCase() === clean.toLowerCase())) {
+                uniqueList.push(clean);
+              }
+            }
+          });
+          try {
+            localStorage.setItem('optics_branches', JSON.stringify(uniqueList));
+          } catch {}
+          return uniqueList;
+        }
+      }
+      return base;
+    } catch {
+      return ['Optics India', 'Ayncare'];
+    }
+  });
+
+  const handleAddBranch = (branchName) => {
+    if (!branchName || !branchName.trim()) return false;
+    const trimmed = branchName.trim();
+    if (branches.some(b => b.toLowerCase() === trimmed.toLowerCase())) {
+      showNotification(`Branch "${trimmed}" already exists.`, 'info');
+      return false;
+    }
+    const updated = [...branches, trimmed];
+    setBranches(updated);
+    try {
+      localStorage.setItem('optics_branches', JSON.stringify(updated));
+    } catch (e) {
+      console.warn('Could not save branches to localStorage', e);
+    }
+    showNotification(`Branch "${trimmed}" created successfully!`, 'success');
+    return true;
+  };
+
+  const handleEditBranch = (oldBranchName, newBranchName) => {
+    if (!oldBranchName || !newBranchName) return false;
+    const cleanOld = oldBranchName.trim();
+    const cleanNew = newBranchName.trim();
+
+    if (!cleanNew) {
+      showNotification('Branch name cannot be empty.', 'error');
+      return false;
+    }
+
+    if (cleanOld.toLowerCase() === cleanNew.toLowerCase()) {
+      if (cleanOld === cleanNew) return true;
+    } else {
+      if (branches.some(b => b.toLowerCase() === cleanNew.toLowerCase())) {
+        showNotification(`Branch "${cleanNew}" already exists.`, 'error');
+        return false;
+      }
+    }
+
+    // 1. Update branches array
+    const updatedBranches = branches.map(b => b.toLowerCase() === cleanOld.toLowerCase() ? cleanNew : b);
+    setBranches(updatedBranches);
+    try {
+      localStorage.setItem('optics_branches', JSON.stringify(updatedBranches));
+    } catch (e) {
+      console.warn('Could not save branches to localStorage', e);
+    }
+
+    // 2. Update staff members assigned to this branch
+    setRegisteredStaff(prev => {
+      let changed = false;
+      const updated = prev.map(s => {
+        if ((s.branch || 'Optics India').toLowerCase() === cleanOld.toLowerCase()) {
+          changed = true;
+          return { ...s, branch: cleanNew };
+        }
+        return s;
+      });
+      if (changed) {
+        try {
+          localStorage.setItem('optics_registered_staff', JSON.stringify(updated));
+        } catch (e) {}
+      }
+      return updated;
+    });
+
+    // 3. Update active bills in state
+    setBills(prev => prev.map(bill => {
+      if ((bill.branch || 'Optics India').toLowerCase() === cleanOld.toLowerCase()) {
+        return { ...bill, branch: cleanNew };
+      }
+      return bill;
+    }));
+
+    showNotification(`Branch "${cleanOld}" updated to "${cleanNew}" successfully!`, 'success');
+    return true;
+  };
+
+  const handleDeleteBranch = (branchToDelete) => {
+    if (!branchToDelete) return false;
+    const cleanTarget = branchToDelete.trim();
+
+    if (cleanTarget.toLowerCase() === 'optics india') {
+      showNotification('Primary branch "Optics India" cannot be deleted.', 'error');
+      return false;
+    }
+
+    if (branches.length <= 1) {
+      showNotification('At least one store branch must remain active.', 'error');
+      return false;
+    }
+
+    // 1. Remove branch from array
+    const updatedBranches = branches.filter(b => b.toLowerCase() !== cleanTarget.toLowerCase());
+    setBranches(updatedBranches);
+    try {
+      localStorage.setItem('optics_branches', JSON.stringify(updatedBranches));
+    } catch (e) {
+      console.warn('Could not save branches to localStorage', e);
+    }
+
+    // 2. Fallback branch: default to 'Optics India' or first remaining branch
+    const fallbackBranch = updatedBranches.find(b => b.toLowerCase() === 'optics india') || updatedBranches[0] || 'Optics India';
+
+    // 3. Reassign staff members from deleted branch
+    setRegisteredStaff(prev => {
+      let changed = false;
+      const updated = prev.map(s => {
+        if ((s.branch || '').toLowerCase() === cleanTarget.toLowerCase()) {
+          changed = true;
+          return { ...s, branch: fallbackBranch };
+        }
+        return s;
+      });
+      if (changed) {
+        try {
+          localStorage.setItem('optics_registered_staff', JSON.stringify(updated));
+        } catch (e) {}
+      }
+      return updated;
+    });
+
+    // 4. Reassign active bills in state
+    setBills(prev => prev.map(bill => {
+      if ((bill.branch || '').toLowerCase() === cleanTarget.toLowerCase()) {
+        return { ...bill, branch: fallbackBranch };
+      }
+      return bill;
+    }));
+
+    showNotification(`Branch "${cleanTarget}" deleted successfully. Any staff were reassigned to ${fallbackBranch}.`, 'info');
+    return true;
+  };
 
   const handleLoginSuccess = (user) => {
     setCurrentUser(user);
@@ -411,13 +573,18 @@ function AppContent() {
 
     setBills(prev => prev.map(b => {
       if (b._id === targetId || String(b.billNo) === String(targetId)) {
-        const details = b.followUpDetails || {};
+        const details = { ...(b.followUpDetails || {}) };
         const now = new Date().toISOString();
-        if (type === 'service') details.serviceSentAt = now;
-        if (type === 'feedback') details.feedbackSentAt = now;
-        if (type === 'eyecheck') details.eyeCheckSentAt = now;
-        details.lastContactedAt = now;
-        return { ...b, followUpStatus: status, followUpDetails: details };
+        const isPending = status === 'Pending';
+        if (type === 'service') details.serviceSentAt = isPending ? null : now;
+        if (type === 'feedback') details.feedbackSentAt = isPending ? null : now;
+        if (type === 'eyecheck') details.eyeCheckSentAt = isPending ? null : now;
+        if (!isPending) details.lastContactedAt = now;
+
+        const anySent = Boolean(details.serviceSentAt || details.feedbackSentAt || details.eyeCheckSentAt);
+        const resolvedStatus = anySent ? 'Sent' : 'Pending';
+
+        return { ...b, followUpStatus: resolvedStatus, followUpDetails: details };
       }
       return b;
     }));
@@ -430,6 +597,7 @@ function AppContent() {
     setFormData({
       ...defaultFormState,
       ...billRecord,
+      branch: billRecord.branch || 'Optics India',
       billNo: formatBillNo(billRecord.billNo),
       date: billRecord.date ? billRecord.date.substring(0, 10) : new Date().toISOString().substring(0, 10),
       deliveryDate: billRecord.deliveryDate ? billRecord.deliveryDate.substring(0, 10) : new Date().toISOString().substring(0, 10),
@@ -555,6 +723,7 @@ function AppContent() {
                         isSearchPanelOpen={isSearchPanelOpen}
                         userRole={currentUser?.role || 'admin'}
                         bills={bills}
+                        branches={branches}
                       />
                     </div>
 
@@ -582,6 +751,7 @@ function AppContent() {
                   <main className="flex-1 w-full">
                     <DashboardPage 
                       bills={bills}
+                      branches={branches}
                       isDarkMode={isDarkMode}
                       userRole={currentUser?.role}
                       onNavigateToReminders={() => navigate('/reminders')}
@@ -616,6 +786,7 @@ function AppContent() {
                   <main className="flex-1 w-full p-4.5 max-w-[1920px] mx-auto">
                     <FollowUpPage 
                       bills={bills}
+                      branches={branches}
                       isDarkMode={isDarkMode}
                       onUpdateBillStatus={handleUpdateFollowUpStatus}
                     />
@@ -644,6 +815,7 @@ function AppContent() {
                     <main className="flex-1 w-full p-4.5 max-w-[1920px] mx-auto">
                       <ReportsPage 
                         bills={bills}
+                        branches={branches}
                         isDarkMode={isDarkMode}
                       />
                     </main>
@@ -676,6 +848,10 @@ function AppContent() {
                     <main className="flex-1 w-full p-4.5 max-w-[1920px] mx-auto">
                       <StaffSetupPage 
                         registeredStaff={registeredStaff}
+                        branches={branches}
+                        onAddBranch={handleAddBranch}
+                        onEditBranch={handleEditBranch}
+                        onDeleteBranch={handleDeleteBranch}
                         onAddStaff={handleAddStaff}
                         onDeleteStaff={handleDeleteStaff}
                         onUpdateStaff={handleUpdateStaff}

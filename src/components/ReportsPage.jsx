@@ -13,29 +13,56 @@ import {
   RotateCcw,
   CheckCircle2,
   Clock,
-  Users
+  Users,
+  Building2
 } from 'lucide-react';
 import { formatBillNo } from '../utils/billNumber';
 
-export default function ReportsPage({ bills = [], isDarkMode }) {
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+export default function ReportsPage({ 
+  bills = [], 
+  branches = ['Optics India', 'Ayncare'],
+  isDarkMode 
+}) {
+  // Use local calendar date (YYYY-MM-DD) to align with date picker and avoid timezone drift
+  const getTodayStr = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Default Start Date & End Date to the current date (Today)
+  const [startDate, setStartDate] = useState(getTodayStr);
+  const [endDate, setEndDate] = useState(getTodayStr);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedBranch, setSelectedBranch] = useState('all');
 
   // Extract YYYY-MM-DD from bill.date safely
   const getBillDateStr = (bill) => {
-    if (!bill?.date) return '';
-    if (typeof bill.date === 'string') return bill.date.substring(0, 10);
+    const dVal = bill?.date || bill?.createdAt;
+    if (!dVal) return '';
+    if (typeof dVal === 'string') {
+      const trimmed = dVal.trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+        return trimmed;
+      }
+    }
     try {
-      return new Date(bill.date).toISOString().substring(0, 10);
+      const d = new Date(dVal);
+      if (isNaN(d.getTime())) return typeof dVal === 'string' ? dVal.substring(0, 10) : '';
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
     } catch {
-      return '';
+      return typeof dVal === 'string' ? dVal.substring(0, 10) : '';
     }
   };
 
   const hasDateSelected = Boolean(startDate || endDate);
 
-  // Filter bills by Start Date, End Date, and optional Search
+  // Filter bills by Start Date, End Date, Branch, and optional Search
   // If no date is selected, keep entries empty
   const filteredBills = useMemo(() => {
     if (!startDate && !endDate) {
@@ -43,6 +70,12 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
     }
 
     return bills.filter(bill => {
+      // Branch filter
+      if (selectedBranch && selectedBranch !== 'all' && selectedBranch !== 'All') {
+        const bBranch = (bill.branch || 'Optics India').toLowerCase();
+        if (bBranch !== selectedBranch.toLowerCase()) return false;
+      }
+
       const bDate = getBillDateStr(bill);
       if (startDate && bDate && bDate < startDate) return false;
       if (endDate && bDate && bDate > endDate) return false;
@@ -60,7 +93,7 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
       }
       return true;
     });
-  }, [bills, startDate, endDate, searchQuery]);
+  }, [bills, startDate, endDate, selectedBranch, searchQuery]);
 
   // Aggregate sales statistics based on filtered bills
   const summaryMetrics = useMemo(() => {
@@ -77,7 +110,9 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
     const lensTypeCounts = {};
     const frameBrandCounts = {};
 
-    const activeBills = hasDateSelected || (searchQuery && searchQuery.trim()) ? filteredBills : bills;
+    // activeBills is strictly tied to filteredBills when date or search is active,
+    // or empty array if user clears both dates, ensuring KPI cards always match the table exactly
+    const activeBills = hasDateSelected || (searchQuery && searchQuery.trim()) ? filteredBills : [];
 
     // Check if any bill has explicit deliveryAmount field
     const hasExplicitDeliveryAmount = activeBills.some(
@@ -151,23 +186,40 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
 
   // Quick Date Preset Handlers
   const handleSetToday = () => {
-    const todayStr = new Date().toISOString().substring(0, 10);
-    setStartDate(todayStr);
-    setEndDate(todayStr);
+    const today = getTodayStr();
+    setStartDate(today);
+    setEndDate(today);
   };
 
   const handleSetThisMonth = () => {
     const now = new Date();
-    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().substring(0, 10);
-    const todayStr = now.toISOString().substring(0, 10);
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const firstDay = `${year}-${month}-01`;
+    const todayStr = getTodayStr();
     setStartDate(firstDay);
     setEndDate(todayStr);
   };
 
-  const handleClearFilter = () => {
-    setStartDate('');
-    setEndDate('');
+  const handleSetAllTime = () => {
+    if (bills.length > 0) {
+      const dates = bills.map(b => getBillDateStr(b)).filter(Boolean).sort();
+      if (dates.length > 0) {
+        setStartDate(dates[0]);
+        setEndDate(getTodayStr());
+        return;
+      }
+    }
+    setStartDate('2020-01-01');
+    setEndDate(getTodayStr());
+  };
+
+  const handleResetFilter = () => {
+    const today = getTodayStr();
+    setStartDate(today);
+    setEndDate(today);
     setSearchQuery('');
+    setSelectedBranch('all');
   };
 
   // Helper for formatting Prescription Summary string in Excel
@@ -312,6 +364,7 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
 
     const excelData = filteredBills.map(b => ({
       'Bill No': formatBillNo(b.billNo),
+      'Branch': b.branch || 'Optics India',
       'Date': b.date ? new Date(b.date).toLocaleDateString('en-GB') : '',
       'MRD No': b.customer?.mrdNo || '',
       'Customer Name': b.customer?.name || '',
@@ -369,6 +422,13 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
   const inputClass = isDarkMode
     ? 'bg-[#061833] border-[#0B2D5B] text-slate-100 focus:border-[#D4AF37]'
     : 'bg-white border-[#0B2D5B]/20 text-[#0B2D5B] focus:border-[#D4AF37]';
+
+  const todayStr = getTodayStr();
+  const now = new Date();
+  const firstDayOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  const isTodaySelected = startDate === todayStr && endDate === todayStr;
+  const isThisMonthSelected = startDate === firstDayOfMonth && endDate === todayStr;
+  const isChangedFromToday = !isTodaySelected || Boolean(searchQuery) || selectedBranch !== 'all';
 
   return (
     <div className="space-y-4 pb-12 animate-in fade-in duration-300">
@@ -464,7 +524,7 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
               {summaryMetrics.totalDeliveryCount}
             </div>
             <div className="text-[10px] opacity-70 font-semibold mt-0.5 text-emerald-700 dark:text-emerald-400/80">
-              {hasDateSelected ? 'Delivered in period' : 'Orders delivered'}
+              {isTodaySelected ? 'Orders delivered today' : hasDateSelected ? 'Delivered in period' : 'Orders delivered'}
             </div>
           </div>
 
@@ -479,7 +539,7 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
               {summaryMetrics.totalCustomer}
             </div>
             <div className="text-[10px] opacity-70 font-semibold mt-0.5">
-              {hasDateSelected ? 'Customers in period' : 'Unique customer profiles'}
+              {isTodaySelected ? 'Unique customers today' : hasDateSelected ? 'Customers in period' : 'Unique customer profiles'}
             </div>
           </div>
 
@@ -540,38 +600,100 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
             </div>
 
             {/* Quick Filter Buttons */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <button
                 type="button"
                 onClick={handleSetToday}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${isDarkMode
-                  ? 'bg-slate-900 border-slate-700 hover:bg-slate-800 text-slate-300'
-                  : 'bg-white border-slate-300 hover:bg-slate-100 text-slate-700 shadow-2xs'
-                  }`}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                  isTodaySelected
+                    ? 'bg-[#0B2D5B] text-[#D4AF37] border-[#D4AF37]/60 shadow-xs ring-1 ring-[#D4AF37]/30'
+                    : isDarkMode
+                      ? 'bg-slate-900 border-slate-700 hover:bg-slate-800 text-slate-300'
+                      : 'bg-white border-slate-300 hover:bg-slate-100 text-slate-700 shadow-2xs'
+                }`}
+                title="Filter by Today's sales and metrics"
               >
                 Today
               </button>
               <button
                 type="button"
                 onClick={handleSetThisMonth}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${isDarkMode
-                  ? 'bg-slate-900 border-slate-700 hover:bg-slate-800 text-slate-300'
-                  : 'bg-white border-slate-300 hover:bg-slate-100 text-slate-700 shadow-2xs'
-                  }`}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                  isThisMonthSelected
+                    ? 'bg-[#0B2D5B] text-[#D4AF37] border-[#D4AF37]/60 shadow-xs ring-1 ring-[#D4AF37]/30'
+                    : isDarkMode
+                      ? 'bg-slate-900 border-slate-700 hover:bg-slate-800 text-slate-300'
+                      : 'bg-white border-slate-300 hover:bg-slate-100 text-slate-700 shadow-2xs'
+                }`}
+                title="Filter by current month sales and metrics"
               >
                 This Month
               </button>
+              <button
+                type="button"
+                onClick={handleSetAllTime}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                  isDarkMode
+                    ? 'bg-slate-900 border-slate-700 hover:bg-slate-800 text-slate-300'
+                    : 'bg-white border-slate-300 hover:bg-slate-100 text-slate-700 shadow-2xs'
+                }`}
+                title="View all records and all-time KPI metrics"
+              >
+                All Time
+              </button>
 
-              {(startDate || endDate || searchQuery) && (
+              {isChangedFromToday && (
                 <button
                   type="button"
-                  onClick={handleClearFilter}
-                  className="px-2.5 py-1 rounded-lg text-xs font-bold border border-rose-500/40 bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 transition-all cursor-pointer flex items-center gap-1"
-                  title="Clear all filters"
+                  onClick={handleResetFilter}
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-bold border border-rose-500/40 bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 transition-all cursor-pointer flex items-center gap-1"
+                  title="Reset date filter back to Today"
                 >
-                  <RotateCcw className="w-3 h-3" /> Reset
+                  <RotateCcw className="w-3 h-3" /> Reset to Today
                 </button>
               )}
+            </div>
+
+            {/* Branch Filter Selector */}
+            <div className="flex items-center gap-1.5">
+              <label className="text-xs font-bold opacity-80 whitespace-nowrap flex items-center gap-1">
+                <Building2 className="w-3.5 h-3.5 text-[#D4AF37]" /> Branch:
+              </label>
+              <select
+                value={selectedBranch}
+                onChange={(e) => setSelectedBranch(e.target.value)}
+                className={`text-xs px-2.5 py-1.5 rounded-lg border outline-none font-bold cursor-pointer transition-all ${
+                  selectedBranch !== 'all'
+                    ? isDarkMode
+                      ? 'bg-[#0B2D5B] text-[#D4AF37] border-[#D4AF37]/60 shadow-xs ring-1 ring-[#D4AF37]/30'
+                      : 'bg-amber-50 text-[#0B2D5B] border-[#D4AF37] shadow-xs ring-1 ring-[#D4AF37]/40'
+                    : isDarkMode
+                      ? 'bg-[#061833] border-[#0B2D5B] text-slate-100 focus:border-[#D4AF37]'
+                      : 'bg-white border-slate-300 text-slate-800 focus:border-[#D4AF37] shadow-2xs'
+                }`}
+                title="Filter reports by store branch"
+              >
+                <option 
+                  value="all" 
+                  className={isDarkMode ? 'bg-slate-900 text-slate-100' : 'bg-white text-slate-900'}
+                  style={{ backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#0f172a' }}
+                >
+                  All Branches ({bills.length})
+                </option>
+                {branches.map(b => {
+                  const count = bills.filter(bill => (bill.branch || 'Optics India').toLowerCase() === b.toLowerCase()).length;
+                  return (
+                    <option 
+                      key={b} 
+                      value={b} 
+                      className={isDarkMode ? 'bg-slate-900 text-slate-100' : 'bg-white text-slate-900'}
+                      style={{ backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#0f172a' }}
+                    >
+                      {b} ({count})
+                    </option>
+                  );
+                })}
+              </select>
             </div>
 
             {/* Search Input in table */}
@@ -644,8 +766,15 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
                 </tr>
               ) : filteredBills.length === 0 ? (
                 <tr>
-                  <td colSpan="13" className="p-8 text-center opacity-60 font-sans">
-                    No billing entries found for the selected date range or search query.
+                  <td colSpan="13" className="p-8 text-center opacity-70 font-sans">
+                    <p className="font-semibold text-sm">
+                      {isTodaySelected ? 'No billing entries recorded for Today yet.' : 'No billing entries found for the selected date range or search query.'}
+                    </p>
+                    {isTodaySelected && (
+                      <p className="text-xs opacity-75 mt-1">
+                        Sales recorded today will automatically appear here. Use <strong>This Month</strong> or <strong>All Time</strong> above to view previous records.
+                      </p>
+                    )}
                   </td>
                 </tr>
               ) : (
@@ -662,7 +791,10 @@ export default function ReportsPage({ bills = [], isDarkMode }) {
                         }`}
                     >
                       <td className="p-2.5 border-r border-slate-400/20 text-center font-bold text-amber-500">
-                        {formatBillNo(b.billNo)}
+                        <div>{formatBillNo(b.billNo)}</div>
+                        <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 inline-block mt-0.5">
+                          {b.branch || 'Optics India'}
+                        </span>
                       </td>
                       <td className="p-2.5 border-r border-slate-400/20 text-[11px]">
                         {formattedDate}

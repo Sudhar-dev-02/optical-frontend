@@ -13,13 +13,23 @@ import {
   BarChart3, 
   Truck,
   Phone,
-  Eye
+  Eye,
+  Building2
 } from 'lucide-react';
 import { formatBillNo } from '../utils/billNumber';
 
-export default function DashboardPage({ bills = [], isDarkMode, userRole = 'admin', onNavigateToReminders, onNavigateToBilling, onSelectBill }) {
+export default function DashboardPage({ 
+  bills = [], 
+  branches = ['Optics India', 'Ayncare'],
+  isDarkMode, 
+  userRole = 'admin', 
+  onNavigateToReminders, 
+  onNavigateToBilling, 
+  onSelectBill 
+}) {
   const [dateFilter, setDateFilter] = useState('all'); // 'all', 'today', 'overdue', 'upcoming'
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedBranch, setSelectedBranch] = useState('all');
 
   const _isAdmin = userRole === 'admin';
   // Use local calendar date (YYYY-MM-DD) to align with date picker and avoid timezone drift
@@ -30,6 +40,15 @@ export default function DashboardPage({ bills = [], isDarkMode, userRole = 'admi
     const day = String(d.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   }, []);
+
+  // Filter bills by selected branch (Optics India, Ayncare, etc.)
+  const branchFilteredBills = useMemo(() => {
+    if (!selectedBranch || selectedBranch === 'all') {
+      return bills;
+    }
+    const target = selectedBranch.toLowerCase();
+    return bills.filter(bill => (bill.branch || 'Optics India').toLowerCase() === target);
+  }, [bills, selectedBranch]);
 
   // 1. Memoized Single-Pass Today & Overall KPI Calculations
   const {
@@ -53,7 +72,7 @@ export default function DashboardPage({ bills = [], isDarkMode, userRole = 'admi
     let delivered = 0;
     const customerSet = new Set();
 
-    bills.forEach(bill => {
+    branchFilteredBills.forEach(bill => {
       if (!bill) return;
       // Prioritize the user-selected invoice date; only fallback to createdAt if bill.date is missing
       const bDate = bill.date ? String(bill.date).substring(0, 10) : '';
@@ -104,13 +123,13 @@ export default function DashboardPage({ bills = [], isDarkMode, userRole = 'admi
       dueRemindersCount: dueReminders,
       deliveredCount: delivered
     };
-  }, [bills, todayStr]);
+  }, [branchFilteredBills, todayStr]);
 
-  // 2. Memoized Date & Search Filtering for Customer Reminders Table
+  // 2. Memoized Date & Search Filtering for Customer Reminders Table (filtered by branch)
   const filteredBills = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
 
-    return bills.filter(bill => {
+    return branchFilteredBills.filter(bill => {
       if (!bill) return false;
       const matchesSearch = !q || (
         (bill.customer?.name && bill.customer.name.toLowerCase().includes(q)) ||
@@ -130,12 +149,12 @@ export default function DashboardPage({ bills = [], isDarkMode, userRole = 'admi
       }
       return true; // 'all'
     });
-  }, [bills, searchQuery, dateFilter, todayStr]);
+  }, [branchFilteredBills, searchQuery, dateFilter, todayStr]);
 
   return (
     <div className="w-full max-w-[1920px] mx-auto p-4 sm:p-6 space-y-6">
       {/* Page Title & Quick Action */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-700/20">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-700/20">
         <div>
           <h1 className={`text-2xl sm:text-3xl font-black tracking-tight flex items-center gap-3 ${
             isDarkMode ? 'text-white' : 'text-[#0B2D5B]'
@@ -150,14 +169,57 @@ export default function DashboardPage({ bills = [], isDarkMode, userRole = 'admi
           </p>
         </div>
 
-        <button
-          onClick={onNavigateToReminders}
-          className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#0B2D5B] to-[#143E77] hover:from-[#0F356B] hover:to-[#184B8E] text-[#D4AF37] border border-[#D4AF37]/40 font-bold text-xs sm:text-sm shadow-lg shadow-[#0B2D5B]/25 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
-        >
-          <Bell className="w-4 h-4 animate-bounce text-[#D4AF37]" />
-          <span>Manage Delivery Reminders ({dueRemindersCount} Pending)</span>
-          <ChevronRight className="w-4 h-4" />
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Admin Branch Filter Selector */}
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold shadow-xs transition-all ${
+            selectedBranch !== 'all'
+              ? isDarkMode
+                ? 'bg-[#0B2D5B] text-[#D4AF37] border-[#D4AF37]/60 shadow-md shadow-[#0B2D5B]/20'
+                : 'bg-amber-50 text-[#0B2D5B] border-[#D4AF37] shadow-xs ring-1 ring-[#D4AF37]/40'
+              : isDarkMode
+                ? 'bg-[#061833] border-[#0B2D5B]/70 text-slate-200'
+                : 'bg-white border-[#0B2D5B]/20 text-[#0B2D5B]'
+          }`}>
+            <Building2 className="w-4 h-4 text-[#D4AF37]" />
+            <span className="whitespace-nowrap">Branch:</span>
+            <select
+              value={selectedBranch}
+              onChange={(e) => setSelectedBranch(e.target.value)}
+              className="bg-transparent font-extrabold focus:outline-none cursor-pointer text-xs"
+              title="Filter Dashboard metrics & orders by Branch"
+            >
+              <option 
+                value="all" 
+                className={isDarkMode ? 'bg-slate-900 text-slate-100' : 'bg-white text-slate-900'}
+                style={{ backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#0f172a' }}
+              >
+                All Branches ({bills.length})
+              </option>
+              {branches.map(b => {
+                const count = bills.filter(bill => (bill.branch || 'Optics India').toLowerCase() === b.toLowerCase()).length;
+                return (
+                  <option 
+                    key={b} 
+                    value={b} 
+                    className={isDarkMode ? 'bg-slate-900 text-slate-100' : 'bg-white text-slate-900'}
+                    style={{ backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#0f172a' }}
+                  >
+                    {b} ({count})
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+
+          <button
+            onClick={onNavigateToReminders}
+            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#0B2D5B] to-[#143E77] hover:from-[#0F356B] hover:to-[#184B8E] text-[#D4AF37] border border-[#D4AF37]/40 font-bold text-xs sm:text-sm shadow-lg shadow-[#0B2D5B]/25 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
+          >
+            <Bell className="w-4 h-4 animate-bounce text-[#D4AF37]" />
+            <span>Reminders ({dueRemindersCount})</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* KPI Cards Grid - Today Metrics (5 Core Cards) */}
@@ -415,7 +477,10 @@ export default function DashboardPage({ bills = [], isDarkMode, userRole = 'admi
                       >
                         {/* Bill No */}
                         <td className="py-3 px-4 font-bold text-blue-800 dark:text-sky-400">
-                          #{formatBillNo(bill.billNo)}
+                          <div>#{formatBillNo(bill.billNo)}</div>
+                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 inline-block mt-0.5">
+                            {bill.branch || 'Optics India'}
+                          </span>
                         </td>
 
                         {/* Customer Info */}

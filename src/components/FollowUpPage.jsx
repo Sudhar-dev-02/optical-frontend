@@ -20,11 +20,13 @@ import {
   Sparkles,
   Eye,
   Clock,
-  CheckCircle2
+  CheckCircle2,
+  Building2,
+  X
 } from 'lucide-react';
 import { formatBillNo } from '../utils/billNumber';
 
-const STORE_PHONE = '+91 733 933 4042';
+const STORE_PHONE = '+91 90432 29107 / +91 99524 17748';
 
 // Pure date calculation helpers
 const addDays = (dateStr, days) => {
@@ -77,20 +79,33 @@ const formatDate = (d) => {
   }
 };
 
-export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatus }) {
+export default function FollowUpPage({ 
+  bills = [], 
+  branches = ['Optics India', 'Ayncare'],
+  isDarkMode, 
+  onUpdateBillStatus 
+}) {
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'service' | 'feedback' | 'eyecheck'
   const [dateScope, setDateScope] = useState('today'); // 'today' | 'overdue' | 'upcoming' | 'all'
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'Pending' | 'Sent' | 'Contacted' | 'Completed'
+  const [selectedBranch, setSelectedBranch] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [localStatuses, setLocalStatuses] = useState({});
   const [localFollowUpDetails, setLocalFollowUpDetails] = useState({});
+
+  // Filter bills by selected branch
+  const branchFilteredBills = useMemo(() => {
+    if (!selectedBranch || selectedBranch === 'all') return bills;
+    const target = selectedBranch.toLowerCase();
+    return bills.filter(bill => (bill.branch || 'Optics India').toLowerCase() === target);
+  }, [bills, selectedBranch]);
 
   // Enrich bills with calculated follow-up dates, due classification, and status
   const followUpItems = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    return bills.map((bill) => {
+    return branchFilteredBills.map((bill) => {
       const baseDate = bill.deliveryDate || bill.date || new Date().toISOString();
       
       // 1) Free Service: 90 days after delivery (3 months)
@@ -147,7 +162,7 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
         currentStatus: savedStatus
       };
     });
-  }, [bills, localStatuses, localFollowUpDetails]);
+  }, [branchFilteredBills, localStatuses, localFollowUpDetails]);
 
   // Filter items based on selected category tab, date scope, status, and search query
   const filteredItems = useMemo(() => {
@@ -226,9 +241,14 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
     }
   };
 
+  // Toggle a single workflow field between Selected (Sent) and Unselected (Pending)
+  const handleToggleWorkflow = (id, type, currentSentState) => {
+    const nextStatus = currentSentState ? 'Pending' : 'Sent';
+    handleSetStatus(id, nextStatus, type);
+  };
+
   // Direct status update handler
   const handleSetStatus = (id, nextStatus, type = null) => {
-    setLocalStatuses(prev => ({ ...prev, [id]: nextStatus }));
     if (type) {
       const now = new Date().toISOString();
       const keyMap = {
@@ -238,15 +258,33 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
       };
       const key = keyMap[type];
       if (key) {
-        setLocalFollowUpDetails(prev => ({
-          ...prev,
-          [id]: {
-            ...(prev[id] || {}),
-            [key]: nextStatus === 'Pending' ? null : now,
-            lastContactedAt: now
-          }
-        }));
+        const isPending = nextStatus === 'Pending';
+        setLocalFollowUpDetails(prev => {
+          const current = prev[id] || {};
+          const updated = {
+            ...current,
+            [key]: isPending ? null : now,
+            lastContactedAt: isPending ? current.lastContactedAt : now
+          };
+
+          const targetBill = bills.find(b => (b._id || b.billNo) === id);
+          const billDetails = targetBill?.followUpDetails || {};
+          const merged = { ...billDetails, ...updated };
+          const anySent = Boolean(merged.serviceSentAt || merged.feedbackSentAt || merged.eyeCheckSentAt);
+
+          setLocalStatuses(prevStatuses => ({
+            ...prevStatuses,
+            [id]: anySent ? 'Sent' : 'Pending'
+          }));
+
+          return {
+            ...prev,
+            [id]: updated
+          };
+        });
       }
+    } else {
+      setLocalStatuses(prev => ({ ...prev, [id]: nextStatus }));
     }
     if (onUpdateBillStatus) {
       onUpdateBillStatus(id, nextStatus, type);
@@ -257,18 +295,18 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
   const getWhatsAppLink = (item, type) => {
     const rawPhone = (item.customer?.phone || '').replace(/\D/g, '');
     const phoneWithCountry = rawPhone.length === 10 ? `91${rawPhone}` : rawPhone;
-    const customerName = item.customer?.name || 'Valued Customer';
+    const customerName = item.customer?.name?.trim() || 'Customer';
     const billNo = formatBillNo(item.billNo);
 
     let message = '';
     if (type === 'service') {
-      message = `Hello ${customerName}, greetings from Optics India (${STORE_PHONE})! 👓✨\n\nIt has been 3 months since your eyewear purchase (Bill #${billNo}). We invite you to visit our store for a Complimentary Glasses Servicing, Ultrasonic Cleaning, and Frame Realignment.\n\nVisit us anytime or call ${STORE_PHONE} for queries!`;
+      message = `👓 Greetings from Optics India! ✨\nDear Customer,\nIt has been 3 months since you chose your spectacles with us! To ensure your glasses continue to give you crisp vision and total comfort, we invite you for a Complimentary 3-Month Eyewear Service.\n🔧 Free Services Included:\n✔️ Deep Lens & Frame Cleaning: Complete ultrasonic smudge and dust removal.\n✔️ Nose Pad Replacement: Brand-new soft silicone pads for all-day comfort.\n✔️ Screw Tightening: Securing loose hinges, temples, and screws.\n✔️ Frame Realignment: Precise adjustments for the perfect fit on your face.\n💵 Charges: 100% FREE`;
     } else if (type === 'feedback') {
-      message = `Hello ${customerName}, thank you for choosing Optics India (${STORE_PHONE})! 🌟\n\nWe would love to know how your new glasses (Bill #${billNo}) are fitting and if your vision is perfectly comfortable. If you need any minor adjustment, please feel free to reach out to us at ${STORE_PHONE}.\n\nHave a wonderful day!`;
+      message = `Greetings from Optics India! ✨\nDear Customer,\nIt has been 1 week since you started wearing your new spectacles from us!\nWe would love to know how they are working for you. Is your vision clear and comfortable?\nKindly give us a feedback`;
     } else if (type === 'eyecheck') {
-      message = `Hello ${customerName}, warm greetings from Optics India (${STORE_PHONE})! 👁️✨\n\nIt has been 8 months since your last eye prescription (Bill #${billNo}). Regular vision checkups ensure optimal eye health and clear vision.\n\nReply to this message or call ${STORE_PHONE} to schedule your free eye checkup at your convenience!`;
+      message = `Optics India: Hi ${customerName}, it’s been 8 months since your last eye check! Walk in with your glasses today for a routine vision check and a free spectacle tune-up. Call/WhatsApp: ${STORE_PHONE}.`;
     } else {
-      message = `Hello ${customerName}, greetings from Optics India (${STORE_PHONE}) regarding Bill #${billNo}. Please feel free to contact us for any assistance or vision queries!`;
+      message = `Greetings from Optics India! ✨\nDear ${customerName},\nPlease feel free to contact us at ${STORE_PHONE} regarding Bill #${billNo} for any eyewear assistance or vision queries!`;
     }
 
     return `https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(message)}`;
@@ -510,7 +548,45 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
             />
           </div>
 
-          <div className="flex items-center gap-2 text-xs">
+          <div className="flex items-center gap-2 text-xs flex-wrap">
+            {/* Branch Filter Selector */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Building2 className="w-3.5 h-3.5 text-[#D4AF37]" />
+              <select
+                value={selectedBranch}
+                onChange={(e) => setSelectedBranch(e.target.value)}
+                className={`rounded-xl px-2.5 py-1.5 font-bold cursor-pointer transition-all ${
+                  selectedBranch !== 'all' 
+                    ? isDarkMode
+                      ? 'bg-[#0B2D5B] text-[#D4AF37] border border-[#D4AF37]/50 shadow-xs' 
+                      : 'bg-amber-50 text-[#0B2D5B] border border-[#D4AF37] shadow-xs ring-1 ring-[#D4AF37]/40'
+                    : inputClass
+                }`}
+                title="Filter follow-up customers by store branch"
+              >
+                <option 
+                  value="all" 
+                  className={isDarkMode ? 'bg-slate-900 text-slate-100' : 'bg-white text-slate-900'}
+                  style={{ backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#0f172a' }}
+                >
+                  All Branches ({bills.length})
+                </option>
+                {branches.map(b => {
+                  const count = bills.filter(bill => (bill.branch || 'Optics India').toLowerCase() === b.toLowerCase()).length;
+                  return (
+                    <option 
+                      key={b} 
+                      value={b} 
+                      className={isDarkMode ? 'bg-slate-900 text-slate-100' : 'bg-white text-slate-900'}
+                      style={{ backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#0f172a' }}
+                    >
+                      {b} ({count})
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+
             <div className="flex items-center gap-1.5 shrink-0">
               <Filter className="w-3.5 h-3.5 text-[#D4AF37]" />
               <select
@@ -518,11 +594,11 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className={`rounded-xl px-2.5 py-1.5 font-bold ${inputClass}`}
               >
-                <option value="all" className={isDarkMode ? 'bg-slate-900' : ''}>All Statuses</option>
-                <option value="Pending" className={isDarkMode ? 'bg-slate-900' : ''}>⏳ Pending</option>
-                <option value="Sent" className={isDarkMode ? 'bg-slate-900' : ''}>🚀 Sent (WhatsApp)</option>
-                <option value="Contacted" className={isDarkMode ? 'bg-slate-900' : ''}>📞 Contacted</option>
-                <option value="Completed" className={isDarkMode ? 'bg-slate-900' : ''}>✅ Completed</option>
+                <option value="all" style={{ backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#0f172a' }}>All Statuses</option>
+                <option value="Pending" style={{ backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#0f172a' }}>Pending</option>
+                <option value="Sent" style={{ backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#0f172a' }}>Sent (WhatsApp)</option>
+                <option value="Contacted" style={{ backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#0f172a' }}>Contacted</option>
+                <option value="Completed" style={{ backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#0f172a' }}>Completed</option>
               </select>
             </div>
           </div>
@@ -595,6 +671,11 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
 
                       <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-[#0B2D5B]/10 dark:bg-[#0B2D5B]/30 border border-[#0B2D5B]/20 text-[#0B2D5B] dark:text-[#D4AF37]">
                         Bill #{formatBillNo(item.billNo)}
+                      </span>
+
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/30 text-sky-600 dark:text-sky-400 flex items-center gap-1">
+                        <Building2 className="w-2.5 h-2.5 text-[#D4AF37]" />
+                        <span>{item.branch || 'Optics India'}</span>
                       </span>
 
                       {/* Due Today Badge */}
@@ -674,151 +755,222 @@ export default function FollowUpPage({ bills = [], isDarkMode, onUpdateBillStatu
                   {/* Target Follow-Up Dates Grid with Due Indicators */}
                   <div className="grid grid-cols-3 gap-2 text-center p-2 rounded-xl bg-slate-500/10 border border-slate-400/20 text-[11px] shrink-0">
                     {/* 3M Free Service Date */}
-                    <div className={`p-1.5 rounded-lg ${
-                      isServiceSent
-                        ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 font-bold'
-                        : item.serviceDueToday 
-                          ? 'bg-[#0B2D5B]/15 border border-[#D4AF37]/40 text-[#0B2D5B] dark:text-[#D4AF37] font-bold' 
-                          : item.serviceOverdue ? 'opacity-80' : ''
-                    }`}>
+                    <div 
+                      onClick={() => handleToggleWorkflow(itemId, 'service', isServiceSent)}
+                      className={`p-1.5 rounded-lg cursor-pointer hover:scale-[1.03] transition-all select-none ${
+                        isServiceSent
+                          ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 font-bold'
+                          : item.serviceDueToday 
+                            ? 'bg-[#0B2D5B]/15 border border-[#D4AF37]/40 text-[#0B2D5B] dark:text-[#D4AF37] font-bold' 
+                            : item.serviceOverdue ? 'opacity-80' : ''
+                      }`}
+                      title={isServiceSent ? "Click to unselect / revert 3M Service to Pending" : "Click to select / mark 3M Service as Sent"}
+                    >
                       <div className="text-[10px] font-bold uppercase flex items-center justify-center gap-1">
                         <Wrench className="w-2.5 h-2.5 text-[#D4AF37]" />
                         <span>3M Service</span>
                       </div>
                       <div className="font-mono font-bold mt-0.5">{formatDate(item.serviceDate)}</div>
                       {isServiceSent ? (
-                        <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-black">✓ SENT</span>
+                        <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-black">✓ SENT (Click to unselect)</span>
                       ) : item.serviceDueToday ? (
                         <span className="text-[9px] text-[#0B2D5B] dark:text-[#D4AF37] font-black">● DUE TODAY</span>
-                      ) : null}
+                      ) : (
+                        <span className="text-[9px] opacity-60">Click to select</span>
+                      )}
                     </div>
 
                     {/* 1W Product Feedback Date */}
-                    <div className={`p-1.5 rounded-lg border-x border-slate-400/20 ${
-                      isFeedbackSent
-                        ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 font-bold'
-                        : item.feedbackDueToday 
-                          ? 'bg-[#0B2D5B]/15 border border-[#D4AF37]/40 text-[#0B2D5B] dark:text-[#D4AF37] font-bold' 
-                          : item.feedbackOverdue ? 'opacity-80' : ''
-                    }`}>
+                    <div 
+                      onClick={() => handleToggleWorkflow(itemId, 'feedback', isFeedbackSent)}
+                      className={`p-1.5 rounded-lg border-x border-slate-400/20 cursor-pointer hover:scale-[1.03] transition-all select-none ${
+                        isFeedbackSent
+                          ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 font-bold'
+                          : item.feedbackDueToday 
+                            ? 'bg-[#0B2D5B]/15 border border-[#D4AF37]/40 text-[#0B2D5B] dark:text-[#D4AF37] font-bold' 
+                            : item.feedbackOverdue ? 'opacity-80' : ''
+                      }`}
+                      title={isFeedbackSent ? "Click to unselect / revert 1W Feedback to Pending" : "Click to select / mark 1W Feedback as Sent"}
+                    >
                       <div className="text-[10px] font-bold uppercase flex items-center justify-center gap-1">
                         <MessageSquare className="w-2.5 h-2.5 text-[#D4AF37]" />
                         <span>1W Feedback</span>
                       </div>
                       <div className="font-mono font-bold mt-0.5">{formatDate(item.feedbackDate)}</div>
                       {isFeedbackSent ? (
-                        <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-black">✓ SENT</span>
+                        <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-black">✓ SENT (Click to unselect)</span>
                       ) : item.feedbackDueToday ? (
                         <span className="text-[9px] text-[#0B2D5B] dark:text-[#D4AF37] font-black">● DUE TODAY</span>
-                      ) : null}
+                      ) : (
+                        <span className="text-[9px] opacity-60">Click to select</span>
+                      )}
                     </div>
 
                     {/* 8M Eye Checkup Date */}
-                    <div className={`p-1.5 rounded-lg ${
-                      isEyeCheckSent
-                        ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 font-bold'
-                        : item.eyeCheckDueToday 
-                          ? 'bg-[#0B2D5B]/15 border border-[#D4AF37]/40 text-[#0B2D5B] dark:text-[#D4AF37] font-bold' 
-                          : item.eyeCheckOverdue ? 'opacity-80' : ''
-                    }`}>
+                    <div 
+                      onClick={() => handleToggleWorkflow(itemId, 'eyecheck', isEyeCheckSent)}
+                      className={`p-1.5 rounded-lg cursor-pointer hover:scale-[1.03] transition-all select-none ${
+                        isEyeCheckSent
+                          ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 font-bold'
+                          : item.eyeCheckDueToday 
+                            ? 'bg-[#0B2D5B]/15 border border-[#D4AF37]/40 text-[#0B2D5B] dark:text-[#D4AF37] font-bold' 
+                            : item.eyeCheckOverdue ? 'opacity-80' : ''
+                      }`}
+                      title={isEyeCheckSent ? "Click to unselect / revert 8M Check to Pending" : "Click to select / mark 8M Check as Sent"}
+                    >
                       <div className="text-[10px] font-bold uppercase flex items-center justify-center gap-1">
                         <Eye className="w-2.5 h-2.5 text-[#D4AF37]" />
                         <span>8M Check</span>
                       </div>
                       <div className="font-mono font-bold mt-0.5">{formatDate(item.eyeCheckDate)}</div>
                       {isEyeCheckSent ? (
-                        <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-black">✓ SENT</span>
+                        <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-black">✓ SENT (Click to unselect)</span>
                       ) : item.eyeCheckDueToday ? (
                         <span className="text-[9px] text-[#0B2D5B] dark:text-[#D4AF37] font-black">● DUE TODAY</span>
-                      ) : null}
+                      ) : (
+                        <span className="text-[9px] opacity-60">Click to select</span>
+                      )}
                     </div>
                   </div>
 
-                  {/* Action Buttons: WhatsApp Send & Mark Sent Action Bar */}
-                  <div className="flex flex-wrap lg:flex-col gap-2 shrink-0 justify-end">
+                  {/* Action Buttons: Unified WhatsApp & Status Control */}
+                  <div className="flex flex-col gap-2 shrink-0 justify-end min-w-[210px] sm:min-w-[230px]">
                     {/* 1) WhatsApp: Free Service */}
                     {showServiceAction && (
-                      <button
-                        type="button"
-                        onClick={(e) => handleSendWhatsApp(e, item, 'service')}
-                        className={`px-3 py-1.5 rounded-xl font-bold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                          isServiceSent
-                            ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white'
-                            : 'bg-[#0B2D5B] hover:bg-[#143E77] text-[#D4AF37] border border-[#D4AF37]/40 shadow-sm'
-                        }`}
-                        title="Send 3-Month Free Service WhatsApp Message & Mark as Sent"
-                      >
-                        <MessageSquare className="w-3.5 h-3.5 fill-current" />
-                        <span>{isServiceSent ? 'WhatsApp Sent ✓ (3M)' : 'WhatsApp Service (3M)'}</span>
-                      </button>
+                      <div className="w-full">
+                        {isServiceSent ? (
+                          <div className="w-full flex items-center rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-sm overflow-hidden transition-all">
+                            <button
+                              type="button"
+                              onClick={(e) => handleSendWhatsApp(e, item, 'service')}
+                              className="p-2 hover:bg-black/15 transition-all cursor-pointer shrink-0"
+                              title="Click to re-send WhatsApp message"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5 fill-current" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleWorkflow(itemId, 'service', true)}
+                              className="flex-1 py-1.5 pr-2.5 font-bold text-xs flex items-center justify-between gap-1 hover:bg-black/10 transition-all cursor-pointer group"
+                              title="Click to unselect / revert 3M Service to Pending"
+                            >
+                              <span className="truncate">WhatsApp Sent ✓ (3M)</span>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-black/25 group-hover:bg-rose-600 group-hover:text-white font-black flex items-center gap-0.5 transition-all shrink-0">
+                                <X className="w-2.5 h-2.5" />
+                                <span>Unselect</span>
+                              </span>
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={(e) => handleSendWhatsApp(e, item, 'service')}
+                            className="w-full px-3 py-2 rounded-xl font-bold text-xs shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer bg-[#0B2D5B] hover:bg-[#143E77] text-[#D4AF37] border border-[#D4AF37]/40 active:scale-[0.98]"
+                            title="Send 3-Month Free Service WhatsApp Message & Mark as Sent"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5 fill-current" />
+                            <span>WhatsApp Service (3M)</span>
+                          </button>
+                        )}
+                      </div>
                     )}
 
                     {/* 2) WhatsApp: Feedback */}
                     {showFeedbackAction && (
-                      <button
-                        type="button"
-                        onClick={(e) => handleSendWhatsApp(e, item, 'feedback')}
-                        className={`px-3 py-1.5 rounded-xl font-bold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                          isFeedbackSent
-                            ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white'
-                            : 'bg-gradient-to-r from-[#D4AF37] via-[#E5C358] to-[#B89025] hover:brightness-110 text-[#061833] font-black shadow-sm'
-                        }`}
-                        title="Send Product Feedback WhatsApp Message & Mark as Sent"
-                      >
-                        <MessageSquare className="w-3.5 h-3.5 fill-current" />
-                        <span>{isFeedbackSent ? 'WhatsApp Sent ✓ (Feedback)' : 'WhatsApp Feedback (1W)'}</span>
-                      </button>
+                      <div className="w-full">
+                        {isFeedbackSent ? (
+                          <div className="w-full flex items-center rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-sm overflow-hidden transition-all">
+                            <button
+                              type="button"
+                              onClick={(e) => handleSendWhatsApp(e, item, 'feedback')}
+                              className="p-2 hover:bg-black/15 transition-all cursor-pointer shrink-0"
+                              title="Click to re-send WhatsApp message"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5 fill-current" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleWorkflow(itemId, 'feedback', true)}
+                              className="flex-1 py-1.5 pr-2.5 font-bold text-xs flex items-center justify-between gap-1 hover:bg-black/10 transition-all cursor-pointer group"
+                              title="Click to unselect / revert 1W Feedback to Pending"
+                            >
+                              <span className="truncate">WhatsApp Sent ✓ (Feedback)</span>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-black/25 group-hover:bg-rose-600 group-hover:text-white font-black flex items-center gap-0.5 transition-all shrink-0">
+                                <X className="w-2.5 h-2.5" />
+                                <span>Unselect</span>
+                              </span>
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={(e) => handleSendWhatsApp(e, item, 'feedback')}
+                            className="w-full px-3 py-2 rounded-xl font-bold text-xs shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer bg-gradient-to-r from-[#D4AF37] via-[#E5C358] to-[#B89025] hover:brightness-110 text-[#061833] font-black active:scale-[0.98]"
+                            title="Send Product Feedback WhatsApp Message & Mark as Sent"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5 fill-current" />
+                            <span>WhatsApp Feedback (1W)</span>
+                          </button>
+                        )}
+                      </div>
                     )}
 
                     {/* 3) WhatsApp: Eye Check */}
                     {showEyeCheckAction && (
-                      <button
-                        type="button"
-                        onClick={(e) => handleSendWhatsApp(e, item, 'eyecheck')}
-                        className={`px-3 py-1.5 rounded-xl font-bold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                          isEyeCheckSent
-                            ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white'
-                            : 'bg-[#0B2D5B] hover:bg-[#143E77] text-[#D4AF37] border border-[#D4AF37]/40 shadow-sm'
-                        }`}
-                        title="Send 8-Month Eye Checkup WhatsApp Message & Mark as Sent"
-                      >
-                        <MessageSquare className="w-3.5 h-3.5 fill-current" />
-                        <span>{isEyeCheckSent ? 'WhatsApp Sent ✓ (8M)' : 'WhatsApp Eye Check (8M)'}</span>
-                      </button>
+                      <div className="w-full">
+                        {isEyeCheckSent ? (
+                          <div className="w-full flex items-center rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-sm overflow-hidden transition-all">
+                            <button
+                              type="button"
+                              onClick={(e) => handleSendWhatsApp(e, item, 'eyecheck')}
+                              className="p-2 hover:bg-black/15 transition-all cursor-pointer shrink-0"
+                              title="Click to re-send WhatsApp message"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5 fill-current" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleWorkflow(itemId, 'eyecheck', true)}
+                              className="flex-1 py-1.5 pr-2.5 font-bold text-xs flex items-center justify-between gap-1 hover:bg-black/10 transition-all cursor-pointer group"
+                              title="Click to unselect / revert 8M Check to Pending"
+                            >
+                              <span className="truncate">WhatsApp Sent ✓ (8M)</span>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-black/25 group-hover:bg-rose-600 group-hover:text-white font-black flex items-center gap-0.5 transition-all shrink-0">
+                                <X className="w-2.5 h-2.5" />
+                                <span>Unselect</span>
+                              </span>
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={(e) => handleSendWhatsApp(e, item, 'eyecheck')}
+                            className="w-full px-3 py-2 rounded-xl font-bold text-xs shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer bg-[#0B2D5B] hover:bg-[#143E77] text-[#D4AF37] border border-[#D4AF37]/40 active:scale-[0.98]"
+                            title="Send 8-Month Eye Checkup WhatsApp Message & Mark as Sent"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5 fill-current" />
+                            <span>WhatsApp Eye Check (8M)</span>
+                          </button>
+                        )}
+                      </div>
                     )}
 
-                    {/* Secondary Actions: Quick Mark Sent / Call Customer */}
-                    <div className="flex items-center gap-1.5">
-                      {/* Explicit Mark as Sent / Toggle Button */}
-                      <button
-                        type="button"
-                        onClick={() => handleSetStatus(itemId, isCurrentWorkflowSent ? 'Pending' : 'Sent', activeWorkflowType)}
-                        className={`flex-1 px-2.5 py-1 rounded-xl border text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
-                          isCurrentWorkflowSent
-                            ? 'bg-emerald-100 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-200'
-                            : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                        }`}
-                        title={isCurrentWorkflowSent ? 'Click to revert this workflow to Pending' : 'Manually mark this workflow as Sent'}
-                      >
-                        <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                        <span>{isCurrentWorkflowSent ? 'Marked Sent' : 'Mark Sent'}</span>
-                      </button>
-
-                      {/* Direct Call Button */}
-                      {rawPhone && (
+                    {/* Direct Call Button */}
+                    {rawPhone && (
+                      <div className="pt-0.5">
                         <a
                           href={`tel:${rawPhone}`}
                           onClick={() => {
                             if (status === 'Pending') handleSetStatus(itemId, 'Contacted');
                           }}
-                          className="px-2.5 py-1 rounded-xl bg-[#0B2D5B]/10 dark:bg-[#0B2D5B]/30 border border-[#0B2D5B]/30 hover:bg-[#0B2D5B]/20 text-[#0B2D5B] dark:text-[#D4AF37] font-bold text-xs flex items-center justify-center gap-1 transition-all"
+                          className="w-full py-1.5 px-3 rounded-xl bg-sky-500/10 border border-sky-500/30 text-sky-600 dark:text-sky-400 hover:bg-sky-500/20 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs"
                           title="Call customer directly and mark as Contacted"
                         >
-                          <PhoneCall className="w-3 h-3 text-[#D4AF37]" />
-                          <span>Call</span>
+                          <PhoneCall className="w-3.5 h-3.5" />
+                          <span>Call ({rawPhone})</span>
                         </a>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

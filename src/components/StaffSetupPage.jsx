@@ -10,11 +10,19 @@ import {
   AlertCircle, 
   Edit, 
   X, 
-  Save 
+  Save,
+  Building2,
+  Store,
+  Plus,
+  Check
 } from 'lucide-react';
 
 export default function StaffSetupPage({ 
   registeredStaff = [], 
+  branches = ['Optics India', 'Ayncare'],
+  onAddBranch,
+  onEditBranch,
+  onDeleteBranch,
   onAddStaff, 
   onDeleteStaff, 
   onUpdateStaff,
@@ -28,12 +36,76 @@ export default function StaffSetupPage({
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('Male');
   const [role, setRole] = useState('Salesperson');
+  const [branch, setBranch] = useState(branches[0] || 'Optics India');
   const [address, setAddress] = useState('');
   const [pin, setPin] = useState('');
   const [msg, setMsg] = useState(null);
 
+  // New Branch Management State
+  const [newBranchInput, setNewBranchInput] = useState('');
+  const [showAddBranchCard, setShowAddBranchCard] = useState(false);
+  const [branchMsg, setBranchMsg] = useState(null);
+
+  // Edit / Delete Branch Management State
+  const [editingBranch, setEditingBranch] = useState(null);
+  const [editBranchName, setEditBranchName] = useState('');
+  const [confirmDeleteBranch, setConfirmDeleteBranch] = useState(null);
+
   // Edit Staff Profile Modal State
   const [editingStaff, setEditingStaff] = useState(null);
+
+  const handleStartEditBranch = (branchName) => {
+    setEditingBranch(branchName);
+    setEditBranchName(branchName);
+  };
+
+  const handleSaveEditBranch = (oldName) => {
+    if (!editBranchName.trim()) {
+      alert('Branch name cannot be empty.');
+      return;
+    }
+    if (onEditBranch) {
+      const success = onEditBranch(oldName, editBranchName.trim());
+      if (success) {
+        if (branch.toLowerCase() === oldName.toLowerCase()) {
+          setBranch(editBranchName.trim());
+        }
+        setEditingBranch(null);
+        setEditBranchName('');
+      }
+    }
+  };
+
+  const handleConfirmDelete = () => {
+    if (confirmDeleteBranch && onDeleteBranch) {
+      const deletedName = confirmDeleteBranch;
+      const success = onDeleteBranch(deletedName);
+      if (success) {
+        if (branch.toLowerCase() === deletedName.toLowerCase()) {
+          setBranch('Optics India');
+        }
+      }
+      setConfirmDeleteBranch(null);
+    }
+  };
+
+  const handleCreateBranch = (e) => {
+    if (e) e.preventDefault();
+    setBranchMsg(null);
+    if (!newBranchInput.trim()) {
+      setBranchMsg({ type: 'error', text: 'Please enter a branch name.' });
+      return;
+    }
+    if (onAddBranch) {
+      const success = onAddBranch(newBranchInput.trim());
+      if (success) {
+        setBranch(newBranchInput.trim());
+        setBranchMsg({ type: 'success', text: `Branch "${newBranchInput.trim()}" added successfully!` });
+        setNewBranchInput('');
+        setShowAddBranchCard(false);
+      }
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -72,9 +144,10 @@ export default function StaffSetupPage({
       qualification: qualification.trim(),
       age: age.trim(),
       gender,
+      role: role.toLowerCase(),
+      branch: (branch || 'Optics India').trim(),
       address: address.trim(),
       pin,
-      role: role.toLowerCase(),
       createdAt: new Date().toISOString()
     };
 
@@ -88,11 +161,12 @@ export default function StaffSetupPage({
     setAge('');
     setGender('Male');
     setRole('Salesperson');
+    setBranch(branches[0] || 'Optics India');
     setAddress('');
     setPin('');
     setMsg({ 
       type: 'success', 
-      text: `Staff member "${cleanedName}" registered successfully! They can now log in using Phone ${cleanedPhone} & PIN ${pin}.` 
+      text: `Staff member "${cleanedName}" assigned to "${branch || 'Optics India'}" registered successfully! Login Phone: ${cleanedPhone} & PIN: ${pin}.` 
     });
   };
 
@@ -119,6 +193,7 @@ export default function StaffSetupPage({
     if (onUpdateStaff) {
       onUpdateStaff({
         ...editingStaff,
+        branch: (editingStaff.branch || 'Optics India').trim(),
         phone: cleanedPhone,
         emergencyPhone: (editingStaff.emergencyPhone || '').replace(/\D/g, '')
       });
@@ -238,9 +313,9 @@ export default function StaffSetupPage({
                   onChange={(e) => setGender(e.target.value)}
                   className={`w-full rounded-xl px-3 py-2 font-semibold ${inputClass}`}
                 >
-                  <option value="Male" className={isDarkMode ? 'bg-slate-900' : ''}>Male</option>
-                  <option value="Female" className={isDarkMode ? 'bg-slate-900' : ''}>Female</option>
-                  <option value="Other" className={isDarkMode ? 'bg-slate-900' : ''}>Other</option>
+                  <option value="Male" style={{ backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#0f172a' }}>Male</option>
+                  <option value="Female" style={{ backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#0f172a' }}>Female</option>
+                  <option value="Other" style={{ backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#0f172a' }}>Other</option>
                 </select>
               </div>
             </div>
@@ -254,10 +329,10 @@ export default function StaffSetupPage({
                   onChange={(e) => setRole(e.target.value)}
                   className={`w-full rounded-xl px-3 py-2 font-semibold ${inputClass}`}
                 >
-                  <option value="Salesperson" className={isDarkMode ? 'bg-slate-900' : ''}>Salesperson</option>
-                  <option value="Optometrist" className={isDarkMode ? 'bg-slate-900' : ''}>Optometrist</option>
-                  <option value="Store Manager" className={isDarkMode ? 'bg-slate-900' : ''}>Store Manager</option>
-                  <option value="Admin" className={isDarkMode ? 'bg-slate-900' : ''}>Admin</option>
+                  <option value="Salesperson" style={{ backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#0f172a' }}>Salesperson</option>
+                  <option value="Optometrist" style={{ backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#0f172a' }}>Optometrist</option>
+                  <option value="Store Manager" style={{ backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#0f172a' }}>Store Manager</option>
+                  <option value="Admin" style={{ backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#0f172a' }}>Admin</option>
                 </select>
               </div>
 
@@ -276,7 +351,97 @@ export default function StaffSetupPage({
                 </div>
               </div>
             </div>
+
+            {/* 7) Staff Assigned Branch */}
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <label className={`${labelClass} font-bold flex items-center gap-1`}>
+                  <Building2 className="w-3.5 h-3.5 text-[#D4AF37]" /> *Store Branch:
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowAddBranchCard(prev => !prev)}
+                  className="text-[10px] font-bold text-sky-500 hover:text-sky-400 flex items-center gap-0.5 cursor-pointer"
+                >
+                  <Plus className="w-3 h-3" /> Add Branch
+                </button>
+              </div>
+              <div className="relative">
+                <select
+                  value={branch}
+                  onChange={(e) => {
+                    if (e.target.value === '__NEW__') {
+                      setShowAddBranchCard(true);
+                    } else {
+                      setBranch(e.target.value);
+                    }
+                  }}
+                  className={`w-full rounded-xl px-3 py-2 font-semibold ${inputClass}`}
+                >
+                  {branches.map(b => (
+                    <option 
+                      key={b} 
+                      value={b} 
+                      style={{ backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#0f172a' }}
+                    >
+                      {b}
+                    </option>
+                  ))}
+                  <option 
+                    value="__NEW__" 
+                    className="text-sky-500 font-bold"
+                    style={{ backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', color: '#0284c7' }}
+                  >
+                    + Add New Branch...
+                  </option>
+                </select>
+              </div>
+            </div>
           </div>
+
+          {/* Quick Add Branch Inline Card */}
+          {showAddBranchCard && (
+            <div className={`p-3 rounded-xl border flex flex-col sm:flex-row items-center gap-2 animate-in fade-in duration-200 ${
+              isDarkMode ? 'bg-[#0B2D5B]/30 border-[#D4AF37]/40' : 'bg-[#0B2D5B]/5 border-[#0B2D5B]/20'
+            }`}>
+              <div className="flex items-center gap-1.5 font-bold text-xs shrink-0 text-[#0B2D5B] dark:text-[#D4AF37]">
+                <Building2 className="w-4 h-4 text-[#D4AF37]" />
+                <span>Create New Branch:</span>
+              </div>
+              <input
+                type="text"
+                placeholder="e.g. Ayncare Anna Nagar"
+                value={newBranchInput}
+                onChange={(e) => setNewBranchInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleCreateBranch(e); }}
+                className={`flex-1 w-full rounded-lg px-3 py-1.5 text-xs font-semibold ${inputClass}`}
+              />
+              <div className="flex items-center gap-1.5 shrink-0 w-full sm:w-auto justify-end">
+                <button
+                  type="button"
+                  onClick={handleCreateBranch}
+                  className="px-3 py-1.5 rounded-lg bg-[#D4AF37] hover:brightness-110 text-[#061833] font-bold text-xs cursor-pointer shadow-sm"
+                >
+                  Save Branch
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddBranchCard(false)}
+                  className="px-2.5 py-1.5 rounded-lg border border-slate-400/30 text-slate-400 hover:text-slate-200 text-xs font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {branchMsg && (
+            <div className={`p-2.5 rounded-xl border text-xs font-semibold ${
+              branchMsg.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400' : 'bg-rose-50 border-rose-200 text-rose-800'
+            }`}>
+              {branchMsg.text}
+            </div>
+          )}
 
           {/* Address Line */}
           <div className="flex flex-col gap-1">
@@ -311,6 +476,123 @@ export default function StaffSetupPage({
         )}
       </div>
 
+      {/* Active Store Branches Bar */}
+      <div className={`${panelClass} p-4 sm:p-5 rounded-2xl sm:rounded-3xl space-y-3`}>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-400/20 pb-3">
+          <div className="flex items-center gap-2">
+            <Building2 className="w-5 h-5 text-[#D4AF37]" />
+            <div>
+              <h2 className="text-sm sm:text-base font-bold text-[#0B2D5B] dark:text-[#D4AF37]">
+                Store Branches & Locations ({branches.length})
+              </h2>
+              <p className="text-[11px] opacity-70">
+                Staff and sales entries are segregated by branch across Dashboard, Reports, and Follow-Up
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowAddBranchCard(prev => !prev)}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold border border-[#D4AF37]/50 bg-[#0B2D5B] text-[#D4AF37] hover:brightness-110 transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+          >
+            <Plus className="w-3.5 h-3.5 text-[#D4AF37]" />
+            <span>Add New Branch</span>
+          </button>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2.5 pt-1">
+          {branches.map(b => {
+            const staffCount = registeredStaff.filter(s => (s.branch || 'Optics India').toLowerCase() === b.toLowerCase()).length;
+            const isEditingThis = editingBranch === b;
+            const isHq = b.toLowerCase() === 'optics india';
+
+            return (
+              <div
+                key={b}
+                className={`group px-3.5 py-2.5 rounded-2xl text-xs font-bold border flex items-center gap-2.5 transition-all shadow-xs ${
+                  isDarkMode 
+                    ? 'bg-[#061833] border-[#0B2D5B]/70 text-slate-200 hover:border-[#D4AF37]/50' 
+                    : 'bg-white border-[#0B2D5B]/20 text-[#0B2D5B] hover:border-[#D4AF37]/50 hover:shadow-sm'
+                }`}
+              >
+                <div className="p-1.5 rounded-xl bg-[#D4AF37]/15 text-[#D4AF37] shrink-0">
+                  <Store className="w-4 h-4" />
+                </div>
+
+                {isEditingThis ? (
+                  <div className="flex items-center gap-1.5 animate-in fade-in duration-150">
+                    <input
+                      type="text"
+                      value={editBranchName}
+                      onChange={(e) => setEditBranchName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleSaveEditBranch(b);
+                        if (e.key === 'Escape') setEditingBranch(null);
+                      }}
+                      className="px-2 py-1 text-xs font-bold rounded-lg border outline-none bg-white text-slate-900 border-[#D4AF37] ring-1 ring-[#D4AF37]/50 w-36"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleSaveEditBranch(b)}
+                      className="p-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-xs"
+                      title="Save branch name"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingBranch(null)}
+                      className="p-1.5 rounded-lg bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-700 dark:text-slate-200 cursor-pointer"
+                      title="Cancel"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between gap-2.5 min-w-[130px]">
+                    <div>
+                      <div className="font-extrabold text-[12px] flex items-center gap-1.5">
+                        <span>{b}</span>
+                        {isHq && (
+                          <span className="text-[9px] px-1.5 py-0.2 rounded-md bg-[#D4AF37]/20 text-[#D4AF37] font-black uppercase tracking-wider">
+                            HQ
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[10px] opacity-70 font-mono">
+                        {isHq ? `${staffCount + 2} staff` : `${staffCount} staff`}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-0.5 ml-1">
+                      <button
+                        type="button"
+                        onClick={() => handleStartEditBranch(b)}
+                        className="p-1 rounded-lg hover:bg-[#D4AF37]/20 text-[#D4AF37] hover:brightness-110 transition-all cursor-pointer"
+                        title={`Rename "${b}" branch`}
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                      </button>
+                      {!isHq && (
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDeleteBranch(b)}
+                          className="p-1 rounded-lg hover:bg-rose-500/20 text-rose-500 hover:text-rose-600 transition-all cursor-pointer"
+                          title={`Delete "${b}" branch`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Registered Staff List */}
       <div className={`${panelClass} p-4 sm:p-5 rounded-2xl sm:rounded-3xl space-y-3`}>
         <div className="flex items-center justify-between border-b border-slate-400/20 pb-2">
@@ -333,6 +615,11 @@ export default function StaffSetupPage({
                 SYSTEM ADMIN
               </span>
             </div>
+            <div className="mb-2">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-sky-500/15 border border-sky-500/30 text-sky-600 dark:text-sky-400 font-bold text-[10px]">
+                <Building2 className="w-3 h-3 text-[#D4AF37]" /> Branch: Optics India (HQ)
+              </span>
+            </div>
             <div className="space-y-1 font-mono text-[11px]">
               <div>Name: <strong>Optics India Admin</strong></div>
               <div>Phone: <strong className="text-[#0B2D5B] dark:text-[#D4AF37]">+91 733 933 4042</strong></div>
@@ -350,6 +637,11 @@ export default function StaffSetupPage({
               </span>
               <span className="px-2 py-0.5 rounded-full bg-[#D4AF37]/20 text-[#0B2D5B] dark:text-[#D4AF37] font-extrabold text-[10px]">
                 SALES EXECUTIVE
+              </span>
+            </div>
+            <div className="mb-2">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-sky-500/15 border border-sky-500/30 text-sky-600 dark:text-sky-400 font-bold text-[10px]">
+                <Building2 className="w-3 h-3 text-[#D4AF37]" /> Branch: Optics India
               </span>
             </div>
             <div className="space-y-1 font-mono text-[11px]">
@@ -373,6 +665,13 @@ export default function StaffSetupPage({
                 </span>
                 <span className="px-2 py-0.5 rounded-full font-extrabold text-[10px] uppercase bg-[#0B2D5B]/10 dark:bg-[#0B2D5B]/30 border border-[#0B2D5B]/20 text-[#0B2D5B] dark:text-[#D4AF37]">
                   {staff.role || 'Salesperson'}
+                </span>
+              </div>
+
+              {/* Branch Pill */}
+              <div>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-sky-500/15 border border-sky-500/30 text-sky-600 dark:text-sky-400 font-bold text-[10px]">
+                  <Building2 className="w-3 h-3 text-[#D4AF37]" /> Branch: {staff.branch || 'Optics India'}
                 </span>
               </div>
 
@@ -406,6 +705,10 @@ export default function StaffSetupPage({
                     <strong className="text-slate-800 dark:text-slate-200">{staff.gender}</strong>
                   </div>
                 )}
+                <div className="flex justify-between">
+                  <span className="opacity-70">Assigned Branch:</span>
+                  <strong className="text-sky-600 dark:text-sky-400 font-bold">{staff.branch || 'Optics India'}</strong>
+                </div>
                 {staff.address && (
                   <div className="flex justify-between">
                     <span className="opacity-70">Address:</span>
@@ -527,9 +830,9 @@ export default function StaffSetupPage({
                     onChange={(e) => setEditingStaff({ ...editingStaff, gender: e.target.value })}
                     className={`w-full rounded-xl px-3 py-2 font-semibold ${inputClass}`}
                   >
-                    <option value="Male" className={isDarkMode ? 'bg-slate-900' : ''}>Male</option>
-                    <option value="Female" className={isDarkMode ? 'bg-slate-900' : ''}>Female</option>
-                    <option value="Other" className={isDarkMode ? 'bg-slate-900' : ''}>Other</option>
+                    <option value="Male" style={{ backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#0f172a' }}>Male</option>
+                    <option value="Female" style={{ backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#0f172a' }}>Female</option>
+                    <option value="Other" style={{ backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#0f172a' }}>Other</option>
                   </select>
                 </div>
 
@@ -541,10 +844,10 @@ export default function StaffSetupPage({
                     onChange={(e) => setEditingStaff({ ...editingStaff, role: e.target.value.toLowerCase() })}
                     className={`w-full rounded-xl px-3 py-2 font-semibold ${inputClass}`}
                   >
-                    <option value="Salesperson" className={isDarkMode ? 'bg-slate-900' : ''}>Salesperson</option>
-                    <option value="Optometrist" className={isDarkMode ? 'bg-slate-900' : ''}>Optometrist</option>
-                    <option value="Store Manager" className={isDarkMode ? 'bg-slate-900' : ''}>Store Manager</option>
-                    <option value="Admin" className={isDarkMode ? 'bg-slate-900' : ''}>Admin</option>
+                    <option value="Salesperson" style={{ backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#0f172a' }}>Salesperson</option>
+                    <option value="Optometrist" style={{ backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#0f172a' }}>Optometrist</option>
+                    <option value="Store Manager" style={{ backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#0f172a' }}>Store Manager</option>
+                    <option value="Admin" style={{ backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#0f172a' }}>Admin</option>
                   </select>
                 </div>
 
@@ -558,6 +861,28 @@ export default function StaffSetupPage({
                     onChange={(e) => setEditingStaff({ ...editingStaff, pin: e.target.value.replace(/\D/g, '') })}
                     className={`w-full rounded-xl px-3 py-2 font-mono font-bold ${inputClass}`}
                   />
+                </div>
+
+                {/* Edit Branch */}
+                <div className="flex flex-col gap-1 sm:col-span-2">
+                  <label className={`${labelClass} font-bold flex items-center gap-1`}>
+                    <Building2 className="w-3.5 h-3.5 text-[#D4AF37]" /> Assigned Store Branch:
+                  </label>
+                  <select
+                    value={editingStaff.branch || 'Optics India'}
+                    onChange={(e) => setEditingStaff({ ...editingStaff, branch: e.target.value })}
+                    className={`w-full rounded-xl px-3 py-2 font-semibold ${inputClass}`}
+                  >
+                    {branches.map(b => (
+                      <option 
+                        key={b} 
+                        value={b} 
+                        style={{ backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#0f172a' }}
+                      >
+                        {b}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -590,6 +915,47 @@ export default function StaffSetupPage({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Delete Branch Confirmation Modal */}
+      {confirmDeleteBranch && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className={`p-5 rounded-2xl max-w-sm w-full border shadow-2xl space-y-4 ${
+            isDarkMode ? 'bg-[#061833] border-[#0B2D5B] text-slate-100' : 'bg-white border-slate-200 text-slate-800'
+          }`}>
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-500 shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm sm:text-base text-rose-600 dark:text-rose-400">Delete Store Branch?</h3>
+                <p className="text-xs opacity-80 mt-0.5">
+                  Are you sure you want to remove <strong className="text-slate-900 dark:text-slate-100">"{confirmDeleteBranch}"</strong>?
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] leading-relaxed text-amber-800 dark:text-amber-300">
+              ⚠️ Any staff members or billing records previously under this branch will be safely reassigned to <strong>Optics India</strong>.
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteBranch(null)}
+                className="px-3.5 py-1.5 rounded-xl text-xs font-bold border border-slate-400/30 hover:bg-slate-500/10 transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="px-4 py-1.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-md shadow-rose-600/30 transition-all cursor-pointer"
+              >
+                Yes, Delete
+              </button>
+            </div>
           </div>
         </div>
       )}
