@@ -9,6 +9,7 @@ import ActionBar from './components/ActionBar';
 import DashboardPage from './components/DashboardPage';
 import LoginPage from './components/LoginPage';
 import DeliveryModal from './components/DeliveryModal';
+import LandingApp from './LandingApp';
 import { BILLS_API as API_BASE } from './config/api';
 import { formatBillNo, getNextSequentialBillNo } from './utils/billNumber';
 
@@ -88,6 +89,7 @@ function AppContent() {
 
   // Current active view calculated from current route hash
   const currentPath = location.pathname.replace(/^\//, '');
+  const isLandingRoute = location.pathname === '/' || currentPath === '';
   const currentView = currentPath || 'dashboard';
 
   // Authentication State
@@ -644,6 +646,11 @@ function AppContent() {
       return nameMatch || mrdMatch || billNoMatch || phoneMatch;
     });
   }, [bills, searchQuery]);
+
+  // Public Landing Page at root "/"
+  if (isLandingRoute) {
+    return <LandingApp />;
+  }
 
   // Dedicated /login Route & Authentication Guard
   if (currentView === 'login' || !currentUser) {
